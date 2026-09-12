@@ -25,6 +25,7 @@
                             v-model:use-novel-ai-weight-symbol="useNovelAiWeightSymbol"
                             v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                             v-model:auto-split-by-period="autoSplitByPeriod"
+                            v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
                             :hide-default-input="item.hideDefaultInput"
                             @update:hide-default-input="onUpdateHideDefaultInput(item.id, $event)"
                             :auto-load-webui-prompt="item.autoLoadWebuiPrompt"
@@ -98,6 +99,7 @@
                        v-model:use-novel-ai-weight-symbol="useNovelAiWeightSymbol"
                        v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                        v-model:auto-split-by-period="autoSplitByPeriod"
+                       v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
         ></prompt-format>
         <blacklist ref="blacklist" v-model:language-code="languageCode"
                    :translate-apis="translateApis"
@@ -312,6 +314,7 @@ export default {
             useNovelAiWeightSymbol: false,
             autoRemoveBeforeLineComma: false,
             autoSplitByPeriod: false,
+            autoSplitByPeriodIncludeParen: false,
             // hideDefaultInput: false,
             enableTooltip: true,
             tagCompleteFile: '',
@@ -534,6 +537,19 @@ export default {
             },
             immediate: false,
         },
+        autoSplitByPeriodIncludeParen: {
+            handler: function (val, oldVal) {
+                if (!this.startWatchSave) return
+                console.log('onAutoSplitByPeriodIncludeParenChange', val)
+                this.gradioAPI.setData('autoSplitByPeriodIncludeParen', val).then(data => {
+                    this.prompts.forEach(item => {
+                        this.$refs[item.id][0].updatePrompt()
+                    })
+                }).catch(err => {
+                })
+            },
+            immediate: false,
+        },
         /*hideDefaultInput: {
             handler: function (val, oldVal) {
                 if (!this.startWatchSave) return
@@ -708,6 +724,7 @@ export default {
                 'useNovelAiWeightSymbol',
                 'autoRemoveBeforeLineComma',
                 'autoSplitByPeriod',
+                'autoSplitByPeriodIncludeParen',
                 /*'hideDefaultInput', */
                 'translateApi',
                 'enableTooltip',
@@ -812,6 +829,9 @@ export default {
                 }
                 if (data.autoSplitByPeriod !== null) {
                     this.autoSplitByPeriod = data.autoSplitByPeriod
+                }
+                if (data.autoSplitByPeriodIncludeParen !== null) {
+                    this.autoSplitByPeriodIncludeParen = data.autoSplitByPeriodIncludeParen
                 }
                 /*if (data.hideDefaultInput !== null) {
                     this.hideDefaultInput = data.hideDefaultInput

@@ -66,6 +66,12 @@
                            @change="$emit('update:autoSplitByPeriod', $event.target.checked)">
                     <div class="format-desc" v-html="getLang('is_split_by_period')"></div>
                 </div>
+                <div class="format-item" v-if="autoSplitByPeriod" style="padding-left: 20px;">
+                    <input class="format-checkbox" type="checkbox"
+                           :checked="autoSplitByPeriodIncludeParen"
+                           @change="$emit('update:autoSplitByPeriodIncludeParen', $event.target.checked)">
+                    <div class="format-desc" v-html="getLang('is_split_by_period_include_paren')"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -124,6 +130,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        autoSplitByPeriodIncludeParen: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         return {
@@ -142,6 +152,7 @@ export default {
         'update:useNovelAiWeightSymbol',
         'update:autoRemoveBeforeLineComma',
         'update:autoSplitByPeriod',
+        'update:autoSplitByPeriodIncludeParen',
     ],
     computed: {},
     mounted() {

@@ -666,6 +666,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        autoSplitByPeriodIncludeParen: {
+            type: Boolean,
+            default: false,
+        },
         hideDefaultInput: {
             type: Boolean,
             default: false,
@@ -794,6 +798,7 @@ export default {
         'update:extraNetworksHeight',
         'update:autoLoadWebuiPrompt',
         'update:autoSplitByPeriod',
+        'update:autoSplitByPeriodIncludeParen',
     ],
     data() {
         return {
@@ -1079,10 +1084,13 @@ export default {
                     // autoSplitByPeriod: split "word1. word2" into "word1.", "word2"
                     if (this.autoSplitByPeriod && !tag.isLora && !tag.isLyco) {
                         let value = tag.value
-                        // Split at ". " (period followed by space), keep the period with the preceding word
-                        // Negative lookahead (?!\() avoids splitting "U.S.A. (something)"
-                        let parts = value.split(/\. (?!\()/)
-                        if (parts.length > 1) {
+                        // Split at ".+" (period + one or more spaces), keep the period with the preceding word
+                        // Default: negative lookahead (?!\() avoids splitting "U.S.A. (something)"
+                        // autoSplitByPeriodIncludeParen: also split before "(" like "word1. (test)"
+                        let regex = this.autoSplitByPeriodIncludeParen ? /\. +/ : /\. +(?!\()/
+                        let parts = value.split(regex)
+                        // Require: at least 2 parts, first part non-empty (no leading ". "), last part non-empty (no trailing ". ")
+                        if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
                             parts.forEach((part, i) => {
                                 if (part === '') return
                                 // Add period back to parts that had it (all except possibly the last)
