@@ -954,6 +954,7 @@ export default {
                     if (!find && index !== -1) indexes.push(index)
                 }
             }
+            this.applySplitByPeriod()
             if (this.autoTranslateToLocal && event) {
                 // 启动了自动翻译到本地语言，并且用户手动触发的
                 let useNetwork = !(this.tagCompleteFile && this.onlyCsvOnAuto)
@@ -1081,36 +1082,6 @@ export default {
 
                     prompt = tag.value + splitSymbol
 
-                    // autoSplitByPeriod: split "word1. word2" into "word1.", "word2"
-                    if (this.autoSplitByPeriod && !tag.isLora && !tag.isLyco) {
-                        let value = tag.value
-                        // Split at ".+" (period + one or more spaces), keep the period with the preceding word
-                        // Default: negative lookahead (?!\() avoids splitting "U.S.A. (something)"
-                        // autoSplitByPeriodIncludeParen: also split before "(" like "word1. (test)"
-                        let regex = this.autoSplitByPeriodIncludeParen ? /\. +/ : /\. +(?!\()/
-                        let parts = value.split(regex)
-                        // Require: at least 2 parts, first part non-empty (no leading ". "), last part non-empty (no trailing ". ")
-                        if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                            parts.forEach((part, i) => {
-                                if (part === '') return
-                                // Add period back to parts that had it (all except possibly the last)
-                                if (i < parts.length - 1 && !part.endsWith('.')) {
-                                    part = part + '.'
-                                }
-                                // Determine separator for this sub-part
-                                let subSplit
-                                if (i === parts.length - 1) {
-                                    // Last sub-part keeps the original splitSymbol (e.g. comma or nothing)
-                                    subSplit = splitSymbol
-                                } else {
-                                    // Non-last sub-parts get a comma separator
-                                    subSplit = ',' + (this.autoRemoveSpace ? '' : ' ')
-                                }
-                                prompts.push(part + subSplit)
-                            })
-                            return // skip the default push below
-                        }
-                    }
                 }
 
                 if (prompt) prompts.push(prompt)
@@ -1118,6 +1089,38 @@ export default {
             if (prompts.length <= 0) return ''
             // console.log('update tags', prompts)
             return prompts.join('')
+        },
+        applySplitByPeriod() {
+            if (!this.autoSplitByPeriod) return
+            let regex = this.autoSplitByPeriodIncludeParen ? /\. +/ : /\. +(?!\()/
+            let i = 0
+            while (i < this.tags.length) {
+                let tag = this.tags[i]
+                // Skip wrap, BREAK, Lora, Lyco tags
+                if (typeof tag['type'] === 'string' && tag.type === 'wrap') { i++; continue }
+                if (tag.value === 'BREAK') { i++; continue }
+                if (tag.isLora || tag.isLyco) { i++; continue }
+
+                let value = tag.value
+                let parts = value.split(regex)
+                if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
+                    // Remove original tag
+                    this.tags.splice(i, 1)
+                    // Insert split parts as new tags (in reverse order so they end up in correct order)
+                    for (let j = parts.length - 1; j >= 0; j--) {
+                        let part = parts[j]
+                        if (part === '') continue
+                        // Add period back to parts that had it (all except the last)
+                        if (j < parts.length - 1 && !part.endsWith('.')) {
+                            part = part + '.'
+                        }
+                        this._appendTag(part, '', false, i, 'text')
+                    }
+                    // Don't increment i, check the next tag (which is the last inserted part's successor)
+                } else {
+                    i++
+                }
+            }
         },
         updatePrompt() {
             let insertWrapIndexes = []
@@ -1320,6 +1323,7 @@ export default {
             history.tags.forEach(item => {
                 this._appendTag(item.value, item.localValue, item.disabled, -1, item.type || 'text')
             })
+            this.applySplitByPeriod()
             this.updateTags()
         },
         useFavorite(favorite) {
@@ -1331,6 +1335,7 @@ export default {
             tags.forEach(tag => {
                 this._appendTag(tag, '', false, -1, 'text')
             })
+            this.applySplitByPeriod()
             this.updateTags()
         },
         onPromptMainClick() {

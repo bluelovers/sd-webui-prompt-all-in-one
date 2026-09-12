@@ -530,6 +530,7 @@ export default {
                 console.log('onAutoSplitByPeriodChange', val)
                 this.gradioAPI.setData('autoSplitByPeriod', val).then(data => {
                     this.prompts.forEach(item => {
+                        this.$refs[item.id][0].applySplitByPeriod()
                         this.$refs[item.id][0].updatePrompt()
                     })
                 }).catch(err => {
