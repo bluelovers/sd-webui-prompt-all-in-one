@@ -662,6 +662,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        autoSplitByPeriod: {
+            type: Boolean,
+            default: false,
+        },
         hideDefaultInput: {
             type: Boolean,
             default: false,
@@ -755,7 +759,42 @@ export default {
             default: () => ({}),
         }
     },
-    emits: ['update:languageCode', 'update:autoTranslate', 'update:autoTranslateToEnglish', 'update:autoTranslateToLocal', 'update:autoRemoveSpace', 'update:autoRemoveLastComma', 'update:autoKeepWeightZero', 'update:autoKeepWeightOne', 'update:hideDefaultInput', 'update:hidePanel', 'update:enableTooltip', 'update:translateApi', 'click:translateApi', 'click:promptFormat', 'click:blacklist', 'click:hotkey', 'click:selectTheme', 'click:switchTheme', 'click:showAbout', 'click:selectLanguage', 'click:showHistory', 'click:showFavorite', 'refreshFavorites', 'click:showChatgpt', 'update:hideGroupTags', 'update:groupTagsColor', 'update:blacklist', 'showExtraNetworks', 'hideExtraNetworks', 'refreshExtraNetworks', 'update:extraNetworksWidth', 'update:extraNetworksHeight', 'update:autoLoadWebuiPrompt'],
+    emits: [
+        'update:languageCode',
+        'update:autoTranslate',
+        'update:autoTranslateToEnglish',
+        'update:autoTranslateToLocal',
+        'update:autoRemoveSpace',
+        'update:autoRemoveLastComma',
+        'update:autoKeepWeightZero',
+        'update:autoKeepWeightOne',
+        'update:hideDefaultInput',
+        'update:hidePanel',
+        'update:enableTooltip',
+        'update:translateApi',
+        'click:translateApi',
+        'click:promptFormat',
+        'click:blacklist',
+        'click:hotkey',
+        'click:selectTheme',
+        'click:switchTheme',
+        'click:showAbout',
+        'click:selectLanguage',
+        'click:showHistory',
+        'click:showFavorite',
+        'refreshFavorites',
+        'click:showChatgpt',
+        'update:hideGroupTags',
+        'update:groupTagsColor',
+        'update:blacklist',
+        'showExtraNetworks',
+        'hideExtraNetworks',
+        'refreshExtraNetworks',
+        'update:extraNetworksWidth',
+        'update:extraNetworksHeight',
+        'update:autoLoadWebuiPrompt',
+        'update:autoSplitByPeriod',
+    ],
     data() {
         return {
             prompt: '',
@@ -1036,6 +1075,34 @@ export default {
                     }
 
                     prompt = tag.value + splitSymbol
+
+                    // autoSplitByPeriod: split "word1. word2" into "word1.", "word2"
+                    if (this.autoSplitByPeriod && !tag.isLora && !tag.isLyco) {
+                        let value = tag.value
+                        // Split at ". " (period followed by space), keep the period with the preceding word
+                        // Negative lookahead (?!\() avoids splitting "U.S.A. (something)"
+                        let parts = value.split(/\. (?!\()/)
+                        if (parts.length > 1) {
+                            parts.forEach((part, i) => {
+                                if (part === '') return
+                                // Add period back to parts that had it (all except possibly the last)
+                                if (i < parts.length - 1 && !part.endsWith('.')) {
+                                    part = part + '.'
+                                }
+                                // Determine separator for this sub-part
+                                let subSplit
+                                if (i === parts.length - 1) {
+                                    // Last sub-part keeps the original splitSymbol (e.g. comma or nothing)
+                                    subSplit = splitSymbol
+                                } else {
+                                    // Non-last sub-parts get a comma separator
+                                    subSplit = ',' + (this.autoRemoveSpace ? '' : ' ')
+                                }
+                                prompts.push(part + subSplit)
+                            })
+                            return // skip the default push below
+                        }
+                    }
                 }
 
                 if (prompt) prompts.push(prompt)

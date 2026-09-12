@@ -24,6 +24,7 @@
                             v-model:auto-remove-lora-after-comma="autoRemoveLoraAfterComma"
                             v-model:use-novel-ai-weight-symbol="useNovelAiWeightSymbol"
                             v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
+                            v-model:auto-split-by-period="autoSplitByPeriod"
                             :hide-default-input="item.hideDefaultInput"
                             @update:hide-default-input="onUpdateHideDefaultInput(item.id, $event)"
                             :auto-load-webui-prompt="item.autoLoadWebuiPrompt"
@@ -96,6 +97,7 @@
                        v-model:auto-remove-lora-after-comma="autoRemoveLoraAfterComma"
                        v-model:use-novel-ai-weight-symbol="useNovelAiWeightSymbol"
                        v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
+                       v-model:auto-split-by-period="autoSplitByPeriod"
         ></prompt-format>
         <blacklist ref="blacklist" v-model:language-code="languageCode"
                    :translate-apis="translateApis"
@@ -309,6 +311,7 @@ export default {
             autoRemoveLoraAfterComma: false,
             useNovelAiWeightSymbol: false,
             autoRemoveBeforeLineComma: false,
+            autoSplitByPeriod: false,
             // hideDefaultInput: false,
             enableTooltip: true,
             tagCompleteFile: '',
@@ -518,6 +521,19 @@ export default {
                 })
             }
         },
+        autoSplitByPeriod: {
+            handler: function (val, oldVal) {
+                if (!this.startWatchSave) return
+                console.log('onAutoSplitByPeriodChange', val)
+                this.gradioAPI.setData('autoSplitByPeriod', val).then(data => {
+                    this.prompts.forEach(item => {
+                        this.$refs[item.id][0].updatePrompt()
+                    })
+                }).catch(err => {
+                })
+            },
+            immediate: false,
+        },
         /*hideDefaultInput: {
             handler: function (val, oldVal) {
                 if (!this.startWatchSave) return
@@ -676,7 +692,36 @@ export default {
         },
         init() {
             this.loadExtraNetworks()
-            let dataListsKeys = ['languageCode', 'autoTranslate', 'autoTranslateToEnglish', 'autoTranslateToLocal', 'autoRemoveSpace', 'autoRemoveLastComma', 'autoKeepWeightZero', 'autoKeepWeightOne', 'autoBreakBeforeWrap', 'autoBreakAfterWrap', 'autoRemoveLoraBeforeComma', 'autoRemoveLoraAfterComma', 'useNovelAiWeightSymbol', 'autoRemoveBeforeLineComma', /*'hideDefaultInput', */'translateApi', 'enableTooltip', 'tagCompleteFile', 'onlyCsvOnAuto', 'extensionSelect.minimalist', 'groupTagsColor', 'groupTagsTranslate', 'blacklist', 'cancelBlacklistConfirm', 'hotkey', 'extraNetworksWidth', 'extraNetworksHeight']
+            let dataListsKeys = [
+                'languageCode',
+                'autoTranslate',
+                'autoTranslateToEnglish',
+                'autoTranslateToLocal',
+                'autoRemoveSpace',
+                'autoRemoveLastComma',
+                'autoKeepWeightZero',
+                'autoKeepWeightOne',
+                'autoBreakBeforeWrap',
+                'autoBreakAfterWrap',
+                'autoRemoveLoraBeforeComma',
+                'autoRemoveLoraAfterComma',
+                'useNovelAiWeightSymbol',
+                'autoRemoveBeforeLineComma',
+                'autoSplitByPeriod',
+                /*'hideDefaultInput', */
+                'translateApi',
+                'enableTooltip',
+                'tagCompleteFile',
+                'onlyCsvOnAuto',
+                'extensionSelect.minimalist',
+                'groupTagsColor',
+                'groupTagsTranslate',
+                'blacklist',
+                'cancelBlacklistConfirm',
+                'hotkey',
+                'extraNetworksWidth',
+                'extraNetworksHeight',
+            ]
             this.prompts.forEach(item => {
                 dataListsKeys.push(item.hideDefaultInputKey)
                 dataListsKeys.push(item.autoLoadWebuiPromptKey)
@@ -764,6 +809,9 @@ export default {
                 }
                 if (data.autoRemoveBeforeLineComma !== null) {
                     this.autoRemoveBeforeLineComma = data.autoRemoveBeforeLineComma
+                }
+                if (data.autoSplitByPeriod !== null) {
+                    this.autoSplitByPeriod = data.autoSplitByPeriod
                 }
                 /*if (data.hideDefaultInput !== null) {
                     this.hideDefaultInput = data.hideDefaultInput
