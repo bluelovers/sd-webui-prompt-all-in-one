@@ -1133,7 +1133,7 @@ export default {
                 // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
                     // 判斷最後一段是否應移除逗號
-                    let originalHasTrailingPeriod = tag.value.endsWith('.')
+                    let originalHasTrailingPeriod = /\.\s*$/.test(tag.value)
 
                     let nextTag = this.tags[i + 1] || null
                     let nextIsWrap = nextTag?.type === 'wrap'
