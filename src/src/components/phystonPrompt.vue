@@ -1204,8 +1204,9 @@ export default {
                             const nextChar = nextStart < len ? str[nextStart] : ''
                             const isFollowedByOpenParen = nextChar === '(' || nextChar === '[' || nextChar === '{'
                             if (!includeParen && isFollowedByOpenParen) {
-                                ci = nextStart - 1  // 跳過已掃描的空白，避免重複處理
-                                continue
+                                break
+                                // ci = nextStart - 1  // 跳過已掃描的空白，避免重複處理
+                                // continue
                             }
                             // 執行切割
                             parts.push(str.substring(start, ci + 1))  // 保留句號
