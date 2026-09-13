@@ -954,6 +954,7 @@ export default {
                     if (!find && index !== -1) indexes.push(index)
                 }
             }
+            // autoSplitByPeriod：在 textarea 內容變動、重新解析標籤後，同步分割含 ". " 的標籤
             this.applySplitByPeriod()
             if (this.autoTranslateToLocal && event) {
                 // 启动了自动翻译到本地语言，并且用户手动触发的
@@ -1090,33 +1091,47 @@ export default {
             // console.log('update tags', prompts)
             return prompts.join('')
         },
+        /**
+         * autoSplitByPeriod：在 tags 陣列層級實際分割標籤。
+         *
+         * 原因：若僅在 genPrompt() 輸出字串中分割，tags 陣列不會被修改，
+         * 導致 UI 顯示的標籤與實際輸出不一致（prompts 已分割但 tag 仍為原始值）。
+         * 因此改為直接操作 tags 陣列，在標籤載入或選項變更時觸發分割。
+         *
+         * 正則規則：
+         *   - 預設 /\. +(?!\()/ : 匹配句號+一個以上空格，但不匹配 "(" 前（避免拆分 "U.S.A. (something)"）
+         *   - autoSplitByPeriodIncludeParen=true 時：改用 /\. +/，允許拆分括號前的句號空格
+         *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空格的情境）
+         */
         applySplitByPeriod() {
             if (!this.autoSplitByPeriod) return
+            // 根據 autoSplitByPeriodIncludeParen 決定是否排除括號前的匹配
             let regex = this.autoSplitByPeriodIncludeParen ? /\. +/ : /\. +(?!\()/
             let i = 0
             while (i < this.tags.length) {
                 let tag = this.tags[i]
-                // Skip wrap, BREAK, Lora, Lyco tags
+                // 跳過不應分割的標籤類型：換行、BREAK、Lora、Lyco
                 if (typeof tag['type'] === 'string' && tag.type === 'wrap') { i++; continue }
                 if (tag.value === 'BREAK') { i++; continue }
                 if (tag.isLora || tag.isLyco) { i++; continue }
 
                 let value = tag.value
                 let parts = value.split(regex)
+                // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                    // Remove original tag
+                    // 移除原始標籤
                     this.tags.splice(i, 1)
-                    // Insert split parts as new tags (in reverse order so they end up in correct order)
+                    // 倒序插入分割後的標籤，使最終順序正確
                     for (let j = parts.length - 1; j >= 0; j--) {
                         let part = parts[j]
                         if (part === '') continue
-                        // Add period back to parts that had it (all except the last)
+                        // 非最後一段需補回句號（split 時句號已被消耗）
                         if (j < parts.length - 1 && !part.endsWith('.')) {
                             part = part + '.'
                         }
                         this._appendTag(part, '', false, i, 'text')
                     }
-                    // Don't increment i, check the next tag (which is the last inserted part's successor)
+                    // 不遞增 i，繼續檢查新插入的下一個標籤
                 } else {
                     i++
                 }
@@ -1323,6 +1338,7 @@ export default {
             history.tags.forEach(item => {
                 this._appendTag(item.value, item.localValue, item.disabled, -1, item.type || 'text')
             })
+            // autoSplitByPeriod：歷史紀錄載入後，同步分割含 ". " 的標籤
             this.applySplitByPeriod()
             this.updateTags()
         },
@@ -1335,6 +1351,7 @@ export default {
             tags.forEach(tag => {
                 this._appendTag(tag, '', false, -1, 'text')
             })
+            // autoSplitByPeriod：ChatGPT prompt 載入後，同步分割含 ". " 的標籤
             this.applySplitByPeriod()
             this.updateTags()
         },
