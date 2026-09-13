@@ -1147,21 +1147,16 @@ export default {
          * 導致 UI 顯示的標籤與實際輸出不一致（prompts 已分割但 tag 仍為原始值）。
          * 因此改為直接操作 tags 陣列，在標籤載入或選項變更時觸發分割。
          *
-         * 正則規則（Lookbehind）：
-         *   - 預設 /(?<=\.) +(?!\()/ : 以句號後的空格為斷點，句號自動保留在前段末尾
-         *     負向 lookahead (?!\() 避免拆分 "U.S.A. (something)"
-         *   - autoSplitByPeriodIncludeParen=true 時：改用 /(?<=\.) +/，允許拆分括號前的句號空格
-         *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空格的情境）
+         * 切割規則（stack-based 單次遍歷）：
+         *   - 以句號後的空白字元為斷點，句號自動保留在前段末尾
+         *   - 巢狀括號防護：stack 追蹤括號配對，僅在所有括號已關閉的位置切割
+         *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空白的情境）
          *   - splitNoComma：中間段永遠不加逗號；最後一段繼承原 tag 的 comma 行為
          *   - else 分支同時負責清除 history 載入時 `_restoreTagProperties` 還原的過期 splitNoComma
          *     （tag.value 已不含句號卻仍帶有 splitNoComma 時，表示 prompt 結構已變動）
          */
         applySplitByPeriod() {
             if (!this.autoSplitByPeriod) return
-            // 使用 Lookbehind 只匹配句號「後」的空格，句號會自動保留在上一段末尾
-            let regex = this.autoSplitByPeriodIncludeParen
-                ? /(?<=\.) +/
-                : /(?<=\.) +(?!\()/
             let i = 0
             while (i < this.tags.length) {
                 let tag = this.tags[i]
@@ -1173,10 +1168,56 @@ export default {
 
                 let nextTag = this.tags[i + 1] || null
 
-                let parts = tag.value.split(regex)
-                // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
+                // 巢狀括號防護：stack-based 單次遍歷，同時追蹤括號配對與切割點，
+                // 僅在括號已完全關閉的位置切割，保留巢狀括號內的完整內容。
+                //
+                // 範例：
+                //   "xxx. (111. 222)"   → ["xxx.", "(111. 222)"]
+                //   "(111. 222). xxx"   → ["(111. 222).", "xxx"]
+                //   "xxx. (111. 222"    → ["xxx.", "(111. 222"]
+                //   "(111. 222. xxx"    → 不切割
+                //   "a. b. c"           → ["a.", "b.", "c"]
+                const PAREN_MAP = { ')': '(', ']': '[', '}': '{' }
+                const str = tag.value
+                const len = str.length
+                const parts = []
+                const stack = []
+                let start = 0
+                const includeParen = this.autoSplitByPeriodIncludeParen
+                for (let ci = 0; ci < len; ci++) {
+                    const ch = str[ci]
+                    if (ch === '(' || ch === '[' || ch === '{') {
+                        stack.push(ch)
+                    } else if (ch === ')' || ch === ']' || ch === '}') {
+                        if (stack.length > 0 && stack[stack.length - 1] === PAREN_MAP[ch]) {
+                            stack.pop()
+                        }
+                    } else if (ch === '.' && stack.length === 0) {
+                        // 永遠保證不切開括號內部；僅在 stack 為空時才考慮切割
+                        if (ci < len - 1 && /\s/.test(str[ci + 1])) {
+                            // 找出句號與空白後的第一個非空白字元
+                            let nextStart = ci + 1
+                            while (nextStart < len && /\s/.test(str[nextStart])) {
+                                nextStart++
+                            }
+                            // includeParen=false 時，下一個非空白字元是開括號則跳過切割
+                            const nextChar = nextStart < len ? str[nextStart] : ''
+                            const isFollowedByOpenParen = nextChar === '(' || nextChar === '[' || nextChar === '{'
+                            if (!includeParen && isFollowedByOpenParen) {
+                                ci = nextStart - 1  // 跳過已掃描的空白，避免重複處理
+                                continue
+                            }
+                            // 執行切割
+                            parts.push(str.substring(start, ci + 1))  // 保留句號
+                            start = nextStart
+                            ci = nextStart - 1  // 迴圈指標跳至空白後的字元前一位
+                        }
+                    }
+                }
+                parts.push(str.substring(start))
+
+                // 需滿足：至少有 2 段 + 首段非空 + 末段非空
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                    // trigger=true：分割正則保證 tag.value 含句號，恆定觸發判定
                     let shouldRemoveLastComma = this._shouldRemoveLastComma(tag, nextTag, true)
 
                     // 移除舊 tag，轉換新 parts 並直接插入對應位置
