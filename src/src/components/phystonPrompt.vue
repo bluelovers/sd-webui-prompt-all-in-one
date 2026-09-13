@@ -951,6 +951,10 @@ export default {
                     const localValue = find ? find.localValue : ''
                     const disabled = find ? find.disabled : false
                     const index = this._appendTag(tag, localValue, disabled, -1, 'text')
+                    // autoSplitByPeriod：重建 tag 時保留 splitNoComma 標記
+                    if (find && find.splitNoComma && index !== -1) {
+                        this.tags[index].splitNoComma = true
+                    }
                     if (!find && index !== -1) indexes.push(index)
                 }
             }
@@ -1073,12 +1077,17 @@ export default {
                     }
 
                     if (this.autoRemoveLastComma && index + 1 === length) {
-                        // 如果是最后一个，那么就不需要加逗号
+                        // 如果是最后一个，那么就不需要加逗號
                         splitSymbol = ''
                     }
 
                     if (splitSymbol === splitSymbolDefault && (tag.isLora || tag.isLyco) && this.autoRemoveLoraAfterComma) {
                         splitSymbol = (this.autoRemoveSpace ? '' : ' ')
+                    }
+
+                    // autoSplitByPeriod：若此 tag 是分割產生的中間段且原始 tag 無逗號，則移除逗號
+                    if (tag.splitNoComma && splitSymbol.includes(',')) {
+                        splitSymbol = splitSymbol.replace(/,/g, '')
                     }
 
                     prompt = tag.value + splitSymbol
@@ -1098,40 +1107,49 @@ export default {
          * 導致 UI 顯示的標籤與實際輸出不一致（prompts 已分割但 tag 仍為原始值）。
          * 因此改為直接操作 tags 陣列，在標籤載入或選項變更時觸發分割。
          *
-         * 正則規則：
-         *   - 預設 /\. +(?!\()/ : 匹配句號+一個以上空格，但不匹配 "(" 前（避免拆分 "U.S.A. (something)"）
-         *   - autoSplitByPeriodIncludeParen=true 時：改用 /\. +/，允許拆分括號前的句號空格
+         * 正則規則（Lookbehind）：
+         *   - 預設 /(?<=\.) +(?!\()/ : 以句號後的空格為斷點，句號自動保留在前段末尾
+         *     負向 lookahead (?!\() 避免拆分 "U.S.A. (something)"
+         *   - autoSplitByPeriodIncludeParen=true 時：改用 /(?<=\.) +/，允許拆分括號前的句號空格
          *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空格的情境）
          */
         applySplitByPeriod() {
             if (!this.autoSplitByPeriod) return
-            // 根據 autoSplitByPeriodIncludeParen 決定是否排除括號前的匹配
-            let regex = this.autoSplitByPeriodIncludeParen ? /\. +/ : /\. +(?!\()/
+            // 使用 Lookbehind 只匹配句號「後」的空格，句號會自動保留在上一段末尾
+            let regex = this.autoSplitByPeriodIncludeParen
+                ? /(?<=\.) +/
+                : /(?<=\.) +(?!\()/
             let i = 0
             while (i < this.tags.length) {
                 let tag = this.tags[i]
-                // 跳過不應分割的標籤類型：換行、BREAK、Lora、Lyco
-                if (typeof tag['type'] === 'string' && tag.type === 'wrap') { i++; continue }
-                if (tag.value === 'BREAK') { i++; continue }
-                if (tag.isLora || tag.isLyco) { i++; continue }
+                // 跳過不應分割的標籤：換行、BREAK、Lora、Lyco
+                if (tag?.type === 'wrap' || tag.value === 'BREAK' || tag.isLora || tag.isLyco) {
+                    i++
+                    continue
+                }
 
-                let value = tag.value
-                let parts = value.split(regex)
+                let parts = tag.value.split(regex)
                 // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                    // 移除原始標籤
+                    // 判斷原標籤是否有逗號：複製 genPrompt() 的 splitSymbol 邏輯
+                    let nextTag = this.tags[i + 1] || null
+                    let originalHasComma = !(
+                        (nextTag?.type === 'wrap' && this.autoRemoveBeforeLineComma) ||
+                        nextTag?.value === 'BREAK' ||
+                        ((nextTag?.isLora || nextTag?.isLyco) && this.autoRemoveLoraBeforeComma)
+                    )
+
+                    // 移除舊 tag，轉換新 parts 並直接插入對應位置
                     this.tags.splice(i, 1)
-                    // 倒序插入分割後的標籤，使最終順序正確
-                    for (let j = parts.length - 1; j >= 0; j--) {
-                        let part = parts[j]
-                        if (part === '') continue
-                        // 非最後一段需補回句號（split 時句號已被消耗）
-                        if (j < parts.length - 1 && !part.endsWith('.')) {
-                            part = part + '.'
+                    parts.forEach((part, index) => {
+                        let newTag = this._appendTag(part, '', false, i + index, 'text')
+                        // 中間分割段（非最後一段）若原標籤無逗號，則補上 splitNoComma
+                        if (newTag !== -1 && index < parts.length - 1 && !originalHasComma) {
+                            this.tags[newTag].splitNoComma = true
                         }
-                        this._appendTag(part, '', false, i, 'text')
-                    }
-                    // 不遞增 i，繼續檢查新插入的下一個標籤
+                    })
+                    // 跳過剛才新插入的這些標籤，繼續往後檢查
+                    i += parts.length
                 } else {
                     i++
                 }
