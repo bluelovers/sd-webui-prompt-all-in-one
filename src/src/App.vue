@@ -26,6 +26,7 @@
                             v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                             v-model:auto-split-by-period="autoSplitByPeriod"
                             v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
+                            v-model:auto-split-by-period-remove-wrap-comma="autoSplitByPeriodRemoveWrapComma"
                             :hide-default-input="item.hideDefaultInput"
                             @update:hide-default-input="onUpdateHideDefaultInput(item.id, $event)"
                             :auto-load-webui-prompt="item.autoLoadWebuiPrompt"
@@ -100,6 +101,7 @@
                        v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                        v-model:auto-split-by-period="autoSplitByPeriod"
                        v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
+                       v-model:auto-split-by-period-remove-wrap-comma="autoSplitByPeriodRemoveWrapComma"
         ></prompt-format>
         <blacklist ref="blacklist" v-model:language-code="languageCode"
                    :translate-apis="translateApis"
@@ -315,6 +317,7 @@ export default {
             autoRemoveBeforeLineComma: false,
             autoSplitByPeriod: false,
             autoSplitByPeriodIncludeParen: false,
+            autoSplitByPeriodRemoveWrapComma: false,
             // hideDefaultInput: false,
             enableTooltip: true,
             tagCompleteFile: '',
@@ -558,6 +561,23 @@ export default {
             },
             immediate: false,
         },
+        // autoSplitByPeriodRemoveWrapComma：子選項變更需重新分割 tags 再重新產生輸出
+        // 原因：此選項改變 shouldRemoveLastComma 的判定邏輯，影響 splitNoComma 的設定，
+        // 需要重新執行 applySplitByPeriod() 才能正確反映在輸出中。
+        autoSplitByPeriodRemoveWrapComma: {
+            handler: function (val, oldVal) {
+                if (!this.startWatchSave) return
+                console.log('onAutoSplitByPeriodRemoveWrapCommaChange', val)
+                this.gradioAPI.setData('autoSplitByPeriodRemoveWrapComma', val).then(data => {
+                    this.prompts.forEach(item => {
+                        this.$refs[item.id][0].applySplitByPeriod()
+                        this.$refs[item.id][0].updatePrompt()
+                    })
+                }).catch(err => {
+                })
+            },
+            immediate: false,
+        },
         /*hideDefaultInput: {
             handler: function (val, oldVal) {
                 if (!this.startWatchSave) return
@@ -733,6 +753,7 @@ export default {
                 'autoRemoveBeforeLineComma',
                 'autoSplitByPeriod',
                 'autoSplitByPeriodIncludeParen',
+                'autoSplitByPeriodRemoveWrapComma',
                 /*'hideDefaultInput', */
                 'translateApi',
                 'enableTooltip',
@@ -840,6 +861,9 @@ export default {
                 }
                 if (data.autoSplitByPeriodIncludeParen !== null) {
                     this.autoSplitByPeriodIncludeParen = data.autoSplitByPeriodIncludeParen
+                }
+                if (data.autoSplitByPeriodRemoveWrapComma !== null) {
+                    this.autoSplitByPeriodRemoveWrapComma = data.autoSplitByPeriodRemoveWrapComma
                 }
                 /*if (data.hideDefaultInput !== null) {
                     this.hideDefaultInput = data.hideDefaultInput

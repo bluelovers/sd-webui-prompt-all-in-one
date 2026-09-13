@@ -670,6 +670,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        autoSplitByPeriodRemoveWrapComma: {
+            type: Boolean,
+            default: false,
+        },
         hideDefaultInput: {
             type: Boolean,
             default: false,
@@ -799,6 +803,7 @@ export default {
         'update:autoLoadWebuiPrompt',
         'update:autoSplitByPeriod',
         'update:autoSplitByPeriodIncludeParen',
+        'update:autoSplitByPeriodRemoveWrapComma',
     ],
     data() {
         return {
@@ -1081,7 +1086,7 @@ export default {
                     }
 
                     // autoSplitByPeriod：若此 tag 是分割產生的中間段且原始 tag 無逗號，則移除逗號
-                    if (tag.splitNoComma && splitSymbol.includes(',')) {
+                    if (this.autoSplitByPeriod && tag.splitNoComma && splitSymbol.includes(',')) {
                         splitSymbol = splitSymbol.replace(/,/g, '')
                     }
 
@@ -1127,13 +1132,25 @@ export default {
                 let parts = tag.value.split(regex)
                 // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                    // 判斷原標籤是否有逗號：複製 genPrompt() 的 splitSymbol 邏輯
+                    // 判斷最後一段是否應移除逗號
+                    let originalHasTrailingPeriod = tag.value.endsWith('.')
+
                     let nextTag = this.tags[i + 1] || null
-                    let originalHasComma = !(
-                        (nextTag?.type === 'wrap' && this.autoRemoveBeforeLineComma) ||
-                        nextTag?.value === 'BREAK' ||
-                        ((nextTag?.isLora || nextTag?.isLyco) && this.autoRemoveLoraBeforeComma)
-                    )
+                    let nextIsWrap = nextTag?.type === 'wrap'
+                    let nextIsLoraOrLyco = originalHasTrailingPeriod && (nextTag?.isLora || nextTag?.isLyco) && !this.autoRemoveLoraBeforeComma
+                    let nextIsBreak = nextTag?.value === 'BREAK'
+
+                    let shouldRemoveLastComma
+                    if (this.autoSplitByPeriodRemoveWrapComma && (nextIsWrap || nextIsLoraOrLyco)) {
+                        shouldRemoveLastComma = true
+                    } else {
+                        // 原 tag 有逗號 + RemoveWrapComma=false → 複製 genPrompt() 邏輯
+                        shouldRemoveLastComma = (
+                            (nextIsWrap && this.autoRemoveBeforeLineComma)
+                            || nextIsBreak
+                            || (nextIsLoraOrLyco)
+                        )
+                    }
 
                     // 移除舊 tag，轉換新 parts 並直接插入對應位置
                     this.tags.splice(i, 1)
@@ -1144,11 +1161,12 @@ export default {
                         let tagIndex = i + index
                         let isIntermediate = index < parts.length - 1
                         // 中間段：永遠不加逗號（原本是同一個 tag 的一部分）
-                        // 最後一段：僅在原 tag 無逗號時才不加（繼承原 tag 的 comma 行為）
-                        if (isIntermediate || !originalHasComma) {
+                        // 最後一段：shouldRemoveLastComma=true 時不加（移除逗號）
+                        if (isIntermediate || shouldRemoveLastComma) {
                             this.tags[tagIndex].splitNoComma = true
                         }
                     })
+
                     // 跳過剛才新插入的這些標籤，繼續往後檢查
                     i += parts.length
                 } else {
