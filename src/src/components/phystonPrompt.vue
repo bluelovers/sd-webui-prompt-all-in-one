@@ -1354,7 +1354,11 @@ export default {
         useHistory(history) {
             this.tags = []
             history.tags.forEach(item => {
-                this._appendTag(item.value, item.localValue, item.disabled, -1, item.type || 'text')
+                let index = this._appendTag(item.value, item.localValue, item.disabled, -1, item.type || 'text')
+                // 還原 JSON 中已儲存的自訂屬性
+                if (item.splitNoComma && index !== -1) {
+                    this.tags[index].splitNoComma = true
+                }
             })
             // autoSplitByPeriod：歷史紀錄載入後，同步分割含 ". " 的標籤
             this.applySplitByPeriod()
