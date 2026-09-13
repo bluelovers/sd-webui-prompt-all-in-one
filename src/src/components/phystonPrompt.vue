@@ -1107,6 +1107,7 @@ export default {
          *     負向 lookahead (?!\() 避免拆分 "U.S.A. (something)"
          *   - autoSplitByPeriodIncludeParen=true 時：改用 /(?<=\.) +/，允許拆分括號前的句號空格
          *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空格的情境）
+         *   - splitNoComma：中間段永遠不加逗號；最後一段繼承原 tag 的 comma 行為
          */
         applySplitByPeriod() {
             if (!this.autoSplitByPeriod) return
@@ -1137,10 +1138,15 @@ export default {
                     // 移除舊 tag，轉換新 parts 並直接插入對應位置
                     this.tags.splice(i, 1)
                     parts.forEach((part, index) => {
-                        let newTag = this._appendTag(part, '', false, i + index, 'text')
-                        // 中間分割段（非最後一段）若原標籤無逗號，則補上 splitNoComma
-                        if (newTag !== -1 && index < parts.length - 1 && !originalHasComma) {
-                            this.tags[newTag].splitNoComma = true
+                        this._appendTag(part, '', false, i + index, 'text')
+                        // 不依賴 _appendTag 回傳值（index>=0 時回傳 index-1，與實際插入位置不符）
+                        // 直接使用已知的插入位置 i + index
+                        let tagIndex = i + index
+                        let isIntermediate = index < parts.length - 1
+                        // 中間段：永遠不加逗號（原本是同一個 tag 的一部分）
+                        // 最後一段：僅在原 tag 無逗號時才不加（繼承原 tag 的 comma 行為）
+                        if (isIntermediate || !originalHasComma) {
+                            this.tags[tagIndex].splitNoComma = true
                         }
                     })
                     // 跳過剛才新插入的這些標籤，繼續往後檢查
