@@ -948,13 +948,8 @@ export default {
                             break
                         }
                     }
-                    const localValue = find ? find.localValue : ''
-                    const disabled = find ? find.disabled : false
-                    const index = this._appendTag(tag, localValue, disabled, -1, 'text')
-                    // autoSplitByPeriod：重建 tag 時保留 splitNoComma 標記
-                    if (find && find.splitNoComma && index !== -1) {
-                        this.tags[index].splitNoComma = true
-                    }
+                    // _restoreTag：建立 tag 並自動還原 localValue/disabled/自訂屬性
+                    const index = this._restoreTag(tag, -1, find || null)
                     if (!find && index !== -1) indexes.push(index)
                 }
             }
@@ -1354,11 +1349,8 @@ export default {
         useHistory(history) {
             this.tags = []
             history.tags.forEach(item => {
-                let index = this._appendTag(item.value, item.localValue, item.disabled, -1, item.type || 'text')
-                // 還原 JSON 中已儲存的自訂屬性
-                if (item.splitNoComma && index !== -1) {
-                    this.tags[index].splitNoComma = true
-                }
+                // _restoreTag：建立 tag 並自動還原 localValue/disabled/自訂屬性
+                this._restoreTag(item.value, -1, item)
             })
             // autoSplitByPeriod：歷史紀錄載入後，同步分割含 ". " 的標籤
             this.applySplitByPeriod()
