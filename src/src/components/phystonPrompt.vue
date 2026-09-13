@@ -1153,6 +1153,8 @@ export default {
          *   - autoSplitByPeriodIncludeParen=true 時：改用 /(?<=\.) +/，允許拆分括號前的句號空格
          *   - 邊界驗證：第一段與最後一段不得為空（排除開頭句號、結尾句號、僅句號空格的情境）
          *   - splitNoComma：中間段永遠不加逗號；最後一段繼承原 tag 的 comma 行為
+         *   - else 分支同時負責清除 history 載入時 `_restoreTagProperties` 還原的過期 splitNoComma
+         *     （tag.value 已不含句號卻仍帶有 splitNoComma 時，表示 prompt 結構已變動）
          */
         applySplitByPeriod() {
             if (!this.autoSplitByPeriod) return
@@ -1200,6 +1202,11 @@ export default {
 
                     if (this._shouldRemoveLastComma(tag, nextTag, hasTrailingPeriod)) {
                         tag.splitNoComma = true
+                    } else if (!hasTrailingPeriod) {
+                        // 清除 history 載入時由 _restoreTagProperties 還原的過期 splitNoComma：
+                        // 舊 session 中 tag 曾以句號結尾而被標記，但當前 value 已不含句號，
+                        // 表示使用者已编辑或 prompt 結構已變動，應移除不再適用的標記
+                        delete tag.splitNoComma
                     }
                     i++
                 }
