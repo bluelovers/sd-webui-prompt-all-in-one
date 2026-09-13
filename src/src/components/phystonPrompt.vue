@@ -1101,6 +1101,46 @@ export default {
             return prompts.join('')
         },
         /**
+         * 判斷指定 tag 的最後一個逗號是否應被移除。
+         *
+         * 單一事實來源：所有基於「下一個 tag 類型」決定逗號去留的邏輯
+         * 都由此方法集中判定，避免重複散落在各處。
+         *
+         * 判定規則（需先通過 trigger 檢查）：
+         *   1. autoSplitByPeriodRemoveWrapComma=true 且 tag 以句號結尾 + next 為 wrap / lora → 移除
+         *   2. 否則依 autoRemoveBeforeLineComma + nextIsBreak + nextIsLoraOrLyco 綜合判定
+         *
+         * @param {object}      tag     - 當前標籤（用於檢查 value 是否以句號結尾）
+         * @param {object|null} nextTag - 下一個標籤，由呼叫端負責提供（null 時直接回傳不移除）
+         * @param {boolean}     trigger - 是否應執行逗號移除判定（false 時直接回傳不移除）
+         *                                if 分支（已觸發分割）：恆為 true（分割正則已保證含句號）
+         *                                else 分支（未觸發分割）：為 tag.value 是否以句號結尾的結果
+         * @returns {boolean} true = 應移除最後一個逗號
+         */
+        _shouldRemoveLastComma(tag, nextTag, trigger) {
+            // nextTag 無效或 trigger 為 false → 無條件不移除
+            if (nextTag === null || !trigger) {
+                return;
+            }
+
+            const nextIsWrap = nextTag?.type === 'wrap'
+            const nextIsBreak = nextTag?.value === 'BREAK'
+            const originalHasTrailingPeriod = /\.\s*$/.test(tag.value)
+            const nextIsLoraOrLyco = originalHasTrailingPeriod
+                && (nextTag?.isLora || nextTag?.isLyco)
+                && !this.autoRemoveLoraBeforeComma
+
+            if (this.autoSplitByPeriodRemoveWrapComma && (originalHasTrailingPeriod && nextIsWrap || nextIsLoraOrLyco)) {
+                return true
+            }
+
+            return (
+                (nextIsWrap && this.autoRemoveBeforeLineComma)
+                || nextIsBreak
+                || nextIsLoraOrLyco
+            )
+        },
+        /**
          * autoSplitByPeriod：在 tags 陣列層級實際分割標籤。
          *
          * 原因：若僅在 genPrompt() 輸出字串中分割，tags 陣列不會被修改，
@@ -1129,28 +1169,13 @@ export default {
                     continue
                 }
 
+                let nextTag = this.tags[i + 1] || null
+
                 let parts = tag.value.split(regex)
                 // 需滿足：至少有 2 段、首段非空（無開頭句號）、末段非空（無結尾句號）
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
-                    // 判斷最後一段是否應移除逗號
-                    let originalHasTrailingPeriod = /\.\s*$/.test(tag.value)
-
-                    let nextTag = this.tags[i + 1] || null
-                    let nextIsWrap = nextTag?.type === 'wrap'
-                    let nextIsLoraOrLyco = originalHasTrailingPeriod && (nextTag?.isLora || nextTag?.isLyco) && !this.autoRemoveLoraBeforeComma
-                    let nextIsBreak = nextTag?.value === 'BREAK'
-
-                    let shouldRemoveLastComma
-                    if (this.autoSplitByPeriodRemoveWrapComma && (nextIsWrap || nextIsLoraOrLyco)) {
-                        shouldRemoveLastComma = true
-                    } else {
-                        // 原 tag 有逗號 + RemoveWrapComma=false → 複製 genPrompt() 邏輯
-                        shouldRemoveLastComma = (
-                            (nextIsWrap && this.autoRemoveBeforeLineComma)
-                            || nextIsBreak
-                            || (nextIsLoraOrLyco)
-                        )
-                    }
+                    // trigger=true：分割正則保證 tag.value 含句號，恆定觸發判定
+                    let shouldRemoveLastComma = this._shouldRemoveLastComma(tag, nextTag, true)
 
                     // 移除舊 tag，轉換新 parts 並直接插入對應位置
                     this.tags.splice(i, 1)
@@ -1170,6 +1195,12 @@ export default {
                     // 跳過剛才新插入的這些標籤，繼續往後檢查
                     i += parts.length
                 } else {
+                    // 未觸發分割：僅 tag 以句號結尾時才進入逗號移除判定
+                    let hasTrailingPeriod = /\.\s*$/.test(tag.value)
+
+                    if (this._shouldRemoveLastComma(tag, nextTag, hasTrailingPeriod)) {
+                        tag.splitNoComma = true
+                    }
                     i++
                 }
             }
