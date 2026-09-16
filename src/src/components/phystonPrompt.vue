@@ -579,6 +579,7 @@ import GroupTagsMixin from "@/mixins/phystonPrompt/groupTagsMixin"
 import IconSvg from "@/components/iconSvg.vue"
 import HighlightPrompt from "@/components/highlightPrompt.vue"
 import {ColorPicker} from "vue3-colorpicker"
+import { splitByPeriod } from "@/utils/splitByPeriod"
 
 export default {
     name: 'PhystonPrompt',
@@ -1168,54 +1169,9 @@ export default {
 
                 let nextTag = this.tags[i + 1] || null
 
-                // 巢狀括號防護：stack-based 單次遍歷，同時追蹤括號配對與切割點，
-                // 僅在括號已完全關閉的位置切割，保留巢狀括號內的完整內容。
-                //
-                // 範例：
-                //   "xxx. (111. 222)"   → ["xxx.", "(111. 222)"]
-                //   "(111. 222). xxx"   → ["(111. 222).", "xxx"]
-                //   "xxx. (111. 222"    → ["xxx.", "(111. 222"]
-                //   "(111. 222. xxx"    → 不切割
-                //   "a. b. c"           → ["a.", "b.", "c"]
-                const PAREN_MAP = { ')': '(', ']': '[', '}': '{' }
-                const str = tag.value
-                const len = str.length
-                const parts = []
-                const stack = []
-                let start = 0
-                const includeParen = this.autoSplitByPeriodIncludeParen
-                for (let ci = 0; ci < len; ci++) {
-                    const ch = str[ci]
-                    if (ch === '(' || ch === '[' || ch === '{') {
-                        stack.push(ch)
-                    } else if (ch === ')' || ch === ']' || ch === '}') {
-                        if (stack.length > 0 && stack[stack.length - 1] === PAREN_MAP[ch]) {
-                            stack.pop()
-                        }
-                    } else if (ch === '.' && stack.length === 0) {
-                        // 永遠保證不切開括號內部；僅在 stack 為空時才考慮切割
-                        if (ci < len - 1 && /\s/.test(str[ci + 1])) {
-                            // 找出句號與空白後的第一個非空白字元
-                            let nextStart = ci + 1
-                            while (nextStart < len && /\s/.test(str[nextStart])) {
-                                nextStart++
-                            }
-                            // includeParen=false 時，下一個非空白字元是開括號則跳過切割
-                            const nextChar = nextStart < len ? str[nextStart] : ''
-                            const isFollowedByOpenParen = nextChar === '(' || nextChar === '[' || nextChar === '{'
-                            if (!includeParen && isFollowedByOpenParen) {
-                                break
-                                // ci = nextStart - 1  // 跳過已掃描的空白，避免重複處理
-                                // continue
-                            }
-                            // 執行切割
-                            parts.push(str.substring(start, ci + 1))  // 保留句號
-                            start = nextStart
-                            ci = nextStart - 1  // 迴圈指標跳至空白後的字元前一位
-                        }
-                    }
-                }
-                parts.push(str.substring(start))
+                // 巢狀括號防護：stack-based 單次遍歷，僅在括號已完全關閉的位置切割。
+                // 算法已抽離至 @/utils/splitByPeriod.js，此處直接呼叫。
+                const parts = splitByPeriod(tag.value, this.autoSplitByPeriodIncludeParen)
 
                 // 需滿足：至少有 2 段 + 首段非空 + 末段非空
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
