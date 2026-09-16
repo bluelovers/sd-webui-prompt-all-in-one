@@ -1,11 +1,18 @@
 export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) => {
     if (tags === null || tags === undefined || tags === false || tags === "" || tags.trim() === "") return []
 
-    tags = tags.replace(/，/g, ',') // 中文逗号
-    tags = tags.replace(/。/g, ',') // 中文句号
-    tags = tags.replace(/、/g, ',') // 中文顿号
-    tags = tags.replace(/；/g, ',') // 中文分号
-    tags = tags.replace(/．/g, ',') // 日文句号
+    // 中文/日文標點轉換（原為全域 pre-process，改為在迴圈內 quote-aware 執行）
+    // 避免引號內的「、」。「」被提前轉換，失去原始語義。
+    function convertPunctuation(ch) {
+        switch (ch) {
+            case '\uFF0C': return ','  // ，中文逗号
+            case '\u3002': return '.'  // 。中文句号
+            case '\u3001': return ','  // 、中文顿号
+            case '\uFF1B': return ','  // ；中文分号
+            case '\uFF0E': return ','  // ．日文句号(fullwidth)
+            default: return ch
+        }
+    }
 
     tags = tags.replace(/\t/g, '\n') // 制表符
     tags = tags.replace(/\r/g, '\n') // 回车符
@@ -36,10 +43,48 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
     let startBracketChar = ''
     let endBracketChar = ''
     let bracketCount = 0
+    let quoteChar = null  // null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元
     let result = []
     for (let i = 0; i < length; i++) {
         const char = tags[i]
-        if (char === "\n") {
+
+        // ── 引號追蹤（優先級最高）──
+        if (quoteChar) {
+            // 在引號內：遇到相同引號字元則關閉
+            if (char === quoteChar) {
+                quoteChar = null
+            }
+            // 分行優先級大於引號：即使在引號內，\n 仍觸發切割
+            if (char === "\n") {
+                temp += ' '
+                continue
+            }
+            temp += char
+            continue
+        } else if (char === '"') {
+            // 雙引號一律視為引號開啟（不會是撇號）
+            quoteChar = char
+            temp += char
+            continue
+        } else if (char === "'") {
+            // 單引號需區分撇號（it's）與引號開啟（'hello'）。
+            // 撇號的特徵：前後都是 word 字元（字母、數字、底線）。
+            const prevChar = i > 0 ? tags[i - 1] : ''
+            const nextChar = i < length - 1 ? tags[i + 1] : ''
+            const isApostrophe = /\w/.test(prevChar) && /\w/.test(nextChar)
+            if (!isApostrophe) {
+                quoteChar = char
+                temp += char
+                continue
+            }
+            temp += char
+            continue
+        }
+
+        // 中文/日文標點轉換：僅在引號外執行，引號內保留原始字元
+        const converted = convertPunctuation(char)
+
+        if (converted === "\n") {
             if (startBracketChar === '') {
                 // 前面没有括号
                 if (temp.trim() !== "") {
@@ -54,7 +99,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
                 // 前面有括号
                 temp += ' '
             }
-        } else if (char === ",") {
+        } else if (converted === ",") {
             if (startBracketChar === '') {
                 // 前面没有括号
                 result.push(temp.trim())
@@ -64,26 +109,26 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
                 temp = ''
             } else {
                 // 前面有括号
-                temp += char
+                temp += converted
             }
         } else {
             if (startBracketChar === '') {
                 // 前面没有括号
-                if (bracketStarts.includes(char)) {
+                if (bracketStarts.includes(converted)) {
                     // 括号开始
                     bracketCount = 1
-                    startBracketChar = char
-                    endBracketChar = brackets[char]
-                    temp += char
+                    startBracketChar = converted
+                    endBracketChar = brackets[converted]
+                    temp += converted
                 } else {
-                    if (char === " " && temp.trim() === 'BREAK') {
+                    if (converted === " " && temp.trim() === 'BREAK') {
                         result.push(temp.trim())
                         bracketCount = 0
                         startBracketChar = ''
                         endBracketChar = ''
                         temp = ''
                     } else {
-                        temp += char
+                        temp += converted
                         if (temp.endsWith(' BREAK')) {
                             temp = temp.substring(0, temp.length - ' BREAK'.length)
                             result.push(temp.trim())
@@ -97,23 +142,23 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
                 }
             } else {
                 // 前面有括号
-                if (char === endBracketChar) {
+                if (converted === endBracketChar) {
                     // 是结束括号的标识，减掉括号计数
                     bracketCount--
                     if (bracketCount === 0) {
                         // 括号计数为0，括号结束
                         startBracketChar = ''
                         endBracketChar = ''
-                        temp += char
+                        temp += converted
                     } else {
-                        temp += char
+                        temp += converted
                     }
-                } else if (char === startBracketChar) {
+                } else if (converted === startBracketChar) {
                     // 是开始括号的标识，加上括号计数
                     bracketCount++
-                    temp += char
+                    temp += converted
                 } else {
-                    temp += char
+                    temp += converted
                 }
             }
         }

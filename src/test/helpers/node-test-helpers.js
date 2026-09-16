@@ -92,8 +92,8 @@ function caseTitle(tc) {
 function runCases(suiteName, fn, cases) {
     describe(suiteName, async () => {
         const resolvedFn = typeof fn === 'function' ? await fn() : fn
-        for (const [index, tc] of cases.entries()) {
-            const title = `${index + 1}. ${caseTitle(tc)}`
+        for (const tc of cases) {
+            const title = caseTitle(tc)
             const handler = async () => {
                 const result = await resolvedFn(tc.input, ...(tc.args || []))
                 if (tc.assert) {
