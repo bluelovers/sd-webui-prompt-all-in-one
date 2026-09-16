@@ -2,12 +2,12 @@
  * splitByPeriod.js
  *
  * 將字串以句號（"."）為分隔符切割為多個片段，
- * 同時尊重巢狀括號的完整性——僅在所有括號已完全關閉的位置才執行切割。
+ * 同時尊重巢狀括號與引號的完整性——僅在括號已完全關閉、且不在引號內的位置才執行切割。
  *
  * 設計目標：
  *   1. 零外部依賴，純函式，可獨立測試。
  *   2. 不依賴任何前端框架（Vue / React）或瀏覽器 API。
- *   3. 透過参数控制是否允許在括號前方切割。
+ *   3. 透過 options 物件控制切割行為，支援未來擴充。
  *
  * @module utils/splitByPeriod
  */
@@ -37,11 +37,12 @@ function isCloseParen(ch) {
 }
 
 /**
- * 以句號 "." 為分隔符切割字串，並在切割時防護巢狀括號。
+ * 以句號 "." 為分隔符切割字串，並在切割時防護巢狀括號與引號。
  *
  * 算法說明（stack-based 單次遍歷）：
- *   - 維護一個 stack 追蹤目前尚未關閉的括號深度。
- *   - 僅在 stack 為空（所有括號已關閉）時，才在句號處嘗試切割。
+ *   - 維護一個 parenStack 追蹤目前尚未關閉的括號深度。
+ *   - 維護一個 quoteChar 追蹤目前是否在引號（" 或 '）內部。
+ *   - 僅在 parenStack 為空且不在引號內時，才在句號處嘗試切割。
  *   - 切割後跳過句號後的連續空白，將下一個非空白字元作為新片段的起點。
  *   - 當 includeParen 為 false 時，若句號後的下一個非空白字元是開括號，
  *     則停止繼續切割（break），避免將 "(111. 222). xxx" 錯誤拆散。
@@ -64,37 +65,66 @@ function isCloseParen(ch) {
  *   // → ["xxx.", "(111. 222"]
  *
  *   splitByPeriod("(111. 222. xxx", { includeParen: true })
- *   // → ["(111. 222. xxx"]   （括號未關閉，stack 非空，不切割）
+ *   // → ["(111. 222. xxx"]   （括號未關閉，parenStack 非空，不切割）
  *
  *   splitByPeriod("a. b. c", { includeParen: true })
  *   // → ["a.", "b.", "c"]
  *
  *   splitByPeriod("xxx. (111. 222)", { includeParen: false })
  *   // → ["xxx. (111. 222)"]  （includeParen=false，句號後為開括號，停止切割）
+ *
+ *   splitByPeriod('with "Small joys. Brighter days." below.', { includeParen: true })
+ *   // → ['with "Small joys. Brighter days." below.']  （引號內的句號不切割）
  */
 export function splitByPeriod(str, { includeParen } = {}) {
     if (typeof str !== 'string') return [String(str)]
 
     const len = str.length
     const parts = []
-    const stack = []
+    const parenStack = []
     let start = 0
+    let quoteChar = null  // null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元
 
-    // includeParen=false 時，若下一個非空白字元是開括號則停止切割
+    // 預先計算：includeParen=false 時，若下一個非空白字元是開括號則停止切割
     const notAllowParen = !includeParen
 
     for (let ci = 0; ci < len; ci++) {
         const ch = str[ci]
 
+        // ── 引號追蹤（優先級最高）──
+        if (quoteChar) {
+            // 目前在引號內：遇到相同引號字元則關閉
+            if (ch === quoteChar) {
+                quoteChar = null
+            }
+            // 在引號內的所有字元（含句號）都不做切割判斷
+            continue
+        } else if (ch === '"') {
+            // 雙引號一律視為引號開啟（不會是撇號）
+            quoteChar = ch
+            continue
+        } else if (ch === "'") {
+            // 單引號需區分撇號（it's）與引號開啟（'hello'）。
+            // 撇號的特徵：前後都是 word 字元（字母、數字、底線）。
+            const prevChar = ci > 0 ? str[ci - 1] : ''
+            const nextChar = ci < len - 1 ? str[ci + 1] : ''
+            const isApostrophe = /\w/.test(prevChar) && /\w/.test(nextChar)
+            if (!isApostrophe) {
+                quoteChar = ch
+            }
+            continue
+        }
+
+        // ── 括號追蹤 ──
         if (isOpenParen(ch)) {
-            stack.push(ch)
+            parenStack.push(ch)
         } else if (isCloseParen(ch)) {
             // 僅在 stack 頂端為配對的開括號時才 pop，避免不配對的閉括號干扰
-            if (stack.length > 0 && stack[stack.length - 1] === PAREN_MAP[ch]) {
-                stack.pop()
+            if (parenStack.length > 0 && parenStack[parenStack.length - 1] === PAREN_MAP[ch]) {
+                parenStack.pop()
             }
-        } else if (ch === '.' && stack.length === 0) {
-            // 僅在括號已全部關閉（stack 為空）時才考慮切割
+        } else if (ch === '.' && parenStack.length === 0) {
+            // 僅在括號已全部關閉（parenStack 為空）時才考慮切割
             if (ci < len - 1 && /\s/.test(str[ci + 1])) {
                 // 找出句號與空白後的第一個非空白字元
                 let nextStart = ci + 1

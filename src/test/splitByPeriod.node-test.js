@@ -125,6 +125,57 @@ const realWorldCases = [
         expected: ['tag.', '(nested. prompt. here).', 'end'] },
 ]
 
+const quoteProtectionCases = [
+    { input: 'with "Small joys. Brighter days." below.',
+        args: [{ includeParen: true }],
+        expected: ['with "Small joys. Brighter days." below.'],
+        note: 'double-quoted sentence preserved' },
+    { input: "with 'Small joys. Brighter days.' below.",
+        args: [{ includeParen: true }],
+        expected: ["with 'Small joys. Brighter days.' below."],
+        note: 'single-quoted sentence preserved' },
+    { input: 'a. "b. c". d',
+        args: [{ includeParen: true }],
+        expected: ['a.', '"b. c".', 'd'],
+        note: 'quotes in middle — split outside only' },
+    { input: '"a. b. c"',
+        args: [{ includeParen: true }],
+        expected: ['"a. b. c"'],
+        note: 'entire string quoted — no split' },
+    { input: '"a. b". "c. d"',
+        args: [{ includeParen: true }],
+        expected: ['"a. b".', '"c. d"'],
+        note: 'two quoted segments' },
+    { input: "it's a. test",
+        args: [{ includeParen: true }],
+        expected: ["it's a.", 'test'],
+        note: 'apostrophe (single char) does not open quote' },
+    { input: 'a. "b. c',
+        args: [{ includeParen: true }],
+        expected: ['a.', '"b. c'],
+        note: 'unclosed double quote — rest is protected to end' },
+    { input: "a. 'b. c",
+        args: [{ includeParen: true }],
+        expected: ["a.", "'b. c"],
+        note: 'unclosed single quote — rest is protected to end' },
+    { input: '"it\'s a. b. c". d',
+        args: [{ includeParen: true }],
+        expected: ['"it\'s a. b. c".', 'd'],
+        note: 'apostrophe inside double-quoted string' },
+    { input: "'hello. world' a. b",
+        args: [{ includeParen: true }],
+        expected: ["'hello. world' a.", 'b'],
+        note: 'closing quote does not split — space after is part of same segment' },
+    { input: "don't stop. go",
+        args: [{ includeParen: true }],
+        expected: ["don't stop.", 'go'],
+        note: 'common contraction — no quote protection' },
+    { input: "end with '.",
+        args: [{ includeParen: true }],
+        expected: ["end with '."],
+        note: 'single quote at end — opens but no closer, period protected' },
+]
+
 /* ====================================================================
  *  模組載入 factory
  *
@@ -155,4 +206,5 @@ describe('splitByPeriod', async () => {
     runCases('non-string input guard',                      loadSplitByPeriod, nonStringGuardCases)
     runCases('whitespace handling',                         loadSplitByPeriod, whitespaceCases)
     runCases('real-world prompt scenarios',                 loadSplitByPeriod, realWorldCases)
+    runCases('quote protection (double & single)',          loadSplitByPeriod, quoteProtectionCases)
 })
