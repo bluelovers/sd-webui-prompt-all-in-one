@@ -19,7 +19,7 @@
 
 const { describe, it } = require('node:test')
 const assert = require('node:assert/strict')
-const crypto = require('node:crypto')
+const { compareWithOriginal, attachOriginalComparison, promptHash, truncate } = require('./helpers/node-test-helpers')
 
 /* ====================================================================
  *  工具函式
@@ -34,31 +34,24 @@ async function loadModule() {
 }
 
 /**
+ * 動態載入 splitTags_original ESM 模組（若存在）。
+ * 用於與新版 splitTags 比較差異。
+ */
+async function loadOriginal() {
+    try {
+        const mod = await import('../src/utils/splitTags_original.js')
+        return mod.default
+    } catch {
+        return null
+    }
+}
+
+/**
  * 動態載入 splitByPeriod ESM 模組。
  */
 async function loadSplitByPeriod() {
     const mod = await import('../src/utils/splitByPeriod.js')
     return mod.default
-}
-
-/**
- * 產生輸入字串的短期雜湊（前 8 碼 hex），用於長輸入的快照標題。
- * @param {string} str
- * @returns {string} 8 字元 hex
- */
-function promptHash(str) {
-    return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
-}
-
-/**
- * 截斷字串並以 "…" 結尾。
- * @param {string} str
- * @param {number} maxLen
- * @returns {string}
- */
-function truncate(str, maxLen = 60) {
-    if (str.length <= maxLen) return str
-    return str.slice(0, maxLen) + '…'
 }
 
 /**
@@ -71,10 +64,10 @@ function truncate(str, maxLen = 60) {
  */
 function testTitle(tc) {
     if (tc.input && typeof tc.input === 'string') {
-        if (tc.input.length > 100 || !tc.note) {
+        if (!tc.note) {
             return `[${promptHash(tc.input)}] ${truncate(tc.input)}`
         }
-        return `[${promptHash(tc.input)}] ${tc.note || 'unnamed'}`
+        return `${tc.note || 'unnamed'} [${promptHash(tc.input)}]`
     }
     return tc.note || 'unnamed'
 }
@@ -103,83 +96,199 @@ function testTitle(tc) {
 const cases = [
     // ── 基本切割 ──
     { input: 'a, b, c',
-        note: 'comma-separated' },
+        note: 'comma-separated',
+        expectOriginalChanged: false },
     { input: 'a, b, c,',
-        note: 'trailing comma' },
+        note: 'trailing comma',
+        expectOriginalChanged: false },
     { input: 'a,  ,  b',
-        note: 'empty segments filtered' },
+        note: 'empty segments filtered',
+        expectOriginalChanged: false },
 
     // ── 換行切割 ──
     { input: 'a\nb\nc',
-        note: 'newline-separated' },
+        note: 'newline-separated',
+        expectOriginalChanged: false },
     { input: 'a\n\n\nb',
-        note: 'multiple newlines collapsed' },
+        note: 'multiple newlines collapsed',
+        expectOriginalChanged: false },
     { input: 'a\rb\nc',
-        note: 'CR normalized to LF' },
+        note: 'CR normalized to LF',
+        expectOriginalChanged: false },
     { input: 'a\tb',
-        note: 'tab converted to newline' },
+        note: 'tab converted to newline',
+        expectOriginalChanged: false },
 
-    // ── 中文標點 ──
+    // ── 中文 / 日文標點 ──
+    // ，(U+FF0C) 全形逗號 → comma
+    { input: '好，壞，普通',
+        note: '，fullwidth comma → comma',
+        expectOriginalChanged: false },
+    // 。(U+3002) 中日文句號 → period（新版不切割，原版視為 comma 切割）
     { input: '好。壞。普通',
-        note: 'Chinese period → period (not comma)' },
+        note: '。Chinese/Japanese period → period (not comma)' },
+    // 、(U+3001) 中日文頓號 → comma
     { input: '好、壞、普通',
-        note: 'Chinese enumeration comma → comma' },
+        note: '、enumeration comma → comma',
+        expectOriginalChanged: false },
+    // ；(U+FF1B) 全形分號 → comma
     { input: '好；壞；普通',
-        note: 'Chinese semicolon → comma' },
+        note: '；fullwidth semicolon → comma',
+        expectOriginalChanged: false },
+    // ．(U+FF0E) 全形句號 → comma
     { input: '好．壞．普通',
-        note: 'Japanese period → comma' },
+        note: '．fullwidth period → comma',
+        expectOriginalChanged: false },
+
+    // ── 中日文標點：混合 ──
+    { input: '好，壞。普通',
+        note: '，and 。mixed — comma splits, period does not' },
+    { input: '好、壞；普通',
+        note: '、and ；mixed — both become comma',
+        expectOriginalChanged: false },
+    { input: '好．壞。普通',
+        note: '．and 。mixed — fullwidth period splits, Japanese period does not' },
+    { input: '好，壞、普通；再來．結束',
+        note: 'all five punctuations in one string' },
+
+    // ── 中日文標點：連續 ──
+    { input: '好。。壞',
+        note: 'consecutive 。 — each becomes period, no split' },
+    { input: '好、、壞',
+        note: 'consecutive 、 — each becomes comma, double split',
+        expectOriginalChanged: false },
+    { input: '好，，壞',
+        note: 'consecutive ， — each becomes comma, empty segment filtered',
+        expectOriginalChanged: false },
+    { input: '好；；壞',
+        note: 'consecutive ； — each becomes comma, empty segment filtered',
+        expectOriginalChanged: false },
+
+    // ── 中日文標點：含引號 ──
+    // 原版無引號保護，以下皆與新版不同
+    { input: '"好，壞"，普通',
+        note: '，inside quotes protected' },
+    { input: '"好。壞"。普通',
+        note: '。inside quotes protected' },
+    { input: '"好、壞"、普通',
+        note: '、inside quotes protected' },
+    { input: '"好；壞"；普通',
+        note: '；inside quotes protected' },
+    { input: '"好．壞"．普通',
+        note: '．inside quotes protected' },
+
+    // ── 中日文標點：含括號 ──
+    { input: '(好，壞)，普通',
+        note: '，inside parens protected',
+        expectOriginalChanged: false },
+    { input: '[好。壞]。普通',
+        note: '。inside brackets — 。changes to period' },
 
     // ── 括號保護 ──
     { input: 'a, [b, c], d',
-        note: 'square brackets protect inner commas' },
+        note: 'square brackets protect inner commas',
+        expectOriginalChanged: false },
     { input: 'a, <b, c>, d',
-        note: 'angle brackets protect inner commas' },
+        note: 'angle brackets protect inner commas',
+        expectOriginalChanged: false },
     { input: 'a, {b, c}, d',
-        note: 'curly braces protect inner commas' },
+        note: 'curly braces protect inner commas',
+        expectOriginalChanged: false },
 
     // ── 巢狀括號 ──
     { input: 'a, ([b, c]), d',
-        note: 'nested bracket types' },
+        note: 'nested bracket types',
+        expectOriginalChanged: false },
     { input: '[a, [b, c]], d',
-        note: 'nested same bracket type' },
+        note: 'nested same bracket type',
+        expectOriginalChanged: false },
 
     // ── BREAK 關鍵字 ──
     { input: 'a, BREAK, b',
-        note: 'BREAK keyword splits' },
+        note: 'BREAK keyword splits',
+        expectOriginalChanged: false },
     { input: 'a\nBREAK\nb',
-        note: 'BREAK with newlines' },
+        note: 'BREAK with newlines',
+        expectOriginalChanged: false },
 
     // ── LoRA 標籤 ──
     { input: 'a, <lora:model:0.7>, b',
-        note: 'LoRA tag preserved as single unit' },
+        note: 'LoRA tag preserved as single unit',
+        expectOriginalChanged: false },
     { input: '<lora:A:1> <lora:B:0.5>, c',
-        note: 'multiple LoRA tags' },
+        note: 'multiple LoRA tags',
+        expectOriginalChanged: false },
 
     // ── 表情符號保護 ──
+    // 單一字元表情
     { input: 'a, >_<, b',
-        note: 'emoji >_< protected' },
+        note: 'emoji >_< protected',
+        expectOriginalChanged: false },
     { input: 'a, :<, b',
-        note: 'emoji :< protected' },
+        note: 'emoji :< protected',
+        expectOriginalChanged: false },
     { input: 'a, :-(, b',
-        note: 'emoji :-( protected' },
+        note: 'emoji :-( protected',
+        expectOriginalChanged: false },
     { input: 'a, :-), b',
-        note: 'emoji :-) protected' },
+        note: 'emoji :-) protected',
+        expectOriginalChanged: false },
+    { input: 'a, >: <, b',
+        note: 'emoji >: < with space — splits on comma',
+        expectOriginalChanged: false },
+    { input: 'a, >_<, b, :-), c',
+        note: 'multiple emojis in sequence',
+        expectOriginalChanged: false },
+
+    // ── 表情符號：相鄰逗號 ──
+    { input: '>_<,hello',
+        note: 'emoji at start',
+        expectOriginalChanged: false },
+    { input: 'hello,>_<',
+        note: 'emoji at end',
+        expectOriginalChanged: false },
+    { input: '>_<,>_<',
+        note: 'two emojis adjacent',
+        expectOriginalChanged: false },
+
+    // ── 表情符號：含引號 ──
+    { input: '":(", hello',
+        note: 'emoji with quote at start' },
+    { input: '":)", world"',
+        note: 'emoji between quotes' },
+
+    // ── 表情符號：與中日文標點混合 ──
+    { input: '>_<，hello',
+        note: 'emoji with ，(fullwidth comma)',
+        expectOriginalChanged: false },
+    { input: 'hello、>_<',
+        note: 'emoji with 、(enumeration comma)',
+        expectOriginalChanged: false },
+    { input: ':-)，world',
+        note: 'emoji with ，(fullwidth comma)',
+        expectOriginalChanged: false },
 
     // ── 空值 / 邊界 ──
     { input: '',
-        note: 'empty string' },
+        note: 'empty string',
+        expectOriginalChanged: false },
     { input: '   ',
-        note: 'whitespace only' },
+        note: 'whitespace only',
+        expectOriginalChanged: false },
     { input: null,
-        note: 'null input' },
+        note: 'null input',
+        expectOriginalChanged: false },
     { input: undefined,
-        note: 'undefined input' },
+        note: 'undefined input',
+        expectOriginalChanged: false },
     { input: false,
-        note: 'boolean false input' },
+        note: 'boolean false input',
+        expectOriginalChanged: false },
 
     // ── prompt weight ──
     { input: '(fire extinguisher: 1.0, 2.0), a',
-        note: 'weight syntax — inner comma preserved' },
+        note: 'weight syntax — inner comma preserved',
+        expectOriginalChanged: false },
 
     // ── 引號保護 ──
     { input: 'with "Small joys. Brighter days." below.',
@@ -215,46 +324,96 @@ const cases = [
 ]
 
 /* ====================================================================
+ *  單一事實來源：splitTags 測試執行器
+ *
+ *  splitTags 與 splitTags → splitByPeriod pipeline 共用此函式。
+ *  差別僅在於 splitByPeriod 是否為 null。
+ * ==================================================================== */
+
+/**
+ * 執行一組 splitTags 測試案例。
+ *
+ * @param {Object}   opts
+ * @param {Object[]} opts.cases        - 測試案例陣列
+ * @param {Function} opts.splitTags    - 新版 splitTags 函式
+ * @param {Function|null} opts.originalFn  - 原版 splitTags_original（可為 null）
+ * @param {Function|null} opts.splitByPeriod - 若提供，對每個 tag 結果再做 splitByPeriod
+ */
+function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
+    for (const tc of cases) {
+        const title = testTitle(tc)
+        it(title, (t) => {
+            // Step 1: splitTags 切割
+            const tagResult = splitTags(tc.input, ...(tc.args || []))
+
+            // Step 2: 可選 — splitByPeriod 管線
+            let finalResult = tagResult
+            let changed = false
+            if (splitByPeriod) {
+                finalResult = tagResult.flatMap(tag => splitByPeriod(tag))
+                changed = JSON.stringify(tagResult) !== JSON.stringify(finalResult)
+
+                if (tc.expectChanged !== undefined) {
+                    t.assert.equal(changed, tc.expectChanged)
+                }
+
+                if (changed) {
+                    console.log(`  ⚠ splitByPeriodChanged: true  (${tagResult.length} → ${finalResult.length} segments)`)
+                } else {
+                    console.log(`  ✓ splitByPeriodChanged: false`)
+                }
+            }
+
+            // Step 3: 與原版比較
+            const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
+
+            if (tc.expectOriginalChanged !== undefined) {
+                t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
+            }
+
+            // Step 4: 組裝快照
+            const snap = splitByPeriod
+                ? { input: tc.input, splitTagsResult: tagResult }
+                : { input: tc.input, result: tagResult }
+
+            if (splitByPeriod) {
+                if (changed) {
+                    snap.splitByPeriodChanged = true
+                    snap.splitByPeriodResult = finalResult
+                } else {
+                    snap.splitByPeriodChanged = false
+                }
+            }
+
+            attachOriginalComparison(snap, changedFromOriginal, originalResult)
+            t.assert.snapshot(snap)
+        })
+    }
+}
+
+/* ====================================================================
  *  執行測試
  * ==================================================================== */
 
 describe('splitTags', async () => {
     const splitTags = await loadModule()
+    const originalFn = await loadOriginal()
 
     it('module loads successfully', (t) => {
         t.assert.equal(typeof splitTags, 'function')
     })
 
-    for (const tc of cases) {
-        const title = testTitle(tc)
-        it(title, (t) => {
-            const result = splitTags(tc.input, ...(tc.args || []))
-            // 長輸入：快照同時保存原始輸入與結果，方便 review
-            if (tc.input && typeof tc.input === 'string' && tc.input.length > 100) {
-                t.assert.snapshot({ input: tc.input, result })
-            } else {
-                t.assert.snapshot(result)
-            }
-        })
-    }
+    runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod: null })
 })
-
-/* ====================================================================
- *  跨模組整合測試：splitTags → splitByPeriod 管線
- *
- *  將 splitTags 的輸出逐項送入 splitByPeriod，
- *  觀察 splitByPeriod 是否會進一步拆分。
- *
- *  - splitByPeriodChanged: false → splitByPeriod 未改變結果
- *  - splitByPeriodChanged: true  → splitByPeriod 產生了新的拆分
- * ==================================================================== */
 
 // 需要進行跨模組驗證的特定提示詞
 const pipelineCases = [
     // 完整提示詞
     { input: 'Prominent readable text and placement: the main illuminated facade at upper left-center reads "Sakura Stop" with "くらしに、さくらを。" beneath. The right side of the fascia reads "いつもの日を、少し特別に。" with "Small joys. Brighter days." below. The tall illuminated sign above the slope reads "Sakura Stop" and lists "たばこ", "お弁当", "飲み物", "スイーツ", and "日用品". The left window poster reads "今日も、いい一日を。" with "Good day. Better tomorrow." below. The right window poster reads "さくらの季節をもっと身近に。". A pink vertical banner beside the store reads "さくらと、いい毎日を。". The roadside vertical sign at far right reads "海の見える町". The downhill road includes the white marking "止まれ" near the lower distance.',
         note: 'full prompt pipeline',
-        expectChanged: true },
+        expectChanged: true,
+        expectOriginalChanged: true,
+    },
 
     // 複雜 prompt（含 weight、LoRA、BREAK）
     { input: 'masterpiece, best quality, (1girl:1.2), <lora:add_detail:0.6>, BREAK, forest, trees',
@@ -273,52 +432,12 @@ const pipelineCases = [
         note: 'parentheses pipeline' },
 
     { input: '一位穿著太空衣的貓、復古老舊的紅色跑車' },
-
 ]
 
 describe('splitTags → splitByPeriod pipeline', async () => {
     const splitTags = await loadModule()
     const splitByPeriod = await loadSplitByPeriod()
+    const originalFn = await loadOriginal()
 
-    for (const tc of pipelineCases) {
-        const title = testTitle(tc)
-        it(title, (t) => {
-            // Step 1: splitTags 切割
-            const tagResult = splitTags(tc.input, ...(tc.args || []))
-
-            // Step 2: 逐項送入 splitByPeriod（不含 includeParen）
-            const finalResult = tagResult.flatMap(tag => splitByPeriod(tag))
-
-            // Step 3: 比較
-            const changed = JSON.stringify(tagResult) !== JSON.stringify(finalResult)
-
-            // Step 3b: 明確期望值驗證（如 expectChanged: true）
-            if (tc.expectChanged !== undefined) {
-                t.assert.equal(changed, tc.expectChanged)
-            }
-
-            // Step 4: 輸出指標
-            if (changed) {
-                console.log(`  ⚠ splitByPeriodChanged: true  (${tagResult.length} → ${finalResult.length} segments)`)
-            } else {
-                console.log(`  ✓ splitByPeriodChanged: false`)
-            }
-
-            // Step 5: 快照保存完整結果
-            // changed=false 時不顯示 splitByPeriodResult（與 splitTagsResult 重複）
-            const snapshot = changed
-                ? {
-                    input: tc.input,
-                    splitTagsResult: tagResult,
-                    splitByPeriodChanged: true,
-                    splitByPeriodResult: finalResult,
-                }
-                : {
-                    input: tc.input,
-                    splitTagsResult: tagResult,
-                    splitByPeriodChanged: false,
-                }
-            t.assert.snapshot(snapshot)
-        })
-    }
+    runSplitTagsTests({ cases: pipelineCases, splitTags, originalFn, splitByPeriod })
 })

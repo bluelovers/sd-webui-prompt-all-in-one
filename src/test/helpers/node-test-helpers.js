@@ -18,23 +18,29 @@
 
 const { describe, it } = require('node:test')
 const assert = require('node:assert/strict')
+const crypto = require('node:crypto')
 
 /**
  * 從輸入值自動產生可讀的測試標題。
  *
  * 規則：
- *   - 字串：截斷至 maxLen 字元並加上引號
+ *   - 短字串（≤ maxLen）：直接加引號
+ *   - 長字串（> maxLen）：「{sha256前8碼} {截斷至60字}」
  *   - 其他型別：直接 toString() 加引號
  *
  * @param {*}      input
- * @param {number} [maxLen=40]
+ * @param {number} [maxLen=100]
  * @returns {string}
  */
-function formatTitle(input, maxLen = 40) {
+function formatTitle(input, maxLen = 100) {
     const raw = typeof input === 'string' ? input : String(input)
-    const truncated = raw.length > maxLen ? raw.slice(0, maxLen) + '…' : raw
+    if (raw.length > maxLen) {
+        const hash = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8)
+        const truncated = raw.length > 60 ? raw.slice(0, 60) + '…' : raw
+        return `${hash} ${truncated}`
+    }
     // 替換控制字元讓標題安全可讀
-    const safe = truncated
+    const safe = raw
         .replace(/\t/g, '\\t')
         .replace(/\n/g, '\\n')
         .replace(/\r/g, '\\r')
@@ -111,4 +117,53 @@ function runCases(suiteName, fn, cases) {
     })
 }
 
-module.exports = { runCases, formatTitle, caseTitle }
+/**
+ * 將新舊版函式結果進行比較。
+ *
+ * @param {Function|null} originalFn - 原版函式（null 時跳過比較）
+ * @param {Object}        tc         - 測試案例（含 input、args）
+ * @param {*}             result     - 新版函式結果
+ * @returns {{ changedFromOriginal: boolean|null, originalResult: *|null }}
+ */
+function compareWithOriginal(originalFn, tc, result) {
+    if (!originalFn) return { changedFromOriginal: null, originalResult: null }
+    const originalResult = originalFn(tc.input, ...(tc.args || []))
+    const changedFromOriginal = JSON.stringify(result) !== JSON.stringify(originalResult)
+    return { changedFromOriginal, originalResult }
+}
+
+/**
+ * 將原版比較結果附加到快照物件。
+ * changedFromOriginal=true 時同時附加 originalResult。
+ *
+ * @param {Object}  snap                  - 快照物件（會被 mutate）
+ * @param {boolean|null} changedFromOriginal
+ * @param {*}       originalResult
+ */
+function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
+    if (changedFromOriginal === null) return
+    snap.changedFromOriginal = changedFromOriginal
+    if (changedFromOriginal) snap.originalResult = originalResult
+}
+
+/**
+ * 產生輸入字串的短期雜湊（前 8 碼 hex），用於長輸入的快照標題。
+ * @param {string} str
+ * @returns {string} 8 字元 hex
+ */
+function promptHash(str) {
+    return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
+}
+
+/**
+ * 截斷字串並以 "…" 結尾。
+ * @param {string} str
+ * @param {number} maxLen
+ * @returns {string}
+ */
+function truncate(str, maxLen = 60) {
+    if (str.length <= maxLen) return str
+    return str.slice(0, maxLen) + '…'
+}
+
+module.exports = { runCases, formatTitle, caseTitle, compareWithOriginal, attachOriginalComparison, promptHash, truncate }
