@@ -47,37 +47,41 @@ function isCloseParen(ch) {
  *     則停止繼續切割（break），避免將 "(111. 222). xxx" 錯誤拆散。
  *
  * @param {string}  str          - 要切割的原始字串。
- * @param {boolean} [includeParen=true] - 是否允許在括號前方切割。
+ * @param {Object}  [options]             - 切割選項。
+ * @param {boolean} [options.includeParen] - 是否允許在括號前方切割（無預設值）。
  *   - true  ：句號後遇到開括號仍執行切割。
- *   - false ：句號後遇到開括號時停止切割（保留括號與前段的關聯）。
+ *   - false / undefined：句號後遇到開括號時停止切割（保留括號與前段的關聯）。
  * @returns {string[]} 切割後的片段陣列。若無可切割點則回傳包含完整字串的單元素陣列。
  *
  * @example
- *   splitByPeriod("xxx. (111. 222)", true)
+ *   splitByPeriod("xxx. (111. 222)", { includeParen: true })
  *   // → ["xxx.", "(111. 222)"]
  *
- *   splitByPeriod("(111. 222). xxx", true)
+ *   splitByPeriod("(111. 222). xxx", { includeParen: true })
  *   // → ["(111. 222).", "xxx"]
  *
- *   splitByPeriod("xxx. (111. 222", true)
+ *   splitByPeriod("xxx. (111. 222", { includeParen: true })
  *   // → ["xxx.", "(111. 222"]
  *
- *   splitByPeriod("(111. 222. xxx", true)
+ *   splitByPeriod("(111. 222. xxx", { includeParen: true })
  *   // → ["(111. 222. xxx"]   （括號未關閉，stack 非空，不切割）
  *
- *   splitByPeriod("a. b. c", true)
+ *   splitByPeriod("a. b. c", { includeParen: true })
  *   // → ["a.", "b.", "c"]
  *
- *   splitByPeriod("xxx. (111. 222)", false)
+ *   splitByPeriod("xxx. (111. 222)", { includeParen: false })
  *   // → ["xxx. (111. 222)"]  （includeParen=false，句號後為開括號，停止切割）
  */
-export function splitByPeriod(str, includeParen = true) {
+export function splitByPeriod(str, { includeParen } = {}) {
     if (typeof str !== 'string') return [String(str)]
 
     const len = str.length
     const parts = []
     const stack = []
     let start = 0
+
+    // includeParen=false 時，若下一個非空白字元是開括號則停止切割
+    const notAllowParen = !includeParen
 
     for (let ci = 0; ci < len; ci++) {
         const ch = str[ci]
@@ -100,7 +104,7 @@ export function splitByPeriod(str, includeParen = true) {
 
                 // includeParen=false 時，若下一個非空白字元是開括號則停止切割
                 const nextChar = nextStart < len ? str[nextStart] : ''
-                if (!includeParen && isOpenParen(nextChar)) {
+                if (notAllowParen && isOpenParen(nextChar)) {
                     break
                 }
 

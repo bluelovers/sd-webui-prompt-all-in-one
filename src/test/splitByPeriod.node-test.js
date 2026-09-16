@@ -50,47 +50,47 @@ const noPeriodCases = [
 ]
 
 const bracketProtectionCases = [
-    { input: 'xxx. (111. 222)',  args: [true], expected: ['xxx.', '(111. 222)'] },
-    { input: '(111. 222). xxx',  args: [true], expected: ['(111. 222).', 'xxx'] },
-    { input: 'xxx. (111. 222',   args: [true], expected: ['xxx.', '(111. 222'],
+    { input: 'xxx. (111. 222)',  args: [{ includeParen: true }], expected: ['xxx.', '(111. 222)'] },
+    { input: '(111. 222). xxx',  args: [{ includeParen: true }], expected: ['(111. 222).', 'xxx'] },
+    { input: 'xxx. (111. 222',   args: [{ includeParen: true }], expected: ['xxx.', '(111. 222'],
         note: 'unclosed paren' },
-    { input: '(111. 222. xxx',   args: [true], expected: ['(111. 222. xxx'],
+    { input: '(111. 222. xxx',   args: [{ includeParen: true }], expected: ['(111. 222. xxx'],
         note: 'unclosed paren — no split at all' },
-    { input: 'aaa. (bbb. ccc). ddd. eee', args: [true],
+    { input: 'aaa. (bbb. ccc). ddd. eee', args: [{ includeParen: true }],
         expected: ['aaa.', '(bbb. ccc).', 'ddd.', 'eee'] },
-    { input: 'aaa. [bbb. ccc]. ddd', args: [true],
+    { input: 'aaa. [bbb. ccc]. ddd', args: [{ includeParen: true }],
         expected: ['aaa.', '[bbb. ccc].', 'ddd'], note: 'square brackets' },
-    { input: 'aaa. {bbb. ccc}. ddd', args: [true],
+    { input: 'aaa. {bbb. ccc}. ddd', args: [{ includeParen: true }],
         expected: ['aaa.', '{bbb. ccc}.', 'ddd'], note: 'curly brackets' },
-    { input: 'a. ((b. c). d). e', args: [true],
+    { input: 'a. ((b. c). d). e', args: [{ includeParen: true }],
         expected: ['a.', '((b. c). d).', 'e'], note: 'deeply nested' },
-    { input: 'a. ([b. c]). d', args: [true],
+    { input: 'a. ([b. c]). d', args: [{ includeParen: true }],
         expected: ['a.', '([b. c]).', 'd'], note: 'mixed bracket types' },
 ]
 
 const includeParenFalseCases = [
-    { input: 'xxx. (111. 222)', args: [false], expected: ['xxx. (111. 222)'],
+    { input: 'xxx. (111. 222)', args: [{ includeParen: false }], expected: ['xxx. (111. 222)'],
         note: 'first open paren stops' },
-    { input: 'a. b. (c. d)',   args: [false], expected: ['a.', 'b. (c. d)'],
+    { input: 'a. b. (c. d)',   args: [{ includeParen: false }], expected: ['a.', 'b. (c. d)'],
         note: 'splits first two, stops at third' },
-    { input: 'a. b. [c. d]',   args: [false], expected: ['a.', 'b. [c. d]'],
+    { input: 'a. b. [c. d]',   args: [{ includeParen: false }], expected: ['a.', 'b. [c. d]'],
         note: 'square bracket stops' },
-    { input: 'a. b. {c. d}',   args: [false], expected: ['a.', 'b. {c. d}'],
+    { input: 'a. b. {c. d}',   args: [{ includeParen: false }], expected: ['a.', 'b. {c. d}'],
         note: 'curly bracket stops' },
-    { input: '(111. 222). xxx', args: [false], expected: ['(111. 222).', 'xxx'],
+    { input: '(111. 222). xxx', args: [{ includeParen: false }], expected: ['(111. 222).', 'xxx'],
         note: 'closed paren — split works' },
-    { input: 'a. b. c',        args: [false], expected: ['a.', 'b.', 'c'],
+    { input: 'a. b. c',        args: [{ includeParen: false }], expected: ['a.', 'b.', 'c'],
         note: 'no parens — all splits work' },
 ]
 
 const mismatchedBracketCases = [
-    { input: 'a. )b. c',  args: [true], expected: ['a.', ')b.', 'c'],
+    { input: 'a. )b. c',  args: [{ includeParen: true }], expected: ['a.', ')b.', 'c'],
         note: 'stray close paren ignored' },
-    { input: 'a. ]. b',   args: [true], expected: ['a.', '].', 'b'],
+    { input: 'a. ]. b',   args: [{ includeParen: true }], expected: ['a.', '].', 'b'],
         note: 'stray close bracket ignored' },
-    { input: '(a. (b. c)). d', args: [true],
+    { input: '(a. (b. c)). d', args: [{ includeParen: true }],
         expected: ['(a. (b. c)).', 'd'], note: 'nested open parens' },
-    { input: '((a. b). (c. d)). e', args: [true],
+    { input: '((a. b). (c. d)). e', args: [{ includeParen: true }],
         expected: ['((a. b). (c. d)).', 'e'], note: 'multiple nested groups' },
 ]
 
@@ -102,31 +102,26 @@ const nonStringGuardCases = [
     { input: { a: 1 },     expected: ['[object Object]'], note: 'object' },
 ]
 
-const defaultParamCases = [
-    { input: 'xxx. (111. 222)', expected: ['xxx.', '(111. 222)'],
-        note: 'omitted args → includeParen defaults to true' },
-]
-
 const whitespaceCases = [
     { input: 'a.\tb. c',       expected: ['a.', 'b.', 'c'], note: 'tab after period' },
     { input: 'a.\t  \tb. c',   expected: ['a.', 'b.', 'c'], note: 'multiple tabs + spaces' },
     { input: 'a.\nb. c',       expected: ['a.', 'b.', 'c'], note: 'newline after period' },
-    { input: 'a.   (b. c)',    args: [true], expected: ['a.', '(b. c)'],
+    { input: 'a.   (b. c)',    args: [{ includeParen: true }], expected: ['a.', '(b. c)'],
         note: 'many spaces then open paren' },
 ]
 
 const realWorldCases = [
     { input: 'masterpiece, best quality. (1girl:1.2), looking at viewer',
-        args: [true],
+        args: [{ includeParen: true }],
         expected: ['masterpiece, best quality.', '(1girl:1.2), looking at viewer'] },
     { input: 'highly detailed. [horse:donkey:0.5]. landscape',
-        args: [true],
+        args: [{ includeParen: true }],
         expected: ['highly detailed.', '[horse:donkey:0.5].', 'landscape'] },
     { input: '(masterpiece:1.0), best quality. 1girl, {red hair}',
-        args: [true],
+        args: [{ includeParen: true }],
         expected: ['(masterpiece:1.0), best quality.', '1girl, {red hair}'] },
     { input: 'tag. (nested. prompt. here). end',
-        args: [true],
+        args: [{ includeParen: true }],
         expected: ['tag.', '(nested. prompt. here).', 'end'] },
 ]
 
@@ -158,7 +153,6 @@ describe('splitByPeriod', async () => {
     runCases('includeParen=false — stop splitting before open paren', loadSplitByPeriod, includeParenFalseCases)
     runCases('mismatched / noisy brackets',                 loadSplitByPeriod, mismatchedBracketCases)
     runCases('non-string input guard',                      loadSplitByPeriod, nonStringGuardCases)
-    runCases('default parameter (includeParen defaults to true)', loadSplitByPeriod, defaultParamCases)
     runCases('whitespace handling',                         loadSplitByPeriod, whitespaceCases)
     runCases('real-world prompt scenarios',                 loadSplitByPeriod, realWorldCases)
 })

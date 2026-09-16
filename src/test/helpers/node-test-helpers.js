@@ -49,7 +49,12 @@ function formatTitle(input, maxLen = 40) {
  */
 function caseTitle(tc) {
     const input = formatTitle(tc.input)
-    const args  = tc.args ? tc.args.map(a => JSON.stringify(a)).join(', ') : ''
+    const args  = tc.args
+        ? tc.args.map(a => typeof a === 'object' && a !== null
+            ? `{${Object.entries(a).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ')}}`
+            : JSON.stringify(a)
+        ).join(', ')
+        : ''
     const label = tc.note ? ` — ${tc.note}` : ''
     if (args) {
         return `${input} (${args})${label}`
