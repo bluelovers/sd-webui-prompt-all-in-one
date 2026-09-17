@@ -1,0 +1,1039 @@
+exports[`splitTags > BREAK keyword splits [bcbb06ec] 1`] = `
+{
+  "input": "a, BREAK, b",
+  "result": [
+    "a",
+    "BREAK",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > BREAK with newlines [a53f4895] 1`] = `
+{
+  "input": "a\\nBREAK\\nb",
+  "result": [
+    "a",
+    "\\n",
+    "BREAK",
+    "\\n",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > CR normalized to LF [82525e55] 1`] = `
+{
+  "input": "a\\rb\\nc",
+  "result": [
+    "a",
+    "\\n",
+    "b",
+    "\\n",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > LoRA tag preserved as single unit [aa5b2d3c] 1`] = `
+{
+  "input": "a, <lora:model:0.7>, b",
+  "result": [
+    "a",
+    "<lora:model:0.7>",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > all five punctuations in one string [c3de2efa] 1`] = `
+{
+  "input": "好，壞、普通；再來．結束",
+  "result": [
+    "好",
+    "壞",
+    "普通",
+    "再來",
+    "結束"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > angle brackets protect inner commas [5b8bbf22] 1`] = `
+{
+  "input": "a, <b, c>, d",
+  "result": [
+    "a",
+    "<b, c>",
+    "d"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > apostrophe — not a quote opener [03a96726] 1`] = `
+{
+  "input": "it's a, b, c",
+  "result": [
+    "it's a",
+    "b",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > boolean false input 1`] = `
+{
+  "input": false,
+  "result": [],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > comma-separated [47a28732] 1`] = `
+{
+  "input": "a, b, c",
+  "result": [
+    "a",
+    "b",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > consecutive 、 — each becomes comma, double split [1df88318] 1`] = `
+{
+  "input": "好、、壞",
+  "result": [
+    "好",
+    "壞"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > consecutive 。 — each becomes period, no split [6862d9cf] 1`] = `
+{
+  "input": "好。。壞",
+  "result": [
+    "好..壞"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "好",
+    "壞"
+  ]
+}
+`;
+
+exports[`splitTags > consecutive ， — each becomes comma, empty segment filtered [887ebed3] 1`] = `
+{
+  "input": "好，，壞",
+  "result": [
+    "好",
+    "壞"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > consecutive ； — each becomes comma, empty segment filtered [c3c02626] 1`] = `
+{
+  "input": "好；；壞",
+  "result": [
+    "好",
+    "壞"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > curly braces protect inner commas [e4cf8e0c] 1`] = `
+{
+  "input": "a, {b, c}, d",
+  "result": [
+    "a",
+    "{b, c}",
+    "d"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji :-( protected [e3d7a88d] 1`] = `
+{
+  "input": "a, :-(, b",
+  "result": [
+    "a",
+    ":-(",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji :-) protected [015f9f96] 1`] = `
+{
+  "input": "a, :-), b",
+  "result": [
+    "a",
+    ":-)",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji :< protected [75df4b5d] 1`] = `
+{
+  "input": "a, :<, b",
+  "result": [
+    "a",
+    ":<",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji >: < with space — splits on comma [83f38a6f] 1`] = `
+{
+  "input": "a, >: <, b",
+  "result": [
+    "a",
+    ">: <, b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji >_< protected [aaa9e3a1] 1`] = `
+{
+  "input": "a, >_<, b",
+  "result": [
+    "a",
+    ">_<",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji at end [5e7d451c] 1`] = `
+{
+  "input": "hello,>_<",
+  "result": [
+    "hello",
+    ">_<"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji at start [683b5f30] 1`] = `
+{
+  "input": ">_<,hello",
+  "result": [
+    ">_<",
+    "hello"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji between quotes [d013881c] 1`] = `
+{
+  "input": "\\":)\\", world\\"",
+  "result": [
+    "\\":)\\"",
+    "world\\""
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji with quote at start [cf74b00c] 1`] = `
+{
+  "input": "\\":(\\", hello",
+  "result": [
+    "\\":(\\"",
+    "hello"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\":(\\", hello"
+  ]
+}
+`;
+
+exports[`splitTags > emoji with 、(enumeration comma) [3adb95d1] 1`] = `
+{
+  "input": "hello、>_<",
+  "result": [
+    "hello",
+    ">_<"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji with ，(fullwidth comma) [1066f457] 1`] = `
+{
+  "input": ":-)，world",
+  "result": [
+    ":-)",
+    "world"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > emoji with ，(fullwidth comma) [8672289f] 1`] = `
+{
+  "input": ">_<，hello",
+  "result": [
+    ">_<",
+    "hello"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > empty segments filtered [28fd7827] 1`] = `
+{
+  "input": "a,  ,  b",
+  "result": [
+    "a",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > empty string 1`] = `
+{
+  "input": "",
+  "result": [],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > excerpt: Japanese comma + period in quotes [4923fb53] 1`] = `
+{
+  "input": "\\"いつもの日を、少し特別に。\\" with",
+  "result": [
+    "\\"いつもの日を、少し特別に。\\" with"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"いつもの日を",
+    "少し特別に",
+    "\\" with"
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: Japanese period inside quotes [e553f60c] 1`] = `
+{
+  "input": "\\"くらしに、さくらを。\\" beneath",
+  "result": [
+    "\\"くらしに、さくらを。\\" beneath"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"くらしに",
+    "さくらを",
+    "\\" beneath"
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: Japanese period then English period [f8202b2e] 1`] = `
+{
+  "input": "\\"さくらの季節をもっと身近に。\\".",
+  "result": [
+    "\\"さくらの季節をもっと身近に。\\"."
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"さくらの季節をもっと身近に",
+    "\\"."
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: Japanese period then trailing English period [3f0b9816] 1`] = `
+{
+  "input": "The right window poster reads \\"さくらの季節をもっと身近に。\\".",
+  "result": [
+    "The right window poster reads \\"さくらの季節をもっと身近に。\\"."
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "The right window poster reads \\"さくらの季節をもっと身近に",
+    "\\"."
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: another Japanese comma + period [8d134a86] 1`] = `
+{
+  "input": "\\"今日も、いい一日を。\\" with",
+  "result": [
+    "\\"今日も、いい一日を。\\" with"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"今日も",
+    "いい一日を",
+    "\\" with"
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: period-space splits outside quotes [1ea95ac6] 1`] = `
+{
+  "input": "The left window poster reads \\"今日も、いい一日を。\\" with \\"Good day. Better tomorrow.\\" below.",
+  "result": [
+    "The left window poster reads \\"今日も、いい一日を。\\" with \\"Good day. Better tomorrow.\\" below."
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "The left window poster reads \\"今日も",
+    "いい一日を",
+    "\\" with \\"Good day. Better tomorrow.\\" below."
+  ]
+}
+`;
+
+exports[`splitTags > excerpt: quoted items separated by commas [e4ea99a4] 1`] = `
+{
+  "input": "lists \\"たばこ\\", \\"お弁当\\", \\"飲み物\\", \\"スイーツ\\", and \\"日用品\\"",
+  "result": [
+    "lists \\"たばこ\\"",
+    "\\"お弁当\\"",
+    "\\"飲み物\\"",
+    "\\"スイーツ\\"",
+    "and \\"日用品\\""
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > multiple LoRA tags [d1fdc6f2] 1`] = `
+{
+  "input": "<lora:A:1> <lora:B:0.5>, c",
+  "result": [
+    "<lora:A:1>",
+    "<lora:B:0.5>",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > multiple emojis in sequence [470ee362] 1`] = `
+{
+  "input": "a, >_<, b, :-), c",
+  "result": [
+    "a",
+    ">_<",
+    "b",
+    ":-)",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > multiple newlines collapsed [2282b3ef] 1`] = `
+{
+  "input": "a\\n\\n\\nb",
+  "result": [
+    "a",
+    "\\n",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > multiple quoted segments with commas [fd1cf617] 1`] = `
+{
+  "input": "\\"a, b\\", c, \\"d, e\\"",
+  "result": [
+    "\\"a, b\\"",
+    "c",
+    "\\"d, e\\""
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"a",
+    "b\\"",
+    "c",
+    "\\"d",
+    "e\\""
+  ]
+}
+`;
+
+exports[`splitTags > nested bracket types [0bee03ca] 1`] = `
+{
+  "input": "a, ([b, c]), d",
+  "result": [
+    "a",
+    "([b, c])",
+    "d"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > nested same bracket type [27170068] 1`] = `
+{
+  "input": "[a, [b, c]], d",
+  "result": [
+    "[a, [b, c]]",
+    "d"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > newline-separated [ea7fb08b] 1`] = `
+{
+  "input": "a\\nb\\nc",
+  "result": [
+    "a",
+    "\\n",
+    "b",
+    "\\n",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > null input 1`] = `
+{
+  "input": null,
+  "result": [],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > quoted segments with newline between [e1387d82] 1`] = `
+{
+  "input": "\\"a, b\\"\\n\\"c, d\\"",
+  "result": [
+    "\\"a, b\\"",
+    "\\n",
+    "\\"c, d\\""
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"a",
+    "b\\"",
+    "\\n",
+    "\\"c",
+    "d\\""
+  ]
+}
+`;
+
+exports[`splitTags > quoted sentence — comma inside protected [da230858] 1`] = `
+{
+  "input": "with \\"Small joys. Brighter days.\\" below.",
+  "result": [
+    "with \\"Small joys. Brighter days.\\" below."
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > quoted then newline then unquoted split [ac9c2a04] 1`] = `
+{
+  "input": "\\"a, b\\"\\nc, d",
+  "result": [
+    "\\"a, b\\"",
+    "\\n",
+    "c",
+    "d"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"a",
+    "b\\"",
+    "\\n",
+    "c",
+    "d"
+  ]
+}
+`;
+
+exports[`splitTags > single-quoted comma protected [fcac0226] 1`] = `
+{
+  "input": "with 'hello, world' end",
+  "result": [
+    "with 'hello, world' end"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "with 'hello",
+    "world' end"
+  ]
+}
+`;
+
+exports[`splitTags > square brackets protect inner commas [c63c958f] 1`] = `
+{
+  "input": "a, [b, c], d",
+  "result": [
+    "a",
+    "[b, c]",
+    "d"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > tab converted to newline [894891f8] 1`] = `
+{
+  "input": "a\\tb",
+  "result": [
+    "a",
+    "\\n",
+    "b"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > trailing comma [c3627a4b] 1`] = `
+{
+  "input": "a, b, c,",
+  "result": [
+    "a",
+    "b",
+    "c"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > two emojis adjacent [278738fa] 1`] = `
+{
+  "input": ">_<,>_<",
+  "result": [
+    ">_<",
+    ">_<"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > unclosed quote — rest protected to end [236673cd] 1`] = `
+{
+  "input": "a, \\"b, c",
+  "result": [
+    "a",
+    "\\"b, c"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "a",
+    "\\"b",
+    "c"
+  ]
+}
+`;
+
+exports[`splitTags > undefined input 1`] = `
+{
+  "result": [],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > weight syntax — inner comma preserved [79d259ad] 1`] = `
+{
+  "input": "(fire extinguisher: 1.0, 2.0), a",
+  "result": [
+    "(fire extinguisher: 1.0, 2.0)",
+    "a"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > whitespace only [0aad7da7] 1`] = `
+{
+  "input": "   ",
+  "result": [],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > 、and ；mixed — both become comma [507e0e5f] 1`] = `
+{
+  "input": "好、壞；普通",
+  "result": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > 、enumeration comma → comma [135b37d0] 1`] = `
+{
+  "input": "好、壞、普通",
+  "result": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > 、inside quotes protected [0aa3d58d] 1`] = `
+{
+  "input": "\\"好、壞\\"、普通",
+  "result": [
+    "\\"好、壞\\"",
+    "普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"好",
+    "壞\\"",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > 。Chinese/Japanese period → period (not comma) [eddccc68] 1`] = `
+{
+  "input": "好。壞。普通",
+  "result": [
+    "好.壞.普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "好",
+    "壞",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > 。inside brackets — 。changes to period [177d802d] 1`] = `
+{
+  "input": "[好。壞]。普通",
+  "result": [
+    "[好.壞].普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "[好,壞]",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > 。inside quotes protected [68699627] 1`] = `
+{
+  "input": "\\"好。壞\\"。普通",
+  "result": [
+    "\\"好。壞\\".普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"好",
+    "壞\\"",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > ，and 。mixed — comma splits, period does not [5215e7bf] 1`] = `
+{
+  "input": "好，壞。普通",
+  "result": [
+    "好",
+    "壞.普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "好",
+    "壞",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > ，fullwidth comma → comma [3511ac5c] 1`] = `
+{
+  "input": "好，壞，普通",
+  "result": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > ，inside parens protected [662d032c] 1`] = `
+{
+  "input": "(好，壞)，普通",
+  "result": [
+    "(好,壞)",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > ，inside quotes protected [cdc874ee] 1`] = `
+{
+  "input": "\\"好，壞\\"，普通",
+  "result": [
+    "\\"好，壞\\"",
+    "普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"好",
+    "壞\\"",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > ．and 。mixed — fullwidth period splits, Japanese period does not [751c58fc] 1`] = `
+{
+  "input": "好．壞。普通",
+  "result": [
+    "好",
+    "壞.普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "好",
+    "壞",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > ．fullwidth period → comma [ded25a67] 1`] = `
+{
+  "input": "好．壞．普通",
+  "result": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > ．inside quotes protected [030b93e4] 1`] = `
+{
+  "input": "\\"好．壞\\"．普通",
+  "result": [
+    "\\"好．壞\\"",
+    "普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"好",
+    "壞\\"",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags > ；fullwidth semicolon → comma [828abde0] 1`] = `
+{
+  "input": "好；壞；普通",
+  "result": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > ；inside quotes protected [be7bb421] 1`] = `
+{
+  "input": "\\"好；壞\\"；普通",
+  "result": [
+    "\\"好；壞\\"",
+    "普通"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "\\"好",
+    "壞\\"",
+    "普通"
+  ]
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > Chinese comma pipeline [3511ac5c] 1`] = `
+{
+  "input": "好，壞，普通",
+  "splitTagsResult": [
+    "好",
+    "壞",
+    "普通"
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > [163e273f] 一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，… 1`] = `
+{
+  "input": "一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，背景可以看到远处的老旧居民楼和几棵行道树，自然光线均匀地照射在人物身上，画面呈现出手机实拍的质感，色调真实自然，人物神态平和，背景有日常生活的街道细节。",
+  "splitTagsResult": [
+    "一位女孩",
+    "她正坐在中国城市街头普通的金属材质公交站台长椅上等车.身侧是一个带有广告牌的公交站牌",
+    "路边是平整的沥青人行道",
+    "背景可以看到远处的老旧居民楼和几棵行道树",
+    "自然光线均匀地照射在人物身上",
+    "画面呈现出手机实拍的质感",
+    "色调真实自然",
+    "人物神态平和",
+    "背景有日常生活的街道细节."
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": true,
+  "originalResult": [
+    "一位女孩",
+    "她正坐在中国城市街头普通的金属材质公交站台长椅上等车",
+    "身侧是一个带有广告牌的公交站牌",
+    "路边是平整的沥青人行道",
+    "背景可以看到远处的老旧居民楼和几棵行道树",
+    "自然光线均匀地照射在人物身上",
+    "画面呈现出手机实拍的质感",
+    "色调真实自然",
+    "人物神态平和",
+    "背景有日常生活的街道细节"
+  ]
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > [74b5470e] 一位穿著太空衣的貓、復古老舊的紅色跑車 1`] = `
+{
+  "input": "一位穿著太空衣的貓、復古老舊的紅色跑車",
+  "splitTagsResult": [
+    "一位穿著太空衣的貓",
+    "復古老舊的紅色跑車"
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > complex prompt pipeline [33c09d55] 1`] = `
+{
+  "input": "masterpiece, best quality, (1girl:1.2), <lora:add_detail:0.6>, BREAK, forest, trees",
+  "splitTagsResult": [
+    "masterpiece",
+    "best quality",
+    "(1girl:1.2)",
+    "<lora:add_detail:0.6>",
+    "BREAK",
+    "forest",
+    "trees"
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > full prompt pipeline [2d679141] 1`] = `
+{
+  "input": "Prominent readable text and placement: the main illuminated facade at upper left-center reads \\"Sakura Stop\\" with \\"くらしに、さくらを。\\" beneath. The right side of the fascia reads \\"いつもの日を、少し特別に。\\" with \\"Small joys. Brighter days.\\" below. The tall illuminated sign above the slope reads \\"Sakura Stop\\" and lists \\"たばこ\\", \\"お弁当\\", \\"飲み物\\", \\"スイーツ\\", and \\"日用品\\". The left window poster reads \\"今日も、いい一日を。\\" with \\"Good day. Better tomorrow.\\" below. The right window poster reads \\"さくらの季節をもっと身近に。\\". A pink vertical banner beside the store reads \\"さくらと、いい毎日を。\\". The roadside vertical sign at far right reads \\"海の見える町\\". The downhill road includes the white marking \\"止まれ\\" near the lower distance.",
+  "splitTagsResult": [
+    "Prominent readable text and placement: the main illuminated facade at upper left-center reads \\"Sakura Stop\\" with \\"くらしに、さくらを。\\" beneath. The right side of the fascia reads \\"いつもの日を、少し特別に。\\" with \\"Small joys. Brighter days.\\" below. The tall illuminated sign above the slope reads \\"Sakura Stop\\" and lists \\"たばこ\\"",
+    "\\"お弁当\\"",
+    "\\"飲み物\\"",
+    "\\"スイーツ\\"",
+    "and \\"日用品\\". The left window poster reads \\"今日も、いい一日を。\\" with \\"Good day. Better tomorrow.\\" below. The right window poster reads \\"さくらの季節をもっと身近に。\\". A pink vertical banner beside the store reads \\"さくらと、いい毎日を。\\". The roadside vertical sign at far right reads \\"海の見える町\\". The downhill road includes the white marking \\"止まれ\\" near the lower distance."
+  ],
+  "splitByPeriodChanged": true,
+  "splitByPeriodResult": [
+    "Prominent readable text and placement: the main illuminated facade at upper left-center reads \\"Sakura Stop\\" with \\"くらしに、さくらを。\\" beneath.",
+    "The right side of the fascia reads \\"いつもの日を、少し特別に。\\" with \\"Small joys. Brighter days.\\" below.",
+    "The tall illuminated sign above the slope reads \\"Sakura Stop\\" and lists \\"たばこ\\"",
+    "\\"お弁当\\"",
+    "\\"飲み物\\"",
+    "\\"スイーツ\\"",
+    "and \\"日用品\\".",
+    "The left window poster reads \\"今日も、いい一日を。\\" with \\"Good day. Better tomorrow.\\" below.",
+    "The right window poster reads \\"さくらの季節をもっと身近に。\\".",
+    "A pink vertical banner beside the store reads \\"さくらと、いい毎日を。\\".",
+    "The roadside vertical sign at far right reads \\"海の見える町\\".",
+    "The downhill road includes the white marking \\"止まれ\\" near the lower distance."
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "Prominent readable text and placement: the main illuminated facade at upper left-center reads \\"Sakura Stop\\" with \\"くらしに",
+    "さくらを",
+    "\\" beneath. The right side of the fascia reads \\"いつもの日を",
+    "少し特別に",
+    "\\" with \\"Small joys. Brighter days.\\" below. The tall illuminated sign above the slope reads \\"Sakura Stop\\" and lists \\"たばこ\\"",
+    "\\"お弁当\\"",
+    "\\"飲み物\\"",
+    "\\"スイーツ\\"",
+    "and \\"日用品\\". The left window poster reads \\"今日も",
+    "いい一日を",
+    "\\" with \\"Good day. Better tomorrow.\\" below. The right window poster reads \\"さくらの季節をもっと身近に",
+    "\\". A pink vertical banner beside the store reads \\"さくらと",
+    "いい毎日を",
+    "\\". The roadside vertical sign at far right reads \\"海の見える町\\". The downhill road includes the white marking \\"止まれ\\" near the lower distance."
+  ]
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > parentheses pipeline [1b4ec68a] 1`] = `
+{
+  "input": "a, (b, c), d",
+  "splitTagsResult": [
+    "a",
+    "(b, c)",
+    "d"
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > quoted comma pipeline [d39a27c4] 1`] = `
+{
+  "input": "with \\"Small joys, Brighter days.\\" below.",
+  "splitTagsResult": [
+    "with \\"Small joys, Brighter days.\\" below."
+  ],
+  "splitByPeriodChanged": false,
+  "changedFromOriginal": true,
+  "originalResult": [
+    "with \\"Small joys",
+    "Brighter days.\\" below."
+  ]
+}
+`;

@@ -432,6 +432,10 @@ const pipelineCases = [
         note: 'parentheses pipeline' },
 
     { input: '一位穿著太空衣的貓、復古老舊的紅色跑車' },
+
+    { input: '一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，背景可以看到远处的老旧居民楼和几棵行道树，自然光线均匀地照射在人物身上，画面呈现出手机实拍的质感，色调真实自然，人物神态平和，背景有日常生活的街道细节。' },
+
+    // ---
 ]
 
 describe('splitTags → splitByPeriod pipeline', async () => {
