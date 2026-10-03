@@ -39,6 +39,9 @@ function isCloseParen(ch) {
 /**
  * 以句號 "." 為分隔符切割字串，並在切割時防護巢狀括號與引號。
  *
+ * 另含與 splitTags 相同的分行規則：\n 優先級最高——不論引號或括號狀態，
+ * 一律觸發切割並保留獨立的 "\n" 標記段（保證 splitTags 產生的標記直通不丟失）。
+ *
  * 算法說明（stack-based 單次遍歷）：
  *   - 維護一個 parenStack 追蹤目前尚未關閉的括號深度。
  *   - 維護一個 quoteChar 追蹤目前是否在引號（" 或 '）內部。
@@ -88,6 +91,17 @@ export function splitByPeriod(str, { includeParen } = {}) {
     // 預先計算：includeParen=false 時，若下一個非空白字元是開括號則停止切割
     const notAllowParen = !includeParen
 
+    // 分行切割：與 splitTags 同規則——分行優先級最高，
+    // 不論引號或括號狀態，\n 一律觸發切割並保留 "\n" 標記；
+    // 切割後括號狀態重設（跨段括號不強制配對）。引號狀態則保留（與 splitTags 一致）。
+    function splitAtNewline(ci) {
+        const seg = str.substring(start, ci)
+        if (seg !== '') parts.push(seg)
+        parts.push('\n')
+        start = ci + 1
+        parenStack.length = 0
+    }
+
     for (let ci = 0; ci < len; ci++) {
         const ch = str[ci]
 
@@ -97,21 +111,34 @@ export function splitByPeriod(str, { includeParen } = {}) {
             if (ch === quoteChar) {
                 quoteChar = null
             }
-            // 在引號內的所有字元（含句號）都不做切割判斷
+            // 分行優先級大於引號：即使在引號內，\n 仍觸發切割
+            if (ch === '\n') {
+                splitAtNewline(ci)
+                continue
+            }
+            // 在引號內的其他字元（含句號）都不做切割判斷
             continue
         } else if (ch === '"') {
             // 雙引號一律視為引號開啟（不會是撇號）
             quoteChar = ch
             continue
         } else if (ch === "'") {
-            // 單引號需區分撇號（it's）與引號開啟（'hello'）。
-            // 撇號的特徵：前後都是 word 字元（字母、數字、底線）。
+            // 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
+            // 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
+            // 選 \S 而非 \w/\p{L}：過嚴會把非 ASCII 相鄰的撇號誤判為引號開頭，
+            // 導致整串未閉合而黏成一段（災難性）；過鬆僅漏開引號（局部）。
             const prevChar = ci > 0 ? str[ci - 1] : ''
             const nextChar = ci < len - 1 ? str[ci + 1] : ''
-            const isApostrophe = /\w/.test(prevChar) && /\w/.test(nextChar)
+            const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
                 quoteChar = ch
             }
+            continue
+        }
+
+        // ── 分行：優先級最高，不論括號狀態一律切割 ──
+        if (ch === '\n') {
+            splitAtNewline(ci)
             continue
         }
 
@@ -126,9 +153,10 @@ export function splitByPeriod(str, { includeParen } = {}) {
         } else if (ch === '.' && parenStack.length === 0) {
             // 僅在括號已全部關閉（parenStack 為空）時才考慮切割
             if (ci < len - 1 && /\s/.test(str[ci + 1])) {
-                // 找出句號與空白後的第一個非空白字元
+                // 找出句號與空白（僅空格/tab）後的第一個非空白字元
+                // 注意：不跳過 \n——換行交由 splitAtNewline 保留 "\n" 標記
                 let nextStart = ci + 1
-                while (nextStart < len && /\s/.test(str[nextStart])) {
+                while (nextStart < len && /[ \t]/.test(str[nextStart])) {
                     nextStart++
                 }
 
@@ -146,8 +174,13 @@ export function splitByPeriod(str, { includeParen } = {}) {
         }
     }
 
-    // 收尾：將最後一段（句號之後或無句號的完整字串）加入
-    parts.push(str.substring(start))
+    // 收尾：將最後一段（句號之後或無句號的完整字串）加入。
+    // 例外：若上一段是 "\n" 標記且尾段為空，不加入空字串
+    //（如輸入 "\n" → ["\n"]，保證 splitTags 標記直通）。
+    const tail = str.substring(start)
+    if (tail !== '' || parts.length === 0 || parts[parts.length - 1] !== '\n') {
+        parts.push(tail)
+    }
 
     return parts
 }

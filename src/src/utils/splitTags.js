@@ -45,6 +45,21 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
     let bracketCount = 0
     let quoteChar = null  // null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元
     let result = []
+
+    // 分行切割：唯一事實來源，引號內／外、括號內／外共用，保證行為完全一致。
+    // 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割。
+    // （括號僅保護逗號，不保護分行；切割後括號狀態重設，跨段括號不強制配對。）
+    function splitAtNewline() {
+        if (temp.trim() !== "") {
+            result.push(temp.trim())
+        }
+        result.push("\n")
+        bracketCount = 0
+        startBracketChar = ''
+        endBracketChar = ''
+        temp = ''
+    }
+
     for (let i = 0; i < length; i++) {
         const char = tags[i]
 
@@ -56,7 +71,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
             }
             // 分行優先級大於引號：即使在引號內，\n 仍觸發切割
             if (char === "\n") {
-                temp += ' '
+                splitAtNewline()
                 continue
             }
             temp += char
@@ -67,11 +82,13 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
             temp += char
             continue
         } else if (char === "'") {
-            // 單引號需區分撇號（it's）與引號開啟（'hello'）。
-            // 撇號的特徵：前後都是 word 字元（字母、數字、底線）。
+            // 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
+            // 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
+            // 選 \S 而非 \w/\p{L}：過嚴會把非 ASCII 相鄰的撇號誤判為引號開頭，
+            // 導致整串未閉合而黏成一段（災難性）；過鬆僅漏開引號（局部）。
             const prevChar = i > 0 ? tags[i - 1] : ''
             const nextChar = i < length - 1 ? tags[i + 1] : ''
-            const isApostrophe = /\w/.test(prevChar) && /\w/.test(nextChar)
+            const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
                 quoteChar = char
                 temp += char
@@ -85,20 +102,8 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
         const converted = convertPunctuation(char)
 
         if (converted === "\n") {
-            if (startBracketChar === '') {
-                // 前面没有括号
-                if (temp.trim() !== "") {
-                    result.push(temp.trim())
-                }
-                result.push("\n")
-                bracketCount = 0
-                startBracketChar = ''
-                endBracketChar = ''
-                temp = ''
-            } else {
-                // 前面有括号
-                temp += ' '
-            }
+            // 分行優先級大於引號：與引號內共用同一切割邏輯
+            splitAtNewline()
         } else if (converted === ",") {
             if (startBracketChar === '') {
                 // 前面没有括号

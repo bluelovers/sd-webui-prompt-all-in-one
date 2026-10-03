@@ -105,9 +105,37 @@ const nonStringGuardCases = [
 const whitespaceCases = [
     { input: 'a.\tb. c',       expected: ['a.', 'b.', 'c'], note: 'tab after period' },
     { input: 'a.\t  \tb. c',   expected: ['a.', 'b.', 'c'], note: 'multiple tabs + spaces' },
-    { input: 'a.\nb. c',       expected: ['a.', 'b.', 'c'], note: 'newline after period' },
+    { input: 'a.\nb. c',       expected: ['a.', '\n', 'b.', 'c'],
+        note: 'newline after period — kept as "\\\\n" marker' },
     { input: 'a.   (b. c)',    args: [{ includeParen: true }], expected: ['a.', '(b. c)'],
         note: 'many spaces then open paren' },
+]
+
+const newlineCases = [
+    { input: 'a\nb',   expected: ['a', '\n', 'b'],
+        note: 'newline always splits — same rule as splitTags (priority > quotes/parens)' },
+    { input: 'a.\nb',  expected: ['a.', '\n', 'b'],
+        note: 'period split AND newline marker both kept' },
+    { input: '\n',     expected: ['\n'],
+        note: 'lone newline — splitTags "\\\\n" marker passthrough unchanged' },
+    { input: 'a\n',    expected: ['a', '\n'],
+        note: 'trailing newline — no empty tail segment' },
+    { input: '\na',    expected: ['\n', 'a'],
+        note: 'leading newline — no empty head segment' },
+    { input: '\n\n',   expected: ['\n', '\n'],
+        note: 'consecutive newlines — one marker each' },
+    { input: '"a\nb"', expected: ['"a', '\n', 'b"'],
+        note: 'newline inside quotes still splits — newline priority > quote' },
+    { input: 'a "b"\nc', expected: ['a "b"', '\n', 'c'],
+        note: 'newline after closed quote' },
+    { input: 'a\nb. c', expected: ['a', '\n', 'b.', 'c'],
+        note: 'newline split then period split' },
+    { input: 'a\nb. c', args: [{ includeParen: true }], expected: ['a', '\n', 'b.', 'c'],
+        note: 'newline split then period split with includeParen=true' },
+    { input: '(a\nb). c', args: [{ includeParen: true }], expected: ['(a', '\n', 'b).', 'c'],
+        note: 'newline in parens splits, paren state reset' },
+    { input: 'a. \n(b)', args: [{ includeParen: false }], expected: ['a.', '\n', '(b)'],
+        note: 'newline priority overrides includeParen=false stop' },
 ]
 
 const realWorldCases = [
@@ -170,6 +198,10 @@ const quoteProtectionCases = [
         args: [{ includeParen: true }],
         expected: ["don't stop.", 'go'],
         note: 'common contraction — no quote protection' },
+    { input: "path\u00e2's stop. go",
+        args: [{ includeParen: true }],
+        expected: ["path\u00e2's stop.", 'go'],
+        note: 'non-ASCII apostrophe (â) — no quote protection' },
     { input: "end with '.",
         args: [{ includeParen: true }],
         expected: ["end with '."],
@@ -198,13 +230,14 @@ describe('splitByPeriod', async () => {
         assert.equal(typeof fn, 'function')
     })
 
-    runCases('basic splitting without brackets',           loadSplitByPeriod, basicCases)
-    runCases('no period at all',                            loadSplitByPeriod, noPeriodCases)
-    runCases('nested bracket protection (includeParen=true)', loadSplitByPeriod, bracketProtectionCases)
-    runCases('includeParen=false — stop splitting before open paren', loadSplitByPeriod, includeParenFalseCases)
-    runCases('mismatched / noisy brackets',                 loadSplitByPeriod, mismatchedBracketCases)
-    runCases('non-string input guard',                      loadSplitByPeriod, nonStringGuardCases)
-    runCases('whitespace handling',                         loadSplitByPeriod, whitespaceCases)
-    runCases('real-world prompt scenarios',                 loadSplitByPeriod, realWorldCases)
-    runCases('quote protection (double & single)',          loadSplitByPeriod, quoteProtectionCases)
+    runCases('basic splitting without brackets',           loadSplitByPeriod, basicCases, { snapshot: true })
+    runCases('no period at all',                            loadSplitByPeriod, noPeriodCases, { snapshot: true })
+    runCases('nested bracket protection (includeParen=true)', loadSplitByPeriod, bracketProtectionCases, { snapshot: true })
+    runCases('includeParen=false — stop splitting before open paren', loadSplitByPeriod, includeParenFalseCases, { snapshot: true })
+    runCases('mismatched / noisy brackets',                 loadSplitByPeriod, mismatchedBracketCases, { snapshot: true })
+    runCases('non-string input guard',                      loadSplitByPeriod, nonStringGuardCases, { snapshot: true })
+    runCases('whitespace handling',                         loadSplitByPeriod, whitespaceCases, { snapshot: true })
+    runCases('newline handling (priority over quotes/parens)', loadSplitByPeriod, newlineCases, { snapshot: true })
+    runCases('real-world prompt scenarios',                 loadSplitByPeriod, realWorldCases, { snapshot: true })
+    runCases('quote protection (double & single)',          loadSplitByPeriod, quoteProtectionCases, { snapshot: true })
 })

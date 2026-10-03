@@ -21,51 +21,68 @@ const assert = require('node:assert/strict')
 const crypto = require('node:crypto')
 
 /**
- * 從輸入值自動產生可讀的測試標題。
- *
- * 規則：
- *   - 短字串（≤ maxLen）：直接加引號
- *   - 長字串（> maxLen）：「{sha256前8碼} {截斷至60字}」
- *   - 其他型別：直接 toString() 加引號
- *
- * @param {*}      input
- * @param {number} [maxLen=100]
+ * 截斷字串並以 "…" 結尾（共用工具）。
+ * @param {string} str
+ * @param {number} [maxLen=60]
  * @returns {string}
  */
-function formatTitle(input, maxLen = 100) {
-    const raw = typeof input === 'string' ? input : String(input)
-    if (raw.length > maxLen) {
-        const hash = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8)
-        const truncated = raw.length > 60 ? raw.slice(0, 60) + '…' : raw
-        return `${hash} ${truncated}`
-    }
-    // 替換控制字元讓標題安全可讀
-    const safe = raw
-        .replace(/\t/g, '\\t')
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-    return `"${safe}"`
+function truncate(str, maxLen = 60) {
+    if (str.length <= maxLen) return str
+    return str.slice(0, maxLen) + '…'
 }
 
 /**
- * 將一個測試案例轉換為比較用的摘要字串，用於自動產生 it() 標題。
+ * 將輸入值字串化為可讀的展示字串：JSON.stringify（精確轉義引號/控制字元）+ 超長截斷。
+ * 例：
+ *   a. b. c                          → "a. b. c"
+ *   with "Small joys." below.        → "with \"Small joys.\" below."（引號正確轉義）
+ *   a<newline>b                      → "a\nb"
+ *
+ * @param {*}      input
+ * @param {number} [maxLen=60] 截斷上限（先截斷再 stringify，避免截斷落在轉義序列中）
+ * @returns {string}
+ */
+function formatTitle(input, maxLen = 60) {
+    const notString = typeof input !== 'string'
+    const raw = notString ? String(input) : input
+
+    let result = truncate(raw, maxLen)
+
+    if (notString && result.length === raw.length) {
+        result = input
+    }
+
+    return JSON.stringify(result)
+}
+
+/**
+ * 產生測試標題 — splitTags 與 splitByPeriod 共用（單一事實來源）。
+ *
+ * 規則：
+ *   - 字串輸入 + 有 note ：「note — [sha256前8碼] "引號包裹值"」（note、hash、值完整呈現）
+ *   - 字串輸入 + 無 note ：「[sha256前8碼] "引號包裹值"」
+ *   - 非字串輸入        ：note，無 note 時以 formatTitle 呈現值
+ *   - 有 args 時附加「 ({...})」後綴（同輸入不同參數時避免標題碰撞）
  *
  * @param {Object} tc
  * @returns {string}
  */
 function caseTitle(tc) {
-    const input = formatTitle(tc.input)
-    const args  = tc.args
-        ? tc.args.map(a => typeof a === 'object' && a !== null
+    let title
+    if (typeof tc.input === 'string') {
+        const identified = `[${promptHash(tc.input)}] ${formatTitle(tc.input)}`
+        title = tc.note ? `${tc.note} — ${identified}` : identified
+    } else {
+        title = tc.note || formatTitle(tc.input)
+    }
+    if (tc.args !== undefined && tc.args.length > 0) {
+        const args = tc.args.map(a => typeof a === 'object' && a !== null
             ? `{${Object.entries(a).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ')}}`
             : JSON.stringify(a)
         ).join(', ')
-        : ''
-    const label = tc.note ? ` — ${tc.note}` : ''
-    if (args) {
-        return `${input} (${args})${label}`
+        title += ` (${args})`
     }
-    return `${input}${label}`
+    return title
 }
 
 /**
@@ -83,6 +100,9 @@ function caseTitle(tc) {
  *   @param {Function} [tc.assert] - 自訂斷言函式(fn(result) → void)，
  *                                    若提供則取代預設 deepEqual。
  *   @param {boolean}  [tc.skip]   - 若為 true 則跳過此案例。
+ * @param {Object}   [options]           - 額外選項。
+ *   @param {boolean} [options.snapshot] - true 時額外寫入快照
+ *                                         { input, args?, result }（與 splitTags 同格式）。
  *
  * @example
  *   // 直接傳入已載入的函式
@@ -90,18 +110,29 @@ function caseTitle(tc) {
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
  *   ])
  *
+ *   // 啟用快照
+ *   runCases('basic', myFn, [ ... ], { snapshot: true })
+ *
  *   // 傳入 factory function（lazy import）
  *   runCases('basic', () => import('./myModule.js').then(m => m.default), [
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
  *   ])
  */
-function runCases(suiteName, fn, cases) {
+function runCases(suiteName, fn, cases, options = {}) {
+    // snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式）
+    const { snapshot = false } = options
     describe(suiteName, async () => {
         const resolvedFn = typeof fn === 'function' ? await fn() : fn
         for (const tc of cases) {
             const title = caseTitle(tc)
-            const handler = async () => {
+            const handler = async (t) => {
                 const result = await resolvedFn(tc.input, ...(tc.args || []))
+                if (snapshot) {
+                    const snap = { input: tc.input }
+                    if (tc.args !== undefined) snap.args = tc.args
+                    snap.result = result
+                    t.assert.snapshot(snap)
+                }
                 if (tc.assert) {
                     tc.assert(result)
                 } else {
@@ -153,17 +184,6 @@ function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
  */
 function promptHash(str) {
     return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
-}
-
-/**
- * 截斷字串並以 "…" 結尾。
- * @param {string} str
- * @param {number} maxLen
- * @returns {string}
- */
-function truncate(str, maxLen = 60) {
-    if (str.length <= maxLen) return str
-    return str.slice(0, maxLen) + '…'
 }
 
 module.exports = { runCases, formatTitle, caseTitle, compareWithOriginal, attachOriginalComparison, promptHash, truncate }

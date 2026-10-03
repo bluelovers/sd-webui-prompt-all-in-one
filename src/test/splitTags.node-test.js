@@ -19,7 +19,7 @@
 
 const { describe, it } = require('node:test')
 const assert = require('node:assert/strict')
-const { compareWithOriginal, attachOriginalComparison, promptHash, truncate } = require('./helpers/node-test-helpers')
+const { compareWithOriginal, attachOriginalComparison, caseTitle } = require('./helpers/node-test-helpers')
 
 /* ====================================================================
  *  工具函式
@@ -52,24 +52,6 @@ async function loadOriginal() {
 async function loadSplitByPeriod() {
     const mod = await import('../src/utils/splitByPeriod.js')
     return mod.default
-}
-
-/**
- * 產生測試標題。
- * - 短輸入（≤ 100 字元）：直接使用 note
- * - 長輸入（> 100 字元）：「{hash} {截斷輸入}」
- *
- * @param {Object} tc
- * @returns {string}
- */
-function testTitle(tc) {
-    if (tc.input && typeof tc.input === 'string') {
-        if (!tc.note) {
-            return `[${promptHash(tc.input)}] ${truncate(tc.input)}`
-        }
-        return `${tc.note || 'unnamed'} [${promptHash(tc.input)}]`
-    }
-    return tc.note || 'unnamed'
 }
 
 /* ====================================================================
@@ -285,6 +267,20 @@ const cases = [
         note: 'boolean false input',
         expectOriginalChanged: false },
 
+    // ── 分行邊界 ──
+    { input: '\n',
+        note: 'newline only — whitespace guard returns []' },
+    { input: '\n\n\n',
+        note: 'multiple newlines only — collapsed then guard returns []' },
+    { input: ' \n ',
+        note: 'whitespace + newline — guard returns []' },
+    { input: 'abc\n',
+        note: 'trailing newline — splits, marker at end' },
+    { input: '\nabc',
+        note: 'leading newline — marker at start' },
+    { input: 'a BREAK\nb',
+        note: 'newline directly after BREAK — marker follows BREAK' },
+
     // ── prompt weight ──
     { input: '(fire extinguisher: 1.0, 2.0), a',
         note: 'weight syntax — inner comma preserved',
@@ -299,12 +295,103 @@ const cases = [
         note: 'multiple quoted segments with commas' },
     { input: "it's a, b, c",
         note: 'apostrophe — not a quote opener' },
-    { input: 'a, "b, c',
-        note: 'unclosed quote — rest protected to end' },
+    { input: "pathâ's leading line",
+        note: 'apostrophe after non-ASCII letter (â) — not a quote opener' },
+    { input: "\ud83d\ude80's launch, next",
+        note: 'apostrophe after emoji — not a quote opener' },
+    { input: "a,'b, c'",
+        note: 'known: quote directly after comma (no space) — \\S rule treats as apostrophe, falls back to original behavior',
+        expectOriginalChanged: false },
+    { input: "caf\u00e9's best, \"it's fine\"",
+        note: 'non-ASCII apostrophe + quoted apostrophe' },
+    { input: '"quoted\nnewline", next',
+        note: 'newline inside quotes still splits' },
+    { input: 'line one\nline two',
+        note: 'newline outside quotes — baseline structure' },
+    { input: '"line one\nline two"',
+        note: 'newline inside quotes — identical structure to outside (\\n marker included)' },
+    { input: 'pre "quoted\nnext" post',
+        note: 'quote opens mid-text, newline still splits with marker' },
     { input: '"a, b"\n"c, d"',
         note: 'quoted segments with newline between' },
     { input: '"a, b"\nc, d',
         note: 'quoted then newline then unquoted split' },
+
+    // ── 未閉合引號 ──
+    { input: 'a, "b, c',
+        note: 'unclosed double quote — comma protected to end' },
+    { input: "a, 'b, c",
+        note: 'unclosed single quote — comma protected to end' },
+    { input: 'pre "quoted\nnext',
+        note: 'unclosed double quote + newline — newline still splits' },
+    { input: "pre 'quoted\nnext",
+        note: 'unclosed single quote + newline — newline still splits' },
+    { input: '"a, b, c',
+        note: 'entire input is unclosed quote — no split' },
+    { input: 'x, y, "z',
+        note: 'splits before quote opens, rest protected' },
+    { input: 'a, "',
+        note: 'unclosed quote with only quote char' },
+    { input: 'a, "好、壞',
+        note: 'unclosed quote + Chinese enumeration comma — preserved, not converted' },
+    { input: 'a, "b, BREAK',
+        note: 'unclosed quote + BREAK — BREAK not keyword inside quote' },
+    { input: "a, 'it's fine",
+        note: 'unclosed single quote after apostrophe — first quote opens, second is content' },
+
+    // ── 引號緊鄰分行前後 ──
+    { input: '"a"\nb',
+        note: 'closed quote directly before newline' },
+    { input: "'a'\nb",
+        note: 'closed single quote directly before newline' },
+    { input: 'a\n"b"',
+        note: 'quote opens directly after newline' },
+    { input: "a\n'b'",
+        note: 'single quote opens directly after newline — prev is \\n, not apostrophe' },
+    { input: '"a"\n"b"',
+        note: 'quotes on both sides of newline' },
+    { input: 'a\n"b\nc',
+        note: 'unclosed quote starts right after newline — inner newline still splits' },
+    { input: '"a\n',
+        note: 'unclosed quote ends at newline — split, empty tail dropped' },
+    { input: '\n"a',
+        note: 'newline at start then unclosed quote' },
+
+    // ── 括號內分行 ──
+    { input: '(a\nb)',
+        note: 'newline in parens — splits, comma rule unaffected' },
+    { input: '[a\nb]',
+        note: 'newline in square brackets — splits' },
+    { input: '{a\nb}',
+        note: 'newline in curly braces — splits' },
+    { input: '(a, b\nc, d)',
+        note: 'newline in parens — inner comma still protected' },
+    { input: '([a\nb])',
+        note: 'newline in nested brackets — splits, state reset' },
+    { input: '(a "b\nc")',
+        note: 'newline in brackets inside quote — splits' },
+
+    // ── 混合引號：單引號與雙引號同時存在 ──
+    { input: "\"a\" 'b', c",
+        note: 'both quote types closed, comma outside splits' },
+    { input: "'a \"b\" c', d",
+        note: 'double quotes inside single quote — inner comma protected' },
+    { input: "\"a, 'b, c'\"",
+        note: 'single quotes inside double quote — inner comma protected' },
+    { input: "\"it's fine, really\"",
+        note: 'apostrophe inside double quotes — content, comma protected' },
+    { input: "'a \"b, c\" d'",
+        note: 'double-quoted comma inside single quotes — protected' },
+    { input: "\"a\" 'b'\nc",
+        note: 'both quote types closed before newline' },
+    { input: "'a'\n\"b\"",
+        note: 'single quote before newline, double quote after' },
+    { input: "\"a 'b' c\"\nd",
+        note: 'mixed quotes inside double quotes, then newline' },
+    { input: "a \"b 'c",
+        note: 'unclosed double quote containing single quote char' },
+    { input: "'a \"b'",
+        note: 'single quote containing double quote char, closed' },
 
     // ── 真實場景摘錄 ──
     { input: '"くらしに、さくらを。" beneath',
@@ -341,7 +428,7 @@ const cases = [
  */
 function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
     for (const tc of cases) {
-        const title = testTitle(tc)
+        const title = caseTitle(tc)
         it(title, (t) => {
             // Step 1: splitTags 切割
             const tagResult = splitTags(tc.input, ...(tc.args || []))
@@ -432,6 +519,11 @@ const pipelineCases = [
         note: 'parentheses pipeline' },
 
     { input: '一位穿著太空衣的貓、復古老舊的紅色跑車' },
+
+    // 分行 marker 管線直通
+    { input: 'line one\nline two',
+        note: 'pipeline newline — splitTags "\\\\n" marker passes through splitByPeriod unchanged',
+        expectChanged: false },
 
     { input: '一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，背景可以看到远处的老旧居民楼和几棵行道树，自然光线均匀地照射在人物身上，画面呈现出手机实拍的质感，色调真实自然，人物神态平和，背景有日常生活的街道细节。' },
 
