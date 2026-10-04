@@ -1,5 +1,22 @@
 export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) => {
     if (tags === null || tags === undefined || tags === false || tags === "" || tags.trim() === "") return []
+    return splitRaw(tags, true, autoBreakBeforeWrap, autoBreakAfterWrap)
+}
+
+/**
+ * 分割核心（可遞迴重處理）。
+ *
+ * @param {string}  tags
+ * @param {boolean} allowSingleQuote - 是否允許單引號開啟引號。
+ *   主呼叫為 true；當分段（分行或收尾）時發現單引號未關閉（quoteChar 為單引號），
+ *   該段會以 false 遞迴重處理——忽略此未關閉的單引號，
+ *   重新套用逗號／分行／BREAK／括號切割規則。
+ *   雙引號不受影響（未關閉雙引號仍保護到結尾）。
+ * @param {boolean} autoBreakBeforeWrap
+ * @param {boolean} autoBreakAfterWrap
+ * @returns {string[]}
+ */
+function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWrap) {
 
     // 中文/日文標點轉換（原為全域 pre-process，改為在迴圈內 quote-aware 執行）
     // 避免引號內的「、」。「」被提前轉換，失去原始語義。
@@ -46,13 +63,26 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
     let quoteChar = null  // null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元
     let result = []
 
+    // 推送一段文字：唯一的事實來源，分行分段、逗號分段、BREAK、收尾皆共用。
+    // 若此時單引號未關閉（false positive，如所有格 orks'），
+    // 忽略該單引號、以 allowSingleQuote=false 遞迴重處理此段，
+    // 重新套用逗號／分行／BREAK／括號規則後再推送結果。
+    // 未關閉的雙引號不觸發重處理（保持保護到結尾的既有行為）。
+    function pushSegment() {
+        const text = temp.trim()
+        if (text === '') return
+        if (allowSingleQuote && quoteChar === "'") {
+            result.push(...splitRaw(text, false, autoBreakBeforeWrap, autoBreakAfterWrap))
+        } else {
+            result.push(text)
+        }
+    }
+
     // 分行切割：唯一事實來源，引號內／外、括號內／外共用，保證行為完全一致。
     // 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割。
     // （括號僅保護逗號，不保護分行；切割後括號狀態重設，跨段括號不強制配對。）
     function splitAtNewline() {
-        if (temp.trim() !== "") {
-            result.push(temp.trim())
-        }
+        pushSegment()
         result.push("\n")
         bracketCount = 0
         startBracketChar = ''
@@ -81,11 +111,13 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
             quoteChar = char
             temp += char
             continue
-        } else if (char === "'") {
+        } else if (char === "'" && allowSingleQuote) {
             // 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
             // 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
             // 選 \S 而非 \w/\p{L}：過嚴會把非 ASCII 相鄰的撇號誤判為引號開頭，
             // 導致整串未閉合而黏成一段（災難性）；過鬆僅漏開引號（局部）。
+            // allowSingleQuote=false（未關閉單引號的重處理）時跳過此分支，
+            // 單引號視為一般字元，逗號照常切割。
             const prevChar = i > 0 ? tags[i - 1] : ''
             const nextChar = i < length - 1 ? tags[i + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
@@ -107,7 +139,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
         } else if (converted === ",") {
             if (startBracketChar === '') {
                 // 前面没有括号
-                result.push(temp.trim())
+                pushSegment()
                 bracketCount = 0
                 startBracketChar = ''
                 endBracketChar = ''
@@ -127,7 +159,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
                     temp += converted
                 } else {
                     if (converted === " " && temp.trim() === 'BREAK') {
-                        result.push(temp.trim())
+                        pushSegment()
                         bracketCount = 0
                         startBracketChar = ''
                         endBracketChar = ''
@@ -136,7 +168,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
                         temp += converted
                         if (temp.endsWith(' BREAK')) {
                             temp = temp.substring(0, temp.length - ' BREAK'.length)
-                            result.push(temp.trim())
+                            pushSegment()
                             result.push('BREAK')
                             bracketCount = 0
                             startBracketChar = ''
@@ -168,9 +200,7 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
             }
         }
     }
-    if (temp !== '') {
-        result.push(temp.trim())
-    }
+    pushSegment()
 
     let result2 = []
     for (let value of result) {

@@ -736,7 +736,7 @@ exports[`splitByPeriod > quote protection (double & single) > unclosed double qu
 }
 `;
 
-exports[`splitByPeriod > quote protection (double & single) > unclosed single quote — rest is protected to end — [cd6115d8] \"a. 'b. c\" ({includeParen: true}) 1`] = `
+exports[`splitByPeriod > quote protection (double & single) > unclosed single quote — ignored at segmentation, period splits (same rule as splitTags) — [cd6115d8] \"a. 'b. c\" ({includeParen: true}) 1`] = `
 {
   "input": "a. 'b. c",
   "args": [
@@ -746,7 +746,8 @@ exports[`splitByPeriod > quote protection (double & single) > unclosed single qu
   ],
   "result": [
     "a.",
-    "'b. c"
+    "'b.",
+    "c"
   ]
 }
 `;
@@ -809,6 +810,178 @@ exports[`splitByPeriod > real-world prompt scenarios > [fb07e75e] \"(masterpiece
   "result": [
     "(masterpiece:1.0), best quality.",
     "1girl, {red hair}"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > consecutive semicolons preserved — not condensed — [1594b656] \"legs;;; gnarled\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "legs;;; gnarled",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "legs;;;",
+    "gnarled"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > default off — semicolon is not a split point — [10a5d3f6] \"her legs; gnarled trees\" 1`] = `
+{
+  "input": "her legs; gnarled trees",
+  "result": [
+    "her legs; gnarled trees"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > enabled — splits like period, delimiter kept at segment end — [10a5d3f6] \"her legs; gnarled trees\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "her legs; gnarled trees",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "her legs;",
+    "gnarled trees"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > explicitly off — [10a5d3f6] \"her legs; gnarled trees\" ({splitSemicolon: false}) 1`] = `
+{
+  "input": "her legs; gnarled trees",
+  "args": [
+    {
+      "splitSemicolon": false
+    }
+  ],
+  "result": [
+    "her legs; gnarled trees"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > includeParen=false stops at paren (same as period) — [dc359986] \"a; (b; c)\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "a; (b; c)",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "a; (b; c)"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > no whitespace after — no split (same mechanism as period) — [7c1225c1] \"a;;b\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "a;;b",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "a;;b"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > semicolon and period share the same mechanism — [395d8ed7] \"a; b. c\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "a; b. c",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "a;",
+    "b.",
+    "c"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > semicolon before newline — split, newline marker kept — [8f82902a] \"a;\\nb\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "a;\\nb",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "a;",
+    "\\n",
+    "b"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > semicolon inside double quotes protected — [2ccd5dfe] \"with \\\"a; b\\\" end\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "with \\"a; b\\" end",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "with \\"a; b\\" end"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > semicolon inside parens protected, after close splits — [37040df0] \"(a; b); c\" ({splitSemicolon: true, includeParen: true}) 1`] = `
+{
+  "input": "(a; b); c",
+  "args": [
+    {
+      "splitSemicolon": true,
+      "includeParen": true
+    }
+  ],
+  "result": [
+    "(a; b);",
+    "c"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > trailing semicolon — no split, preserved — [52f361ed] \"legs;\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "legs;",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "legs;"
+  ]
+}
+`;
+
+exports[`splitByPeriod > semicolon splitting (splitSemicolon option, default off) > unclosed single quote (possessive) ignored — semicolon still splits — [88db725e] \"orks' legs; gnarled trees\" ({splitSemicolon: true}) 1`] = `
+{
+  "input": "orks' legs; gnarled trees",
+  "args": [
+    {
+      "splitSemicolon": true
+    }
+  ],
+  "result": [
+    "orks' legs;",
+    "gnarled trees"
   ]
 }
 `;

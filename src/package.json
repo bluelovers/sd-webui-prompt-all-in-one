@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "test": "node --test --test-update-snapshots test/**/*.node-test.js",
+    "test": "node --run test:node",
+    "test:node": "node --test --test-update-snapshots test/**/*.node-test.js",
+    "posttest": "pnpm run build",
     "build": "vite build",
     "build:watch": "vite build --watch",
     "preview": "vite preview"

@@ -26,6 +26,7 @@
                             v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                             v-model:auto-split-by-period="autoSplitByPeriod"
                             v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
+                            v-model:auto-split-by-period-semicolon="autoSplitByPeriodSemicolon"
                             v-model:auto-split-by-period-remove-wrap-comma="autoSplitByPeriodRemoveWrapComma"
                             :hide-default-input="item.hideDefaultInput"
                             @update:hide-default-input="onUpdateHideDefaultInput(item.id, $event)"
@@ -101,6 +102,7 @@
                        v-model:auto-remove-before-line-comma="autoRemoveBeforeLineComma"
                        v-model:auto-split-by-period="autoSplitByPeriod"
                        v-model:auto-split-by-period-include-paren="autoSplitByPeriodIncludeParen"
+                       v-model:auto-split-by-period-semicolon="autoSplitByPeriodSemicolon"
                        v-model:auto-split-by-period-remove-wrap-comma="autoSplitByPeriodRemoveWrapComma"
         ></prompt-format>
         <blacklist ref="blacklist" v-model:language-code="languageCode"
@@ -317,6 +319,7 @@ export default {
             autoRemoveBeforeLineComma: false,
             autoSplitByPeriod: false,
             autoSplitByPeriodIncludeParen: false,
+            autoSplitByPeriodSemicolon: false,
             autoSplitByPeriodRemoveWrapComma: false,
             // hideDefaultInput: false,
             enableTooltip: true,
@@ -561,6 +564,23 @@ export default {
             },
             immediate: false,
         },
+        // autoSplitByPeriodSemicolon：子選項變更需重新分割 tags 再重新產生輸出
+        // 原因：此選項控制 ";" 是否併入句號機制成為分割點，
+        // 需要重新執行 applySplitByPeriod() 才能將既有含分號的 tag 分割。
+        autoSplitByPeriodSemicolon: {
+            handler: function (val, oldVal) {
+                if (!this.startWatchSave) return
+                console.log('onAutoSplitByPeriodSemicolonChange', val)
+                this.gradioAPI.setData('autoSplitByPeriodSemicolon', val).then(data => {
+                    this.prompts.forEach(item => {
+                        this.$refs[item.id][0].applySplitByPeriod()
+                        this.$refs[item.id][0].updatePrompt()
+                    })
+                }).catch(err => {
+                })
+            },
+            immediate: false,
+        },
         // autoSplitByPeriodRemoveWrapComma：子選項變更需重新分割 tags 再重新產生輸出
         // 原因：此選項改變 shouldRemoveLastComma 的判定邏輯，影響 splitNoComma 的設定，
         // 需要重新執行 applySplitByPeriod() 才能正確反映在輸出中。
@@ -753,6 +773,7 @@ export default {
                 'autoRemoveBeforeLineComma',
                 'autoSplitByPeriod',
                 'autoSplitByPeriodIncludeParen',
+                'autoSplitByPeriodSemicolon',
                 'autoSplitByPeriodRemoveWrapComma',
                 /*'hideDefaultInput', */
                 'translateApi',
@@ -861,6 +882,9 @@ export default {
                 }
                 if (data.autoSplitByPeriodIncludeParen !== null) {
                     this.autoSplitByPeriodIncludeParen = data.autoSplitByPeriodIncludeParen
+                }
+                if (data.autoSplitByPeriodSemicolon !== null) {
+                    this.autoSplitByPeriodSemicolon = data.autoSplitByPeriodSemicolon
                 }
                 if (data.autoSplitByPeriodRemoveWrapComma !== null) {
                     this.autoSplitByPeriodRemoveWrapComma = data.autoSplitByPeriodRemoveWrapComma

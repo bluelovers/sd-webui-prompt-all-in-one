@@ -950,6 +950,41 @@ exports[`splitTags > quotes on both sides of newline — [4a362fea] \"\\\"a\\\"\
 }
 `;
 
+exports[`splitTags > re-process: unclosed single ignored, closed double quote still protects — [c9b473a3] \"x 'a \\\"b, c\\\" d, e\\nnext\" 1`] = `
+{
+  "input": "x 'a \\"b, c\\" d, e\\nnext",
+  "result": [
+    "x 'a \\"b, c\\" d",
+    "e",
+    "\\n",
+    "next"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "x 'a \\"b",
+    "c\\" d",
+    "e",
+    "\\n",
+    "next"
+  ]
+}
+`;
+
+exports[`splitTags > real-world: unclosed single quote (orks') ignored at segmentation — comma rules re-applied, newlines split — [497823a0] \"her fingers and the orks' legs; gnarled dead trees stand as …\" 1`] = `
+{
+  "input": "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \\n#, \\npixelated",
+  "result": [
+    "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges",
+    "dense fog swallows the middle distance",
+    "\\n",
+    "#",
+    "\\n",
+    "pixelated"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
 exports[`splitTags > single quote before newline, double quote after — [1110acef] \"'a'\\n\\\"b\\\"\" 1`] = `
 {
   "input": "'a'\\n\\"b\\"",
@@ -1212,19 +1247,15 @@ exports[`splitTags > unclosed single quote after apostrophe — first quote open
 }
 `;
 
-exports[`splitTags > unclosed single quote — comma protected to end — [9637b550] \"a, 'b, c\" 1`] = `
+exports[`splitTags > unclosed single quote — ignored at segmentation, comma splits (matches original) — [9637b550] \"a, 'b, c\" 1`] = `
 {
   "input": "a, 'b, c",
   "result": [
     "a",
-    "'b, c"
-  ],
-  "changedFromOriginal": true,
-  "originalResult": [
-    "a",
     "'b",
     "c"
-  ]
+  ],
+  "changedFromOriginal": false
 }
 `;
 
@@ -1613,6 +1644,31 @@ exports[`splitTags → splitByPeriod pipeline > pipeline newline — splitTags \
     "line two"
   ],
   "splitByPeriodChanged": false,
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags → splitByPeriod pipeline > pipeline splitSemicolon — semicolon splits like period (option B) — [497823a0] \"her fingers and the orks' legs; gnarled dead trees stand as …\" 1`] = `
+{
+  "input": "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \\n#, \\npixelated",
+  "splitTagsResult": [
+    "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges",
+    "dense fog swallows the middle distance",
+    "\\n",
+    "#",
+    "\\n",
+    "pixelated"
+  ],
+  "splitByPeriodChanged": true,
+  "splitByPeriodResult": [
+    "her fingers and the orks' legs;",
+    "gnarled dead trees stand as dark silhouettes at the frame edges",
+    "dense fog swallows the middle distance",
+    "\\n",
+    "#",
+    "\\n",
+    "pixelated"
+  ],
   "changedFromOriginal": false
 }
 `;

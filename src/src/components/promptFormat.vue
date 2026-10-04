@@ -74,6 +74,12 @@
                 </div>
                 <div class="format-item" v-if="autoSplitByPeriod" style="padding-left: 20px;">
                     <input class="format-checkbox" type="checkbox"
+                           :checked="autoSplitByPeriodSemicolon"
+                           @change="$emit('update:autoSplitByPeriodSemicolon', $event.target.checked)">
+                    <div class="format-desc" v-html="getLang('is_split_by_period_semicolon')"></div>
+                </div>
+                <div class="format-item" v-if="autoSplitByPeriod" style="padding-left: 20px;">
+                    <input class="format-checkbox" type="checkbox"
                            :checked="autoSplitByPeriodRemoveWrapComma"
                            @change="$emit('update:autoSplitByPeriodRemoveWrapComma', $event.target.checked)">
                     <div class="format-desc" v-html="getLang('is_split_by_period_remove_wrap_comma')"></div>
@@ -140,6 +146,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        autoSplitByPeriodSemicolon: {
+            type: Boolean,
+            default: false,
+        },
         autoSplitByPeriodRemoveWrapComma: {
             type: Boolean,
             default: false,
@@ -163,6 +173,7 @@ export default {
         'update:autoRemoveBeforeLineComma',
         'update:autoSplitByPeriod',
         'update:autoSplitByPeriodIncludeParen',
+        'update:autoSplitByPeriodSemicolon',
         'update:autoSplitByPeriodRemoveWrapComma',
     ],
     computed: {},

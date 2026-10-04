@@ -321,7 +321,10 @@ const cases = [
     { input: 'a, "b, c',
         note: 'unclosed double quote — comma protected to end' },
     { input: "a, 'b, c",
-        note: 'unclosed single quote — comma protected to end' },
+        note: 'unclosed single quote — ignored at segmentation, comma splits (matches original)',
+        expectOriginalChanged: false },
+    { input: "x 'a \"b, c\" d, e\nnext",
+        note: 're-process: unclosed single ignored, closed double quote still protects' },
     { input: 'pre "quoted\nnext',
         note: 'unclosed double quote + newline — newline still splits' },
     { input: "pre 'quoted\nnext",
@@ -408,6 +411,11 @@ const cases = [
         note: 'excerpt: period-space splits outside quotes' },
     { input: 'The right window poster reads "さくらの季節をもっと身近に。".',
         note: 'excerpt: Japanese period then trailing English period' },
+
+    // ── 真實場景 ──
+    { input: "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \n#, \npixelated",
+        note: "real-world: unclosed single quote (orks') ignored at segmentation — comma rules re-applied, newlines split",
+        expectOriginalChanged: false },
 ]
 
 /* ====================================================================
@@ -437,7 +445,7 @@ function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
             let finalResult = tagResult
             let changed = false
             if (splitByPeriod) {
-                finalResult = tagResult.flatMap(tag => splitByPeriod(tag))
+                finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
                 changed = JSON.stringify(tagResult) !== JSON.stringify(finalResult)
 
                 if (tc.expectChanged !== undefined) {
@@ -524,6 +532,13 @@ const pipelineCases = [
     { input: 'line one\nline two',
         note: 'pipeline newline — splitTags "\\\\n" marker passes through splitByPeriod unchanged',
         expectChanged: false },
+
+    // 分號切割選項（splitSemicolon，預設關閉；開啟時併入句號機制）
+    { input: "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \n#, \npixelated",
+        note: 'pipeline splitSemicolon — semicolon splits like period (option B)',
+        splitByPeriodOptions: { splitSemicolon: true },
+        expectChanged: true,
+        expectOriginalChanged: false },
 
     { input: '一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，背景可以看到远处的老旧居民楼和几棵行道树，自然光线均匀地照射在人物身上，画面呈现出手机实拍的质感，色调真实自然，人物神态平和，背景有日常生活的街道细节。' },
 

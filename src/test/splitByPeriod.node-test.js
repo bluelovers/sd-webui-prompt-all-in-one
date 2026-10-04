@@ -111,6 +111,33 @@ const whitespaceCases = [
         note: 'many spaces then open paren' },
 ]
 
+const semicolonCases = [
+    { input: 'her legs; gnarled trees', expected: ['her legs; gnarled trees'],
+        note: 'default off — semicolon is not a split point' },
+    { input: 'her legs; gnarled trees', args: [{ splitSemicolon: false }], expected: ['her legs; gnarled trees'],
+        note: 'explicitly off' },
+    { input: 'her legs; gnarled trees', args: [{ splitSemicolon: true }], expected: ['her legs;', 'gnarled trees'],
+        note: 'enabled — splits like period, delimiter kept at segment end' },
+    { input: 'a; b. c', args: [{ splitSemicolon: true }], expected: ['a;', 'b.', 'c'],
+        note: 'semicolon and period share the same mechanism' },
+    { input: 'legs;;; gnarled', args: [{ splitSemicolon: true }], expected: ['legs;;;', 'gnarled'],
+        note: 'consecutive semicolons preserved — not condensed' },
+    { input: 'a;;b', args: [{ splitSemicolon: true }], expected: ['a;;b'],
+        note: 'no whitespace after — no split (same mechanism as period)' },
+    { input: 'legs;', args: [{ splitSemicolon: true }], expected: ['legs;'],
+        note: 'trailing semicolon — no split, preserved' },
+    { input: 'with "a; b" end', args: [{ splitSemicolon: true }], expected: ['with "a; b" end'],
+        note: 'semicolon inside double quotes protected' },
+    { input: '(a; b); c', args: [{ splitSemicolon: true, includeParen: true }], expected: ['(a; b);', 'c'],
+        note: 'semicolon inside parens protected, after close splits' },
+    { input: 'a; (b; c)', args: [{ splitSemicolon: true }], expected: ['a; (b; c)'],
+        note: 'includeParen=false stops at paren (same as period)' },
+    { input: 'a;\nb', args: [{ splitSemicolon: true }], expected: ['a;', '\n', 'b'],
+        note: 'semicolon before newline — split, newline marker kept' },
+    { input: "orks' legs; gnarled trees", args: [{ splitSemicolon: true }], expected: ["orks' legs;", 'gnarled trees'],
+        note: 'unclosed single quote (possessive) ignored — semicolon still splits' },
+]
+
 const newlineCases = [
     { input: 'a\nb',   expected: ['a', '\n', 'b'],
         note: 'newline always splits — same rule as splitTags (priority > quotes/parens)' },
@@ -184,8 +211,8 @@ const quoteProtectionCases = [
         note: 'unclosed double quote — rest is protected to end' },
     { input: "a. 'b. c",
         args: [{ includeParen: true }],
-        expected: ["a.", "'b. c"],
-        note: 'unclosed single quote — rest is protected to end' },
+        expected: ["a.", "'b.", 'c'],
+        note: 'unclosed single quote — ignored at segmentation, period splits (same rule as splitTags)' },
     { input: '"it\'s a. b. c". d',
         args: [{ includeParen: true }],
         expected: ['"it\'s a. b. c".', 'd'],
@@ -238,6 +265,7 @@ describe('splitByPeriod', async () => {
     runCases('non-string input guard',                      loadSplitByPeriod, nonStringGuardCases, { snapshot: true })
     runCases('whitespace handling',                         loadSplitByPeriod, whitespaceCases, { snapshot: true })
     runCases('newline handling (priority over quotes/parens)', loadSplitByPeriod, newlineCases, { snapshot: true })
+    runCases('semicolon splitting (splitSemicolon option, default off)', loadSplitByPeriod, semicolonCases, { snapshot: true })
     runCases('real-world prompt scenarios',                 loadSplitByPeriod, realWorldCases, { snapshot: true })
     runCases('quote protection (double & single)',          loadSplitByPeriod, quoteProtectionCases, { snapshot: true })
 })
