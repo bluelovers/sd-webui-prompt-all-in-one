@@ -1166,7 +1166,7 @@ export default {
             let i = 0
             while (i < this.tags.length) {
                 let tag = this.tags[i]
-                // 跳過不應分割的標籤：換行、BREAK、Lora、Lyco
+                /** 跳過不應分割的標籤：換行、BREAK、Lora、Lyco */
                 if (tag?.type === 'wrap' || tag.value === 'BREAK' || tag.isLora || tag.isLyco) {
                     i++
                     continue
@@ -1174,44 +1174,52 @@ export default {
 
                 let nextTag = this.tags[i + 1] || null
 
-                // 巢狀括號防護：stack-based 單次遍歷，僅在括號已完全關閉的位置切割。
-                // 算法已抽離至 @/utils/splitByPeriod.js，此處直接呼叫。
+                /**
+                 * 巢狀括號防護：stack-based 單次遍歷，僅在括號已完全關閉的位置切割。
+                 * 算法已抽離至 @/utils/splitByPeriod.js，此處直接呼叫。
+                 */
                 const parts = splitByPeriod(tag.value, {
                     includeParen: this.autoSplitByPeriodIncludeParen,
                     splitSemicolon: this.autoSplitByPeriodSemicolon,
                 })
 
-                // 需滿足：至少有 2 段 + 首段非空 + 末段非空
+                /** 需滿足：至少有 2 段 + 首段非空 + 末段非空 */
                 if (parts.length > 1 && parts[0] !== '' && parts[parts.length - 1] !== '') {
                     let shouldRemoveLastComma = this._shouldRemoveLastComma(tag, nextTag, true)
 
-                    // 移除舊 tag，轉換新 parts 並直接插入對應位置
+                    /** 移除舊 tag，轉換新 parts 並直接插入對應位置 */
                     this.tags.splice(i, 1)
                     parts.forEach((part, index) => {
                         this._appendTag(part, '', false, i + index, 'text')
-                        // 不依賴 _appendTag 回傳值（index>=0 時回傳 index-1，與實際插入位置不符）
-                        // 直接使用已知的插入位置 i + index
+                        /**
+                         * 不依賴 _appendTag 回傳值（index>=0 時回傳 index-1，與實際插入位置不符）
+                         * 直接使用已知的插入位置 i + index
+                         */
                         let tagIndex = i + index
                         let isIntermediate = index < parts.length - 1
-                        // 中間段：永遠不加逗號（原本是同一個 tag 的一部分）
-                        // 最後一段：shouldRemoveLastComma=true 時不加（移除逗號）
+                        /**
+                         * 中間段：永遠不加逗號（原本是同一個 tag 的一部分）
+                         * 最後一段：shouldRemoveLastComma=true 時不加（移除逗號）
+                         */
                         if (isIntermediate || shouldRemoveLastComma) {
                             this.tags[tagIndex].splitNoComma = true
                         }
                     })
 
-                    // 跳過剛才新插入的這些標籤，繼續往後檢查
+                    /** 跳過剛才新插入的這些標籤，繼續往後檢查 */
                     i += parts.length
                 } else {
-                    // 未觸發分割：僅 tag 以句號結尾時才進入逗號移除判定
+                    /** 未觸發分割：僅 tag 以句號結尾時才進入逗號移除判定 */
                     let hasTrailingPeriod = /\.\s*$/.test(tag.value)
 
                     if (this._shouldRemoveLastComma(tag, nextTag, hasTrailingPeriod)) {
                         tag.splitNoComma = true
                     } else if (!hasTrailingPeriod) {
-                        // 清除 history 載入時由 _restoreTagProperties 還原的過期 splitNoComma：
-                        // 舊 session 中 tag 曾以句號結尾而被標記，但當前 value 已不含句號，
-                        // 表示使用者已编辑或 prompt 結構已變動，應移除不再適用的標記
+                        /**
+                         * 清除 history 載入時由 _restoreTagProperties 還原的過期 splitNoComma：
+                         * 舊 session 中 tag 曾以句號結尾而被標記，但當前 value 已不含句號，
+                         * 表示使用者已编辑或 prompt 結構已變動，應移除不再適用的標記
+                         */
                         delete tag.splitNoComma
                     }
                     i++

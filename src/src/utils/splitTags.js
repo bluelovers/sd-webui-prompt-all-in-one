@@ -18,22 +18,32 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false) =
  */
 function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWrap) {
 
-    // 中文/日文標點轉換（原為全域 pre-process，改為在迴圈內 quote-aware 執行）
-    // 避免引號內的「、」。「」被提前轉換，失去原始語義。
+    /**
+     * 中文/日文標點轉換（原為全域 pre-process，改為在迴圈內 quote-aware 執行）
+     * 避免引號內的「、」。「」被提前轉換，失去原始語義。
+     */
     function convertPunctuation(ch) {
         switch (ch) {
-            case '\uFF0C': return ','  // ，中文逗号
-            case '\u3002': return '.'  // 。中文句号
-            case '\u3001': return ','  // 、中文顿号
-            case '\uFF1B': return ','  // ；中文分号
-            case '\uFF0E': return ','  // ．日文句号(fullwidth)
+            /** ，中文逗号 */
+            case '\uFF0C': return ','
+            /** 。中文句号 */
+            case '\u3002': return '.'
+            /** 、中文顿号 */
+            case '\u3001': return ','
+            /** ；中文分号 */
+            case '\uFF1B': return ','
+            /** ．日文句号(fullwidth) */
+            case '\uFF0E': return ','
             default: return ch
         }
     }
 
-    tags = tags.replace(/\t/g, '\n') // 制表符
-    tags = tags.replace(/\r/g, '\n') // 回车符
-    tags = tags.replace(/\n+/g, '\n') // 连续换行符
+    /** 制表符 */
+    tags = tags.replace(/\t/g, '\n')
+    /** 回车符 */
+    tags = tags.replace(/\r/g, '\n')
+    /** 连续换行符 */
+    tags = tags.replace(/\n+/g, '\n')
 
     let emojis = [
         {emoji: ">_<", re: /\>_\</g},
@@ -60,14 +70,17 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
     let startBracketChar = ''
     let endBracketChar = ''
     let bracketCount = 0
-    let quoteChar = null  // null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元
+    /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元 */
+    let quoteChar = null
     let result = []
 
-    // 推送一段文字：唯一的事實來源，分行分段、逗號分段、BREAK、收尾皆共用。
-    // 若此時單引號未關閉（false positive，如所有格 orks'），
-    // 忽略該單引號、以 allowSingleQuote=false 遞迴重處理此段，
-    // 重新套用逗號／分行／BREAK／括號規則後再推送結果。
-    // 未關閉的雙引號不觸發重處理（保持保護到結尾的既有行為）。
+    /**
+     * 推送一段文字：唯一的事實來源，分行分段、逗號分段、BREAK、收尾皆共用。
+     * 若此時單引號未關閉（false positive，如所有格 orks'），
+     * 忽略該單引號、以 allowSingleQuote=false 遞迴重處理此段，
+     * 重新套用逗號／分行／BREAK／括號規則後再推送結果。
+     * 未關閉的雙引號不觸發重處理（保持保護到結尾的既有行為）。
+     */
     function pushSegment() {
         const text = temp.trim()
         if (text === '') return
@@ -78,9 +91,11 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
         }
     }
 
-    // 分行切割：唯一事實來源，引號內／外、括號內／外共用，保證行為完全一致。
-    // 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割。
-    // （括號僅保護逗號，不保護分行；切割後括號狀態重設，跨段括號不強制配對。）
+    /**
+     * 分行切割：唯一事實來源，引號內／外、括號內／外共用，保證行為完全一致。
+     * 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割。
+     * （括號僅保護逗號，不保護分行；切割後括號狀態重設，跨段括號不強制配對。）
+     */
     function splitAtNewline() {
         pushSegment()
         result.push("\n")
@@ -93,13 +108,13 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
     for (let i = 0; i < length; i++) {
         const char = tags[i]
 
-        // ── 引號追蹤（優先級最高）──
+        /** ── 引號追蹤（優先級最高）── */
         if (quoteChar) {
-            // 在引號內：遇到相同引號字元則關閉
+            /** 在引號內：遇到相同引號字元則關閉 */
             if (char === quoteChar) {
                 quoteChar = null
             }
-            // 分行優先級大於引號：即使在引號內，\n 仍觸發切割
+            /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割 */
             if (char === "\n") {
                 splitAtNewline()
                 continue
@@ -107,17 +122,19 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             temp += char
             continue
         } else if (char === '"') {
-            // 雙引號一律視為引號開啟（不會是撇號）
+            /** 雙引號一律視為引號開啟（不會是撇號） */
             quoteChar = char
             temp += char
             continue
         } else if (char === "'" && allowSingleQuote) {
-            // 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
-            // 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
-            // 選 \S 而非 \w/\p{L}：過嚴會把非 ASCII 相鄰的撇號誤判為引號開頭，
-            // 導致整串未閉合而黏成一段（災難性）；過鬆僅漏開引號（局部）。
-            // allowSingleQuote=false（未關閉單引號的重處理）時跳過此分支，
-            // 單引號視為一般字元，逗號照常切割。
+            /**
+             * 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
+             * 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
+             * 選 \S 而非 \w/\p{L}：過嚴會把非 ASCII 相鄰的撇號誤判為引號開頭，
+             * 導致整串未閉合而黏成一段（災難性）；過鬆僅漏開引號（局部）。
+             * allowSingleQuote=false（未關閉單引號的重處理）時跳過此分支，
+             * 單引號視為一般字元，逗號照常切割。
+             */
             const prevChar = i > 0 ? tags[i - 1] : ''
             const nextChar = i < length - 1 ? tags[i + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
@@ -130,29 +147,29 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             continue
         }
 
-        // 中文/日文標點轉換：僅在引號外執行，引號內保留原始字元
+        /** 中文/日文標點轉換：僅在引號外執行，引號內保留原始字元 */
         const converted = convertPunctuation(char)
 
         if (converted === "\n") {
-            // 分行優先級大於引號：與引號內共用同一切割邏輯
+            /** 分行優先級大於引號：與引號內共用同一切割邏輯 */
             splitAtNewline()
         } else if (converted === ",") {
             if (startBracketChar === '') {
-                // 前面没有括号
+                /** 前面没有括号 */
                 pushSegment()
                 bracketCount = 0
                 startBracketChar = ''
                 endBracketChar = ''
                 temp = ''
             } else {
-                // 前面有括号
+                /** 前面有括号 */
                 temp += converted
             }
         } else {
             if (startBracketChar === '') {
-                // 前面没有括号
+                /** 前面没有括号 */
                 if (bracketStarts.includes(converted)) {
-                    // 括号开始
+                    /** 括号开始 */
                     bracketCount = 1
                     startBracketChar = converted
                     endBracketChar = brackets[converted]
@@ -178,12 +195,12 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
                     }
                 }
             } else {
-                // 前面有括号
+                /** 前面有括号 */
                 if (converted === endBracketChar) {
-                    // 是结束括号的标识，减掉括号计数
+                    /** 是结束括号的标识，减掉括号计数 */
                     bracketCount--
                     if (bracketCount === 0) {
-                        // 括号计数为0，括号结束
+                        /** 括号计数为0，括号结束 */
                         startBracketChar = ''
                         endBracketChar = ''
                         temp += converted
@@ -191,7 +208,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
                         temp += converted
                     }
                 } else if (converted === startBracketChar) {
-                    // 是开始括号的标识，加上括号计数
+                    /** 是开始括号的标识，加上括号计数 */
                     bracketCount++
                     temp += converted
                 } else {
@@ -223,7 +240,10 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             continue
         }
 
-        // aaa <lora:KuutanKoihime:0.7>  <lora:add_detail:0.6><lora:clothesTransparent_v20:1:1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0>, [<lora:A:1>:<lora:B:1>:10], [lora:A:1::10], [<lora:A:1>:10], [<lora:A:1>:0.5], [[<lora:A:1>::25]:10], [<lora:A:1> #increment:10], [<lora:A:1> #decrease:10], [<lora:A:1> #cmd\(warmup\(0.5\)\):10]
+        /**
+         * lora 標籤與權重括號格式範例（本段邏輯只會拆出 <lora:...>，其餘靠括號防護保留）：
+         * aaa <lora:KuutanKoihime:0.7>  <lora:add_detail:0.6><lora:clothesTransparent_v20:1:1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0>, [<lora:A:1>:<lora:B:1>:10], [lora:A:1::10], [<lora:A:1>:10], [<lora:A:1>:0.5], [[<lora:A:1>::25]:10], [<lora:A:1> #increment:10], [<lora:A:1> #decrease:10], [<lora:A:1> #cmd\(warmup\(0.5\)\):10]
+         */
         let regex = /\<lora:[^\>]+\>/
         let match = null
         let values = []

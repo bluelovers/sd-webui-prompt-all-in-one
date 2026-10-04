@@ -119,7 +119,7 @@ function caseTitle(tc) {
  *   ])
  */
 function runCases(suiteName, fn, cases, options = {}) {
-    // snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式）
+    /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
         const resolvedFn = typeof fn === 'function' ? await fn() : fn

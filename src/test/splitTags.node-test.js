@@ -25,9 +25,7 @@ const { compareWithOriginal, attachOriginalComparison, caseTitle } = require('./
  *  工具函式
  * ==================================================================== */
 
-/**
- * 動態載入 ESM 模組。
- */
+/** 動態載入 ESM 模組。 */
 async function loadModule() {
     const mod = await import('../src/utils/splitTags.js')
     return mod.default
@@ -46,9 +44,7 @@ async function loadOriginal() {
     }
 }
 
-/**
- * 動態載入 splitByPeriod ESM 模組。
- */
+/** 動態載入 splitByPeriod ESM 模組。 */
 async function loadSplitByPeriod() {
     const mod = await import('../src/utils/splitByPeriod.js')
     return mod.default
@@ -76,7 +72,7 @@ async function loadSplitByPeriod() {
  * ==================================================================== */
 
 const cases = [
-    // ── 基本切割 ──
+    /** ── 基本切割 ── */
     { input: 'a, b, c',
         note: 'comma-separated',
         expectOriginalChanged: false },
@@ -87,7 +83,7 @@ const cases = [
         note: 'empty segments filtered',
         expectOriginalChanged: false },
 
-    // ── 換行切割 ──
+    /** ── 換行切割 ── */
     { input: 'a\nb\nc',
         note: 'newline-separated',
         expectOriginalChanged: false },
@@ -101,28 +97,30 @@ const cases = [
         note: 'tab converted to newline',
         expectOriginalChanged: false },
 
-    // ── 中文 / 日文標點 ──
-    // ，(U+FF0C) 全形逗號 → comma
+    /**
+     * ── 中文 / 日文標點 ──
+     * ，(U+FF0C) 全形逗號 → comma
+     */
     { input: '好，壞，普通',
         note: '，fullwidth comma → comma',
         expectOriginalChanged: false },
-    // 。(U+3002) 中日文句號 → period（新版不切割，原版視為 comma 切割）
+    /** 。(U+3002) 中日文句號 → period（新版不切割，原版視為 comma 切割） */
     { input: '好。壞。普通',
         note: '。Chinese/Japanese period → period (not comma)' },
-    // 、(U+3001) 中日文頓號 → comma
+    /** 、(U+3001) 中日文頓號 → comma */
     { input: '好、壞、普通',
         note: '、enumeration comma → comma',
         expectOriginalChanged: false },
-    // ；(U+FF1B) 全形分號 → comma
+    /** ；(U+FF1B) 全形分號 → comma */
     { input: '好；壞；普通',
         note: '；fullwidth semicolon → comma',
         expectOriginalChanged: false },
-    // ．(U+FF0E) 全形句號 → comma
+    /** ．(U+FF0E) 全形句號 → comma */
     { input: '好．壞．普通',
         note: '．fullwidth period → comma',
         expectOriginalChanged: false },
 
-    // ── 中日文標點：混合 ──
+    /** ── 中日文標點：混合 ── */
     { input: '好，壞。普通',
         note: '，and 。mixed — comma splits, period does not' },
     { input: '好、壞；普通',
@@ -133,7 +131,7 @@ const cases = [
     { input: '好，壞、普通；再來．結束',
         note: 'all five punctuations in one string' },
 
-    // ── 中日文標點：連續 ──
+    /** ── 中日文標點：連續 ── */
     { input: '好。。壞',
         note: 'consecutive 。 — each becomes period, no split' },
     { input: '好、、壞',
@@ -146,8 +144,10 @@ const cases = [
         note: 'consecutive ； — each becomes comma, empty segment filtered',
         expectOriginalChanged: false },
 
-    // ── 中日文標點：含引號 ──
-    // 原版無引號保護，以下皆與新版不同
+    /**
+     * ── 中日文標點：含引號 ──
+     * 原版無引號保護，以下皆與新版不同
+     */
     { input: '"好，壞"，普通',
         note: '，inside quotes protected' },
     { input: '"好。壞"。普通',
@@ -159,14 +159,14 @@ const cases = [
     { input: '"好．壞"．普通',
         note: '．inside quotes protected' },
 
-    // ── 中日文標點：含括號 ──
+    /** ── 中日文標點：含括號 ── */
     { input: '(好，壞)，普通',
         note: '，inside parens protected',
         expectOriginalChanged: false },
     { input: '[好。壞]。普通',
         note: '。inside brackets — 。changes to period' },
 
-    // ── 括號保護 ──
+    /** ── 括號保護 ── */
     { input: 'a, [b, c], d',
         note: 'square brackets protect inner commas',
         expectOriginalChanged: false },
@@ -177,7 +177,7 @@ const cases = [
         note: 'curly braces protect inner commas',
         expectOriginalChanged: false },
 
-    // ── 巢狀括號 ──
+    /** ── 巢狀括號 ── */
     { input: 'a, ([b, c]), d',
         note: 'nested bracket types',
         expectOriginalChanged: false },
@@ -185,7 +185,7 @@ const cases = [
         note: 'nested same bracket type',
         expectOriginalChanged: false },
 
-    // ── BREAK 關鍵字 ──
+    /** ── BREAK 關鍵字 ── */
     { input: 'a, BREAK, b',
         note: 'BREAK keyword splits',
         expectOriginalChanged: false },
@@ -193,7 +193,7 @@ const cases = [
         note: 'BREAK with newlines',
         expectOriginalChanged: false },
 
-    // ── LoRA 標籤 ──
+    /** ── LoRA 標籤 ── */
     { input: 'a, <lora:model:0.7>, b',
         note: 'LoRA tag preserved as single unit',
         expectOriginalChanged: false },
@@ -201,8 +201,10 @@ const cases = [
         note: 'multiple LoRA tags',
         expectOriginalChanged: false },
 
-    // ── 表情符號保護 ──
-    // 單一字元表情
+    /**
+     * ── 表情符號保護 ──
+     * 單一字元表情
+     */
     { input: 'a, >_<, b',
         note: 'emoji >_< protected',
         expectOriginalChanged: false },
@@ -222,7 +224,7 @@ const cases = [
         note: 'multiple emojis in sequence',
         expectOriginalChanged: false },
 
-    // ── 表情符號：相鄰逗號 ──
+    /** ── 表情符號：相鄰逗號 ── */
     { input: '>_<,hello',
         note: 'emoji at start',
         expectOriginalChanged: false },
@@ -233,13 +235,13 @@ const cases = [
         note: 'two emojis adjacent',
         expectOriginalChanged: false },
 
-    // ── 表情符號：含引號 ──
+    /** ── 表情符號：含引號 ── */
     { input: '":(", hello',
         note: 'emoji with quote at start' },
     { input: '":)", world"',
         note: 'emoji between quotes' },
 
-    // ── 表情符號：與中日文標點混合 ──
+    /** ── 表情符號：與中日文標點混合 ── */
     { input: '>_<，hello',
         note: 'emoji with ，(fullwidth comma)',
         expectOriginalChanged: false },
@@ -250,7 +252,7 @@ const cases = [
         note: 'emoji with ，(fullwidth comma)',
         expectOriginalChanged: false },
 
-    // ── 空值 / 邊界 ──
+    /** ── 空值 / 邊界 ── */
     { input: '',
         note: 'empty string',
         expectOriginalChanged: false },
@@ -267,7 +269,7 @@ const cases = [
         note: 'boolean false input',
         expectOriginalChanged: false },
 
-    // ── 分行邊界 ──
+    /** ── 分行邊界 ── */
     { input: '\n',
         note: 'newline only — whitespace guard returns []' },
     { input: '\n\n\n',
@@ -281,12 +283,12 @@ const cases = [
     { input: 'a BREAK\nb',
         note: 'newline directly after BREAK — marker follows BREAK' },
 
-    // ── prompt weight ──
+    /** ── prompt weight ── */
     { input: '(fire extinguisher: 1.0, 2.0), a',
         note: 'weight syntax — inner comma preserved',
         expectOriginalChanged: false },
 
-    // ── 引號保護 ──
+    /** ── 引號保護 ── */
     { input: 'with "Small joys. Brighter days." below.',
         note: 'quoted sentence — comma inside protected' },
     { input: "with 'hello, world' end",
@@ -317,7 +319,7 @@ const cases = [
     { input: '"a, b"\nc, d',
         note: 'quoted then newline then unquoted split' },
 
-    // ── 未閉合引號 ──
+    /** ── 未閉合引號 ── */
     { input: 'a, "b, c',
         note: 'unclosed double quote — comma protected to end' },
     { input: "a, 'b, c",
@@ -342,7 +344,7 @@ const cases = [
     { input: "a, 'it's fine",
         note: 'unclosed single quote after apostrophe — first quote opens, second is content' },
 
-    // ── 引號緊鄰分行前後 ──
+    /** ── 引號緊鄰分行前後 ── */
     { input: '"a"\nb',
         note: 'closed quote directly before newline' },
     { input: "'a'\nb",
@@ -360,7 +362,7 @@ const cases = [
     { input: '\n"a',
         note: 'newline at start then unclosed quote' },
 
-    // ── 括號內分行 ──
+    /** ── 括號內分行 ── */
     { input: '(a\nb)',
         note: 'newline in parens — splits, comma rule unaffected' },
     { input: '[a\nb]',
@@ -374,7 +376,7 @@ const cases = [
     { input: '(a "b\nc")',
         note: 'newline in brackets inside quote — splits' },
 
-    // ── 混合引號：單引號與雙引號同時存在 ──
+    /** ── 混合引號：單引號與雙引號同時存在 ── */
     { input: "\"a\" 'b', c",
         note: 'both quote types closed, comma outside splits' },
     { input: "'a \"b\" c', d",
@@ -396,7 +398,7 @@ const cases = [
     { input: "'a \"b'",
         note: 'single quote containing double quote char, closed' },
 
-    // ── 真實場景摘錄 ──
+    /** ── 真實場景摘錄 ── */
     { input: '"くらしに、さくらを。" beneath',
         note: 'excerpt: Japanese period inside quotes' },
     { input: '"いつもの日を、少し特別に。" with',
@@ -412,7 +414,7 @@ const cases = [
     { input: 'The right window poster reads "さくらの季節をもっと身近に。".',
         note: 'excerpt: Japanese period then trailing English period' },
 
-    // ── 真實場景 ──
+    /** ── 真實場景 ── */
     { input: "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \n#, \npixelated",
         note: "real-world: unclosed single quote (orks') ignored at segmentation — comma rules re-applied, newlines split",
         expectOriginalChanged: false },
@@ -438,10 +440,10 @@ function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
     for (const tc of cases) {
         const title = caseTitle(tc)
         it(title, (t) => {
-            // Step 1: splitTags 切割
+            /** Step 1: splitTags 切割 */
             const tagResult = splitTags(tc.input, ...(tc.args || []))
 
-            // Step 2: 可選 — splitByPeriod 管線
+            /** Step 2: 可選 — splitByPeriod 管線 */
             let finalResult = tagResult
             let changed = false
             if (splitByPeriod) {
@@ -459,14 +461,14 @@ function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
                 }
             }
 
-            // Step 3: 與原版比較
+            /** Step 3: 與原版比較 */
             const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
 
             if (tc.expectOriginalChanged !== undefined) {
                 t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
             }
 
-            // Step 4: 組裝快照
+            /** Step 4: 組裝快照 */
             const snap = splitByPeriod
                 ? { input: tc.input, splitTagsResult: tagResult }
                 : { input: tc.input, result: tagResult }
@@ -501,39 +503,39 @@ describe('splitTags', async () => {
     runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod: null })
 })
 
-// 需要進行跨模組驗證的特定提示詞
+/** 需要進行跨模組驗證的特定提示詞 */
 const pipelineCases = [
-    // 完整提示詞
+    /** 完整提示詞 */
     { input: 'Prominent readable text and placement: the main illuminated facade at upper left-center reads "Sakura Stop" with "くらしに、さくらを。" beneath. The right side of the fascia reads "いつもの日を、少し特別に。" with "Small joys. Brighter days." below. The tall illuminated sign above the slope reads "Sakura Stop" and lists "たばこ", "お弁当", "飲み物", "スイーツ", and "日用品". The left window poster reads "今日も、いい一日を。" with "Good day. Better tomorrow." below. The right window poster reads "さくらの季節をもっと身近に。". A pink vertical banner beside the store reads "さくらと、いい毎日を。". The roadside vertical sign at far right reads "海の見える町". The downhill road includes the white marking "止まれ" near the lower distance.',
         note: 'full prompt pipeline',
         expectChanged: true,
         expectOriginalChanged: true,
     },
 
-    // 複雜 prompt（含 weight、LoRA、BREAK）
+    /** 複雜 prompt（含 weight、LoRA、BREAK） */
     { input: 'masterpiece, best quality, (1girl:1.2), <lora:add_detail:0.6>, BREAK, forest, trees',
         note: 'complex prompt pipeline' },
 
-    // 含引號的短 prompt
+    /** 含引號的短 prompt */
     { input: 'with "Small joys, Brighter days." below.',
         note: 'quoted comma pipeline' },
 
-    // 含中文標點的 prompt
+    /** 含中文標點的 prompt */
     { input: '好，壞，普通',
         note: 'Chinese comma pipeline' },
 
-    // 含括號巢狀的 prompt
+    /** 含括號巢狀的 prompt */
     { input: 'a, (b, c), d',
         note: 'parentheses pipeline' },
 
     { input: '一位穿著太空衣的貓、復古老舊的紅色跑車' },
 
-    // 分行 marker 管線直通
+    /** 分行 marker 管線直通 */
     { input: 'line one\nline two',
         note: 'pipeline newline — splitTags "\\\\n" marker passes through splitByPeriod unchanged',
         expectChanged: false },
 
-    // 分號切割選項（splitSemicolon，預設關閉；開啟時併入句號機制）
+    /** 分號切割選項（splitSemicolon，預設關閉；開啟時併入句號機制） */
     { input: "her fingers and the orks' legs; gnarled dead trees stand as dark silhouettes at the frame edges, dense fog swallows the middle distance, \n#, \npixelated",
         note: 'pipeline splitSemicolon — semicolon splits like period (option B)',
         splitByPeriodOptions: { splitSemicolon: true },
@@ -542,7 +544,7 @@ const pipelineCases = [
 
     { input: '一位女孩，她正坐在中国城市街头普通的金属材质公交站台长椅上等车。身侧是一个带有广告牌的公交站牌，路边是平整的沥青人行道，背景可以看到远处的老旧居民楼和几棵行道树，自然光线均匀地照射在人物身上，画面呈现出手机实拍的质感，色调真实自然，人物神态平和，背景有日常生活的街道细节。' },
 
-    // ---
+    /** --- */
 ]
 
 describe('splitTags → splitByPeriod pipeline', async () => {
