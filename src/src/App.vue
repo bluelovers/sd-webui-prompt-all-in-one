@@ -179,7 +179,7 @@ import PackagesState from "@/components/packagesState.vue";
 import ChatgptPrompt from "@/components/chatgptPrompt.vue";
 import About from "@/components/about.vue";
 import globals from "../globals";
-import jsYaml from "js-yaml";
+import { load as yamlLoad } from "js-yaml";
 import {ref} from "vue";
 import Hotkey from "@/components/hotkey.vue";
 import ExtraNetworksPopup from "@/components/extraNetworksPopup.vue";
@@ -803,6 +803,7 @@ export default {
                 'autoSplitByPeriodIncludeParen',
                 'autoSplitByPeriodSemicolon',
                 'autoOptimizeSplitSymbol',
+                'allowKeepEmptyLine',
                 'autoSplitByPeriodRemoveWrapComma', // 舊存檔鍵：僅供遷移讀取（選項更名前的使用者設定），見下方載入邏輯
                 /*'hideDefaultInput', */
                 'translateApi',
@@ -918,9 +919,14 @@ export default {
                 if (data.autoOptimizeSplitSymbol !== null) {
                     this.autoOptimizeSplitSymbol = data.autoOptimizeSplitSymbol
                 } else if (data.autoSplitByPeriodRemoveWrapComma !== null) {
-                    // 舊存檔鍵遷移：autoSplitByPeriodRemoveWrapComma 已更名為 autoOptimizeSplitSymbol，
-                    // 讀取舊鍵避免使用者既有設定遺失；後續寫入一律走新鍵
+                    /**
+                     * 舊存檔鍵遷移：autoSplitByPeriodRemoveWrapComma 已更名為 autoOptimizeSplitSymbol，
+                     * 讀取舊鍵避免使用者既有設定遺失；後續寫入一律走新鍵
+                     */
                     this.autoOptimizeSplitSymbol = data.autoSplitByPeriodRemoveWrapComma
+                }
+                if (data.allowKeepEmptyLine !== null) {
+                    this.allowKeepEmptyLine = data.allowKeepEmptyLine
                 }
                 /*if (data.hideDefaultInput !== null) {
                     this.hideDefaultInput = data.hideDefaultInput
@@ -1069,7 +1075,7 @@ export default {
                     this.groupTags = []
                 } else {
                     try {
-                        this.groupTags = jsYaml.load(data)
+                        this.groupTags = yamlLoad(data)
                         if (!Array.isArray(this.groupTags)) {
                             this.groupTags = []
                         }
