@@ -573,7 +573,7 @@
     </div>
 </template>
 
-<script>
+<script lang="ts">
 import Sortable from "sortablejs"
 
 import common from "@/utils/common"
@@ -588,6 +588,7 @@ import IconSvg from "@/components/iconSvg.vue"
 import HighlightPrompt from "@/components/highlightPrompt.vue"
 import {ColorPicker} from "vue3-colorpicker"
 import { splitByPeriod } from "@/utils/splitByPeriod"
+import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
 
 export default {
     name: 'PhystonPrompt',
@@ -631,66 +632,8 @@ export default {
             type: Boolean,
             default: false,
         },
-        autoRemoveSpace: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLastComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoKeepWeightZero: {
-            type: Boolean,
-            default: false,
-        },
-        autoKeepWeightOne: {
-            type: Boolean,
-            default: false,
-        },
-        autoBreakBeforeWrap: {
-            type: Boolean,
-            default: false,
-        },
-        autoBreakAfterWrap: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLoraBeforeComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLoraAfterComma: {
-            type: Boolean,
-            default: false,
-        },
-        useNovelAiWeightSymbol: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveBeforeLineComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriod: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriodIncludeParen: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriodSemicolon: {
-            type: Boolean,
-            default: false,
-        },
-        autoOptimizeSplitSymbol: {
-            type: Boolean,
-            default: false,
-        },
-        allowKeepEmptyLine: {
-            type: Boolean,
-            default: false,
-        },
+        /** prompts 系列選項 props：由 src/src/utils/promptOptions 生成 */
+        ...getPromptOptionProps(),
         hideDefaultInput: {
             type: Boolean,
             default: false,
@@ -789,10 +732,6 @@ export default {
         'update:autoTranslate',
         'update:autoTranslateToEnglish',
         'update:autoTranslateToLocal',
-        'update:autoRemoveSpace',
-        'update:autoRemoveLastComma',
-        'update:autoKeepWeightZero',
-        'update:autoKeepWeightOne',
         'update:hideDefaultInput',
         'update:hidePanel',
         'update:enableTooltip',
@@ -818,11 +757,11 @@ export default {
         'update:extraNetworksWidth',
         'update:extraNetworksHeight',
         'update:autoLoadWebuiPrompt',
-        'update:autoSplitByPeriod',
-        'update:autoSplitByPeriodIncludeParen',
-        'update:autoSplitByPeriodSemicolon',
-        'update:autoOptimizeSplitSymbol',
-        'update:allowKeepEmptyLine',
+        /**
+         * prompts 系列選項 v-model 事件（update:key）：依 emittedBy 生成——
+         * 本元件實際只在頭部選單 emit autoRemoveSpace，其餘選項僅由父層以 prop 傳入。
+         */
+        ...getPromptOptionEmits('phystonPrompt'),
     ],
     data() {
         return {
@@ -1226,13 +1165,13 @@ export default {
             if (!tag) return false
             const {lineHasSharp = false} = options
             const value = (tag.value || '').trim()
-            // 規則 1：換行前的 tag 以「:」結尾
+            /** 規則 1：換行前的 tag 以「:」結尾 */
             if (value.endsWith(':')) return true
-            // 規則 2：換行前的 tag 是 Lora / Lyco
+            /** 規則 2：換行前的 tag 是 Lora / Lyco */
             if (tag.isLora || tag.isLyco) return true
-            // 規則 3：該行任一 tag 以「#」開頭或結尾（由呼叫端遍歷期間累計傳入）
+            /** 規則 3：該行任一 tag 以「#」開頭或結尾（由呼叫端遍歷期間累計傳入） */
             // if (lineHasSharp) return true
-            // 規則 4：換行前的 tag 以句號結尾
+            /** 規則 4：換行前的 tag 以句號結尾 */
             return /\.\s*$/.test(tag.value)
         },
         /**
@@ -1265,14 +1204,14 @@ export default {
             const isWrap = item => !!item && typeof item['type'] === 'string' && item.type === 'wrap'
             const isBreak = item => !!item && typeof item.value === 'string' && item.value.trim() === 'BREAK'
             const nextTag = index + 1 < tags2.length ? tags2[index + 1] : null
-            // 已是最後一個 tag → 由 autoRemoveLastComma 處理，此處不移除
+            /** 已是最後一個 tag → 由 autoRemoveLastComma 處理，此處不移除 */
             if (!nextTag) return false
 
-            // 規則 1：當前是 Lora / Lyco，且下一個也是 Lora / Lyco
+            /** 規則 1：當前是 Lora / Lyco，且下一個也是 Lora / Lyco */
             if (isLoraLike(tag) && isLoraLike(nextTag)) return true
-            // 規則 2-1：下一個 tag 是 BREAK
+            /** 規則 2-1：下一個 tag 是 BREAK */
             if (isBreak(nextTag)) return true
-            // 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK
+            /** 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK */
             if (isWrap(nextTag)) {
                 let nextIndex = index + 1
                 while (nextIndex < tags2.length && isWrap(tags2[nextIndex])) {
@@ -1280,8 +1219,8 @@ export default {
                 }
                 if (isBreak(nextIndex < tags2.length ? tags2[nextIndex] : null)) return true
             }
-            // 規則 3：當前 tag 以「;」或「}」結尾，且下一個是 分行 / Lora / Lyco
-            if (/[;}:]$/.test((tag.value || '').trim()) && (isWrap(nextTag) || isLoraLike(nextTag))) return true
+            /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
+            if (/[;}:'"]$/.test((tag.value || '').trim()) && (isWrap(nextTag) || isLoraLike(nextTag))) return true
 
             return false
         },

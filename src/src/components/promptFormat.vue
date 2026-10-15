@@ -99,72 +99,15 @@
 <script>
 import LanguageMixin from "@/mixins/languageMixin";
 import IconSvg from "@/components/iconSvg.vue";
+import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
 
 export default {
     name: 'PromptFormat',
     components: {IconSvg},
     mixins: [LanguageMixin],
     props: {
-        autoRemoveSpace: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLastComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoKeepWeightZero: {
-            type: Boolean,
-            default: false,
-        },
-        autoKeepWeightOne: {
-            type: Boolean,
-            default: false,
-        },
-        autoBreakBeforeWrap: {
-            type: Boolean,
-            default: false,
-        },
-        autoBreakAfterWrap: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLoraBeforeComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveLoraAfterComma: {
-            type: Boolean,
-            default: false,
-        },
-        useNovelAiWeightSymbol: {
-            type: Boolean,
-            default: false,
-        },
-        autoRemoveBeforeLineComma: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriod: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriodIncludeParen: {
-            type: Boolean,
-            default: false,
-        },
-        autoSplitByPeriodSemicolon: {
-            type: Boolean,
-            default: false,
-        },
-        autoOptimizeSplitSymbol: {
-            type: Boolean,
-            default: false,
-        },
-        allowKeepEmptyLine: {
-            type: Boolean,
-            default: false,
-        },
+        /** prompts 系列選項 props：由 src/src/utils/promptOptions 生成 */
+        ...getPromptOptionProps(),
     },
     data() {
         return {
@@ -172,21 +115,8 @@ export default {
         }
     },
     emits: [
-        'update:autoRemoveSpace',
-        'update:autoRemoveLastComma',
-        'update:autoKeepWeightZero',
-        'update:autoKeepWeightOne',
-        'update:autoBreakBeforeWrap',
-        'update:autoBreakAfterWrap',
-        'update:autoRemoveLoraBeforeComma',
-        'update:autoRemoveLoraAfterComma',
-        'update:useNovelAiWeightSymbol',
-        'update:autoRemoveBeforeLineComma',
-        'update:autoSplitByPeriod',
-        'update:autoSplitByPeriodIncludeParen',
-        'update:autoSplitByPeriodSemicolon',
-        'update:autoOptimizeSplitSymbol',
-        'update:allowKeepEmptyLine',
+        /** v-model 事件名（update:key）：依 emittedBy 生成——本元件的 14 個 checkbox 實際會 emit */
+        ...getPromptOptionEmits('promptFormat'),
     ],
     computed: {},
     mounted() {

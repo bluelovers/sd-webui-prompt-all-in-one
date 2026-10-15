@@ -13,7 +13,8 @@
     "build:css:main": "node build-css.js main",
     "build:css:extensions": "node build-css.js extensions",
     "build:watch": "vite build --watch",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit & echo Type checking completed"
   },
   "dependencies": {
     "autosize-input": "^1.0.2",
