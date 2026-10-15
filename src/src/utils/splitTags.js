@@ -14,6 +14,45 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, o
 }
 
 /**
+ * 建立「僅作用於當前行」的 runtime 狀態物件。
+ *
+ * 為何集中管理：過去行級變數（引號、括號）以散落的個別變數維護，
+ * 分行時逐一手列重置，發生過「新增行級變數卻忘了納入重置清單」的遺漏
+ * （quoteChar 未隨分行重置 → 未關閉引號跨行吞掉整段後續標籤，產生孤兒逗號 tag）。
+ * 集中為單一物件後，重置只需一行 lineState.reset()，
+ * 未來新增行級變數只需加進 createLineState() 與 reset()，不會再有遺漏。
+ *
+ * @returns {{
+ *   quoteChar: string|null,
+ *   bracketCount: number,
+ *   startBracketChar: string,
+ *   endBracketChar: string,
+ *   resetBracket: () => void,
+ *   reset: () => void
+ * }}
+ */
+function createLineState() {
+    return {
+        /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元（不跨行保留） */
+        quoteChar: null,
+        bracketCount: 0,
+        startBracketChar: '',
+        endBracketChar: '',
+        /** 重置括號狀態（逗號 / BREAK 分段時使用；引號不受影響） */
+        resetBracket() {
+            this.bracketCount = 0
+            this.startBracketChar = ''
+            this.endBracketChar = ''
+        },
+        /** 行級完整重置（分行時使用）：結束引號 + 重置括號 */
+        reset() {
+            this.quoteChar = null
+            this.resetBracket()
+        },
+    }
+}
+
+/**
  * 分割核心（可遞迴重處理）。
  *
  * @param {string}  tags
@@ -88,11 +127,12 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
 
     let length = tags.length
     let temp = ''
-    let startBracketChar = ''
-    let endBracketChar = ''
-    let bracketCount = 0
-    /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元 */
-    let quoteChar = null
+    /**
+     * 行級 runtime 狀態：所有「僅作用於當前行」的變數集中於此。
+     * 分行時由 splitAtNewline() 呼叫 lineState.reset() 一併重置。
+     * 新增行級變數時只需加進 createLineState()，不會再發生遺漏重置。
+     */
+    const lineState = createLineState()
     let result = []
 
     /**
@@ -105,7 +145,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
     function pushSegment() {
         const text = temp.trim()
         if (text === '') return
-        if (allowSingleQuote && quoteChar === "'") {
+        if (allowSingleQuote && lineState.quoteChar === "'") {
             result.push(...splitRaw(text, false, autoBreakBeforeWrap, autoBreakAfterWrap, options))
         } else {
             result.push(text)
@@ -114,15 +154,14 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
 
     /**
      * 分行切割：唯一事實來源，引號內／外、括號內／外共用，保證行為完全一致。
-     * 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割。
-     * （括號僅保護逗號，不保護分行；切割後括號狀態重設，跨段括號不強制配對。）
+     * 設計規則：分行優先級最高——不論引號或括號狀態，\n 一律觸發切割；
+     * 且引號不跨行保留：切割後由 lineState.reset() 將行級狀態（含 quoteChar）
+     * 一併重置，下一行視為全新上下文（跨段括號亦不強制配對）。
      */
     function splitAtNewline() {
         pushSegment()
         result.push("\n")
-        bracketCount = 0
-        startBracketChar = ''
-        endBracketChar = ''
+        lineState.reset()
         temp = ''
     }
 
@@ -130,12 +169,12 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
         const char = tags[i]
 
         /** ── 引號追蹤（優先級最高）── */
-        if (quoteChar) {
+        if (lineState.quoteChar) {
             /** 在引號內：遇到相同引號字元則關閉 */
-            if (char === quoteChar) {
-                quoteChar = null
+            if (char === lineState.quoteChar) {
+                lineState.quoteChar = null
             }
-            /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割 */
+            /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割，並結束該行引號 */
             if (char === "\n") {
                 splitAtNewline()
                 continue
@@ -144,7 +183,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             continue
         } else if (char === '"') {
             /** 雙引號一律視為引號開啟（不會是撇號） */
-            quoteChar = char
+            lineState.quoteChar = char
             temp += char
             continue
         } else if (char === "'" && allowSingleQuote) {
@@ -160,7 +199,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             const nextChar = i < length - 1 ? tags[i + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
-                quoteChar = char
+                lineState.quoteChar = char
                 temp += char
                 continue
             }
@@ -175,32 +214,28 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             /** 分行優先級大於引號：與引號內共用同一切割邏輯 */
             splitAtNewline()
         } else if (converted === ",") {
-            if (startBracketChar === '') {
+            if (lineState.startBracketChar === '') {
                 /** 前面没有括号 */
                 pushSegment()
-                bracketCount = 0
-                startBracketChar = ''
-                endBracketChar = ''
+                lineState.resetBracket()
                 temp = ''
             } else {
                 /** 前面有括号 */
                 temp += converted
             }
         } else {
-            if (startBracketChar === '') {
+            if (lineState.startBracketChar === '') {
                 /** 前面没有括号 */
                 if (bracketStarts.includes(converted)) {
                     /** 括号开始 */
-                    bracketCount = 1
-                    startBracketChar = converted
-                    endBracketChar = brackets[converted]
+                    lineState.bracketCount = 1
+                    lineState.startBracketChar = converted
+                    lineState.endBracketChar = brackets[converted]
                     temp += converted
                 } else {
                     if (converted === " " && temp.trim() === 'BREAK') {
                         pushSegment()
-                        bracketCount = 0
-                        startBracketChar = ''
-                        endBracketChar = ''
+                        lineState.resetBracket()
                         temp = ''
                     } else {
                         temp += converted
@@ -208,29 +243,27 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
                             temp = temp.substring(0, temp.length - ' BREAK'.length)
                             pushSegment()
                             result.push('BREAK')
-                            bracketCount = 0
-                            startBracketChar = ''
-                            endBracketChar = ''
+                            lineState.resetBracket()
                             temp = ''
                         }
                     }
                 }
             } else {
                 /** 前面有括号 */
-                if (converted === endBracketChar) {
+                if (converted === lineState.endBracketChar) {
                     /** 是结束括号的标识，减掉括号计数 */
-                    bracketCount--
-                    if (bracketCount === 0) {
+                    lineState.bracketCount--
+                    if (lineState.bracketCount === 0) {
                         /** 括号计数为0，括号结束 */
-                        startBracketChar = ''
-                        endBracketChar = ''
+                        lineState.startBracketChar = ''
+                        lineState.endBracketChar = ''
                         temp += converted
                     } else {
                         temp += converted
                     }
-                } else if (converted === startBracketChar) {
+                } else if (converted === lineState.startBracketChar) {
                     /** 是开始括号的标识，加上括号计数 */
-                    bracketCount++
+                    lineState.bracketCount++
                     temp += converted
                 } else {
                     temp += converted

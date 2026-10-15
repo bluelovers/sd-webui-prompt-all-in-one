@@ -51,6 +51,60 @@ async function loadSplitByPeriod() {
 }
 
 /* ====================================================================
+ *  issues 回歸斷言輔助函式
+ * ==================================================================== */
+
+/**
+ * 斷言：不得出現孤兒逗號 tag。
+ *
+ * 來源 issue：孤立雙引號（如 JSON 殘骸 `", "}, }`）開啟引號狀態後，
+ * 舊版 splitTags 的分行不重置 quoteChar，導致後續整行被引號吞掉、
+ * 逗號全部失效，lora 後處理再把分隔逗號切成值恰為 "," 的孤兒 tag，
+ * 最終 genPrompt 輸出 `, ,,`。
+ *
+ * 檢查項目：
+ *   1. 不得存在值恰為 "," 的 tag（孤兒分隔逗號）。
+ *   2. 不得存在以 "," 結尾的 tag（分隔符被誤留在 tag 內容尾端）。
+ *
+ * @param {string[]} tagResult - splitTags 的輸出陣列
+ * @param {object}   t         - node:test 的 TestContext（提供 assert）
+ */
+function assertNoOrphanCommaTags(tagResult, t) {
+    const orphans = tagResult.filter(tag => tag === ',')
+    t.assert.deepEqual(orphans, [],
+        `不應存在孤兒逗號 tag（值恰為 ","）: ${JSON.stringify(orphans)}`)
+
+    const trailing = tagResult.filter(tag => tag !== ',' && /,$/.test(tag))
+    t.assert.deepEqual(trailing, [],
+        `不應存在尾隨逗號 tag（分隔符殘留在 tag 內容）: ${JSON.stringify(trailing.map(v => v.slice(-40)))}`)
+}
+
+/**
+ * 斷言：所有 <lora:...> tag 都是完整獨立的 tag。
+ *
+ * 來源 issue 同上：孤兒逗號出現時，lora 前的 before 殘片會帶尾隨逗號，
+ * 破壞 lora 單元的完整性。
+ *
+ * @param {string[]} tagResult
+ * @param {object}   t
+ */
+function assertLoraTagsIntact(tagResult, t) {
+    const broken = tagResult.filter(tag => tag.startsWith('<lora:') && !/^<lora:[^>]+>$/.test(tag))
+    t.assert.deepEqual(broken, [],
+        `lora tag 應為完整獨立單元: ${JSON.stringify(broken)}`)
+}
+
+/**
+ * issues 回歸案例共用斷言：孤兒逗號 + lora 完整性。
+ * @param {string[]} tagResult
+ * @param {object}   t
+ */
+function assertNoOrphanCommaRegressions(tagResult, t) {
+    assertNoOrphanCommaTags(tagResult, t)
+    assertLoraTagsIntact(tagResult, t)
+}
+
+/* ====================================================================
  *  測試案例定義
  *
  *  每筆案例格式：
@@ -61,6 +115,9 @@ async function loadSplitByPeriod() {
  *            options 為物件（如 { allowKeepEmptyLine: true }），集中承載新選項，
  *            後續新增選項只需擴充物件欄位，不必更動既有案例。
  *  - note  : 附加說明（顯示在測試標題中）
+ *  - assertResult : 可選，自訂斷言函式 (result, t) => void。
+ *                   用於 issues 回歸案例——除快照外再以明確斷言鎖住關鍵行為，
+ *                   避免未來維護者盲目更新快照時讓 bug 行為被悄悄固化。
  *
  *  斷言方式：
  *    - 短輸入：t.assert.snapshot(result)
@@ -361,6 +418,9 @@ const cases = [
         note: 'unclosed quote + BREAK — BREAK not keyword inside quote' },
     { input: "a, 'it's fine",
         note: 'unclosed single quote after apostrophe — first quote opens, second is content' },
+    { input: 'a "b, c\nd, e',
+        note: 'unclosed double quote ends at newline — line 2 commas split normally (quote not carried over)',
+        expectOriginalChanged: true },
 
     /** ── 引號緊鄰分行前後 ── */
     { input: '"a"\nb',
@@ -439,6 +499,62 @@ const cases = [
 ]
 
 /* ====================================================================
+ *  issues 回歸案例（regression cases）
+ *
+ *  分類目的：收錄「已知 bug 的原始輸入」，防止未來更新時同型 bug 復發。
+ *  與一般 cases 的差異：
+ *    1. 保留使用者回報的原始字串（不裁剪、不改寫），並附最小重現對照組。
+ *    2. 除快照外，另有 assertResult 明確斷言（快照被盲目更新也不會漏接）。
+ *
+ *  ── issue #1：孤立雙引號 → 孤兒逗號 tag（genPrompt 輸出 ", ,,"）──
+ *  病因（已修復）：
+ *    - 輸入含孤立 `"`（JSON 殘骸 `", "}, }`）開啟引號狀態後永不關閉。
+ *    - 舊版 splitAtNewline() 分行時漏重置 quoteChar（行級變數散落維護），
+ *      導致引號跨行吞掉整段後續標籤，逗號分割全部失效。
+ *    - lora 後處理把段落間的「分隔逗號」切成值恰為 "," 的孤兒 tag。
+ *    - genPrompt 為每顆 tag 補 ", " → 孤兒逗號被渲染成 ", ,,"。
+ *  修復方式：
+ *    - splitTags.js / splitByPeriod.js 建立 lineState runtime 物件，
+ *      行級變數集中管理，分行時 lineState.reset() 一併重置（含 quoteChar）。
+ *  鎖定行為：
+ *    - 分行結束引號（引號不跨行保留）。
+ *    - 不得產生孤兒逗號 tag、不得有尾隨逗號 tag、lora tag 完整獨立。
+ * ==================================================================== */
+
+const issuesCases = [
+    /** issue #1 — 使用者回報的完整原始輸入（兩行，含孤立 "） */
+    {
+        input: 'Bright, direct mid-day sunlight illuminates the scene, casting clear light across her face and chest above water while creating shimmering ripple patterns through the turquoise sea floor below.   Background, Composition & SettingSetting: An open tropical sea or lagoon with crystal-clear turquoise water over a pale sandy seabed. The horizon features a vast blue sky filled with fluffy white cumulus clouds.   Composition: An over-under (split-level) water shot using a wide-angle dome lens, capturing both the vibrant underwater scene in the lower half and the sunny sky with the subject in the upper half., "}, }\nGrainy smartphone photo with high ISO noise, selfie, raw unedited aesthetic, moody boudoir erotica, voyeuristic sensual editorial look, heroin chic vibe. Candid photo raking from the side, muted desaturated colors, nostalgic film look, photo dump style. Shot on a 28mm lens at f/1.8 with visible digital grain., <lora:realism_engine_krea2_v3.1:0.4>, <lora:babegenerator.ink-realism_helper:1> <lora:2_Strongx3_wl7:1>, <lora:realism_engine_krea2_v3.1:0.25>, <lora:babegenerator.ink-realism_helper:0.65>, <lora:Krea2_TextFusion_Refusal_Reduction:2>',
+        note: 'issue#1: 原始回報輸入 — 孤立雙引號不產生孤兒逗號 tag',
+        assertResult: assertNoOrphanCommaRegressions,
+    },
+    /** issue #1 — 第二段獨立輸入（無引號對照組，正常行為不得被改壞） */
+    {
+        input: 'Grainy smartphone photo with high ISO noise, selfie, raw unedited aesthetic, moody boudoir erotica, voyeuristic sensual editorial look, heroin chic vibe. Candid photo raking from the side, muted desaturated colors, nostalgic film look, photo dump style. Shot on a 28mm lens at f/1.8 with visible digital grain., <lora:realism_engine_krea2_v3.1:0.4>, <lora:babegenerator.ink-realism_helper:1> <lora:2_Strongx3_wl7:1>, <lora:realism_engine_krea2_v3.1:0.25>, <lora:babegenerator.ink-realism_helper:0.65>, <lora:Krea2_TextFusion_Refusal_Reduction:2>',
+        note: 'issue#1: 無引號對照組 — 正常輸入不受影響',
+        assertResult: assertNoOrphanCommaRegressions,
+    },
+    /** issue #1 — 最小重現：孤立 " 與其唯一的差異變因 */
+    {
+        input: 'Scene text., }\nGrainy photo with grain., <lora:A:0.4>, <lora:B:1> <lora:C:1>, <lora:D:0.25>',
+        note: 'issue#1: 最小重現 — 無引號對照組',
+        assertResult: assertNoOrphanCommaRegressions,
+    },
+    {
+        input: 'Scene text., "}, }\nGrainy photo with grain., <lora:A:0.4>, <lora:B:1> <lora:C:1>, <lora:D:0.25>',
+        note: 'issue#1: 最小重現 — 加入孤立 "（唯一變因）不得產生孤兒逗號',
+        assertResult: assertNoOrphanCommaRegressions,
+    },
+    /** issue #1 — 分行結束引號的語意鎖定：第二行照常切割 */
+    {
+        input: 'a "b, c\nd, e',
+        note: 'issue#1: 引號不跨行保留 — 第二行逗號照常切割',
+        assertResult: assertNoOrphanCommaRegressions,
+    },
+    /** --- */
+]
+
+/* ====================================================================
  *  單一事實來源：splitTags 測試執行器
  *
  *  splitTags 與 splitTags → splitByPeriod pipeline 共用此函式。
@@ -460,6 +576,9 @@ function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
         it(title, (t) => {
             /** Step 1: splitTags 切割 */
             const tagResult = splitTags(tc.input, ...(tc.args || []))
+
+            /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
+            if (tc.assertResult) tc.assertResult(tagResult, t)
 
             /** Step 2: 可選 — splitByPeriod 管線 */
             let finalResult = tagResult
@@ -571,4 +690,14 @@ describe('splitTags → splitByPeriod pipeline', async () => {
     const originalFn = await loadOriginal()
 
     runSplitTagsTests({ cases: pipelineCases, splitTags, originalFn, splitByPeriod })
+})
+
+/**
+ * issues 回歸案例：以獨立 describe 分類呈現，
+ * 失敗時可立即從標題辨識為「已知 bug 復發」而非一般行為變更。
+ */
+describe('issues regression cases', async () => {
+    const splitTags = await loadModule()
+
+    runSplitTagsTests({ cases: issuesCases, splitTags, originalFn: null, splitByPeriod: null })
 })

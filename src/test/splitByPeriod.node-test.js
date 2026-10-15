@@ -163,6 +163,8 @@ const newlineCases = [
         note: 'newline in parens splits, paren state reset' },
     { input: 'a. \n(b)', args: [{ includeParen: false }], expected: ['a.', '\n', '(b)'],
         note: 'newline priority overrides includeParen=false stop' },
+    { input: 'a. "b. c\nd. e', expected: ['a.', '"b. c', '\n', 'd.', 'e'],
+        note: 'unclosed quote ends at newline — line 2 period splits normally (quote not carried over)' },
 ]
 
 const realWorldCases = [

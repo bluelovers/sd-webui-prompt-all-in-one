@@ -8,8 +8,6 @@
  *   1. 零外部依賴，純函式，可獨立測試。
  *   2. 不依賴任何前端框架（Vue / React）或瀏覽器 API。
  *   3. 透過 options 物件控制切割行為，支援未來擴充。
- *
- * @module utils/splitByPeriod
  */
 
 /**
@@ -98,6 +96,29 @@ export function splitByPeriod(str, { includeParen, splitSemicolon } = {}) {
 }
 
 /**
+ * 建立「僅作用於當前行」的 runtime 狀態物件。
+ *
+ * 與 splitTags.createLineState 同構（行級變數集中管理）：
+ * 分行時由 walk() 的 splitAtNewline() 呼叫 lineState.reset() 一併重置，
+ * 未來新增行級變數只需加進此處，不會再發生「忘了納入重置清單」的遺漏。
+ *
+ * @returns {{quoteChar: string|null, parenStack: string[], reset: () => void}}
+ */
+function createLineState() {
+    return {
+        /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元（不跨行保留） */
+        quoteChar: null,
+        /** 未關閉括號的 stack（不跨行配對，分行即清空） */
+        parenStack: [],
+        /** 行級完整重置（分行時使用）：結束引號 + 清空括號 stack */
+        reset() {
+            this.quoteChar = null
+            this.parenStack.length = 0
+        },
+    }
+}
+
+/**
  * 走訪切割核心（可遞迴重處理）。
  *
  * @param {string}  str
@@ -113,10 +134,12 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
 
     const len = str.length
     const parts = []
-    const parenStack = []
+    /**
+     * 行級 runtime 狀態：所有「僅作用於當前行」的變數集中於此。
+     * 分行時由 splitAtNewline() 呼叫 lineState.reset() 一併重置。
+     */
+    const lineState = createLineState()
     let start = 0
-    /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元 */
-    let quoteChar = null
 
     /** 預先計算：includeParen=false 時，若下一個非空白字元是開括號則停止切割 */
     const notAllowParen = !includeParen
@@ -124,26 +147,27 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
     /**
      * 分行切割：與 splitTags 同規則——分行優先級最高，
      * 不論引號或括號狀態，\n 一律觸發切割並保留 "\n" 標記；
-     * 切割後括號狀態重設（跨段括號不強制配對）。引號狀態則保留（與 splitTags 一致）。
+     * 切割後由 lineState.reset() 將行級狀態（含 quoteChar、parenStack）
+     * 一併重置，下一行視為全新上下文（引號不跨行保留，跨段括號不強制配對）。
      */
     function splitAtNewline(ci) {
         const seg = str.substring(start, ci)
         if (seg !== '') parts.push(seg)
         parts.push('\n')
         start = ci + 1
-        parenStack.length = 0
+        lineState.reset()
     }
 
     for (let ci = 0; ci < len; ci++) {
         const ch = str[ci]
 
         /** ── 引號追蹤（優先級最高）── */
-        if (quoteChar) {
+        if (lineState.quoteChar) {
             /** 目前在引號內：遇到相同引號字元則關閉 */
-            if (ch === quoteChar) {
-                quoteChar = null
+            if (ch === lineState.quoteChar) {
+                lineState.quoteChar = null
             }
-            /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割 */
+            /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割，並結束該行引號 */
             if (ch === '\n') {
                 splitAtNewline(ci)
                 continue
@@ -152,7 +176,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
             continue
         } else if (ch === '"') {
             /** 雙引號一律視為引號開啟（不會是撇號） */
-            quoteChar = ch
+            lineState.quoteChar = ch
             continue
         } else if (ch === "'" && allowSingleQuote) {
             /**
@@ -167,7 +191,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
             const nextChar = ci < len - 1 ? str[ci + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
-                quoteChar = ch
+                lineState.quoteChar = ch
             }
             continue
         }
@@ -179,6 +203,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
         }
 
         /** ── 括號追蹤 ── */
+        const parenStack = lineState.parenStack
         if (isOpenParen(ch)) {
             parenStack.push(ch)
         } else if (isCloseParen(ch)) {
@@ -222,7 +247,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
      * 未關閉的單引號：忽略它並以 allowSingleQuote=false 重走
      *（與 splitTags pushSegment 同規則；重走時單引號不再開啟，不會遞迴）。
      */
-    if (allowSingleQuote && quoteChar === "'") {
+    if (allowSingleQuote && lineState.quoteChar === "'") {
         return walk(str, includeParen, splitSemicolon, false)
     }
 

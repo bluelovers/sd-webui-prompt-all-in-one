@@ -495,6 +495,19 @@ exports[`splitByPeriod > newline handling (priority over quotes/parens) > traili
 }
 `;
 
+exports[`splitByPeriod > newline handling (priority over quotes/parens) > unclosed quote ends at newline — line 2 period splits normally (quote not carried over) — [8a012bc1] \"a. \\\"b. c\\nd. e\" 1`] = `
+{
+  "input": "a. \\"b. c\\nd. e",
+  "result": [
+    "a.",
+    "\\"b. c",
+    "\\n",
+    "d.",
+    "e"
+  ]
+}
+`;
+
 exports[`splitByPeriod > no period at all > [b94d27b9] \"hello world\" 1`] = `
 {
   "input": "hello world",
