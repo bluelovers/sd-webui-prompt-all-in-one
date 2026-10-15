@@ -317,6 +317,111 @@ exports[`splitTags > both quote types closed, comma outside splits — [d36cc3f4
 }
 `;
 
+exports[`splitTags > cleanup: NULL char removed — [2b10de34] \"a\\u0000b, c\" 1`] = `
+{
+  "input": "a\\u0000b, c",
+  "result": [
+    "ab",
+    "c"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "a\\u0000b",
+    "c"
+  ]
+}
+`;
+
+exports[`splitTags > cleanup: edge BOM (U+FEFF) removed — JS \\s includes U+FEFF — [5868a377] \"﻿abc, def\" 1`] = `
+{
+  "input": "﻿abc, def",
+  "result": [
+    "abc",
+    "def"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > cleanup: edge spaces trimmed but boundary newlines preserved — [a8f85b71] \" \\nabc\\n \" 1`] = `
+{
+  "input": " \\nabc\\n ",
+  "result": [
+    "\\n",
+    "abc",
+    "\\n"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > cleanup: edge spaces trimmed, internal kept — [3e59aee2] \"  abc ,  def  \" 1`] = `
+{
+  "input": "  abc ,  def  ",
+  "result": [
+    "abc",
+    "def"
+  ],
+  "changedFromOriginal": false
+}
+`;
+
+exports[`splitTags > cleanup: invisible-chars-only input returns [] — [82899120] \"​\\u0000\" 1`] = `
+{
+  "input": "​\\u0000",
+  "result": [],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "​\\u0000"
+  ]
+}
+`;
+
+exports[`splitTags > cleanup: leading zero-width space removed — [cefb41ac] \"​abc, def\" 1`] = `
+{
+  "input": "​abc, def",
+  "result": [
+    "abc",
+    "def"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "​abc",
+    "def"
+  ]
+}
+`;
+
+exports[`splitTags > cleanup: trailing zero-width space removed — [e3bffa5f] \"abc, def​\" 1`] = `
+{
+  "input": "abc, def​",
+  "result": [
+    "abc",
+    "def"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "abc",
+    "def​"
+  ]
+}
+`;
+
+exports[`splitTags > cleanup: zero-width space inside segment removed — [9570efc2] \"abc​, def\" 1`] = `
+{
+  "input": "abc​, def",
+  "result": [
+    "abc",
+    "def"
+  ],
+  "changedFromOriginal": true,
+  "originalResult": [
+    "abc​",
+    "def"
+  ]
+}
+`;
+
 exports[`splitTags > closed quote directly before newline — [2110a10f] \"\\\"a\\\"\\nb\" 1`] = `
 {
   "input": "\\"a\\"\\nb",

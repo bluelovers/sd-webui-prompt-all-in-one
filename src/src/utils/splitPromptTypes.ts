@@ -90,6 +90,23 @@ export const enum EnumPromptSplitDelimiter {
  */
 export type IPromptSplitDelimiter = ITSTypeAndStringLiteral<EnumPromptSplitDelimiter>
 
+/**
+ * 需從 prompt 文字中清除的不可見字元。
+ * 這些字元肉眼不可見，會使標籤比對（lora 名稱、embedding）與權重解析悄悄失敗，
+ * 來源多為網頁 / 終端機複製貼上。
+ */
+export const enum EnumPromptInvisibleChar {
+    /** NULL 字元（來源常見於二進位流 / 終端輸出殘留） */
+    nullChar = '\x00',
+    /** 零寬空格 Zero Width Space（來源常見於網頁複製，U+200B） */
+    zeroWidthSpace = '\u200b',
+}
+
+/**
+ * 不可見字元（相容於 js：接受原始字串）。
+ */
+export type IPromptInvisibleChar = ITSTypeAndStringLiteral<EnumPromptInvisibleChar>
+
 /* ====================================================================
  *  定義（由 enum 派生的執行期資料，對應 promptOptions/definitions.ts 的角色）
  *

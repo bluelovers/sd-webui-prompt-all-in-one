@@ -119,6 +119,36 @@ function assertNoOrphanCommaRegressions(tagResult, t) {
     assertLoraTagsIntact(tagResult, t)
 }
 
+/**
+ * 斷言：結果中不得殘留不可見字元（\x00 NULL、\u200b 零寬空格）。
+ * 來源：輸入清理（trimPromptText）應在 splitTags 入口完成清除。
+ *
+ * @param {string[]} tagResult
+ * @param {object}   t
+ */
+function assertNoInvisibleChars(tagResult, t) {
+    const INVISIBLE_RE = /[\x00\u200b]/
+    const polluted = tagResult.filter(tag => INVISIBLE_RE.test(tag))
+    t.assert.deepEqual(polluted, [],
+        `不得殘留不可見字元: ${JSON.stringify(polluted)}`)
+}
+
+/**
+ * 斷言：首尾 tag 不得多餘水平空白（邊界空白應已修剪；\n 標記除外）。
+ *
+ * @param {string[]} tagResult
+ * @param {object}   t
+ */
+function assertNoEdgeWhitespace(tagResult, t) {
+    const segments = tagResult.filter(tag => tag !== '\n')
+    const first = segments[0] ?? ''
+    const last = segments[segments.length - 1] ?? ''
+    t.assert.equal(/^[^\S\n]|[^\S\n]$/.test(first), false,
+        `首段不得有前導空白: ${JSON.stringify(first)}`)
+    t.assert.equal(/[^\S\n]$/.test(last), false,
+        `末段不得有尾隨空白: ${JSON.stringify(last)}`)
+}
+
 /* ====================================================================
  *  測試案例定義
  *
@@ -358,6 +388,64 @@ const cases = [
     { input: false,
         note: 'boolean false input',
         expectOriginalChanged: false },
+
+    /**
+     * ── 輸入清理（trimPromptText）──
+     * splitTags 入口先清除不可見字元（\x00 NULL、\u200b 零寬空格）
+     * 並修剪邊界水平空白；換行是結構（wrap 標記），不得被修剪。
+     *
+     * 除快照外，另以 assertResult 直接断言意图：
+     *   - 結果中不得殘留任何不可見字元
+     *   - 邊界空白被清除（首尾 tag 無多餘空白）
+     *   - 換行標記數量與位置完全保留（清理不得吃掉結構）
+     */
+    { input: '​abc, def',
+        note: 'cleanup: leading zero-width space removed',
+        assertResult: (r, t) => {
+            assertNoInvisibleChars(r, t)
+            t.assert.equal(r[0], 'abc', '首段應為 abc（前導零寬空格已清除）')
+        } },
+    { input: 'abc​, def',
+        note: 'cleanup: zero-width space inside segment removed',
+        assertResult: (r, t) => {
+            assertNoInvisibleChars(r, t)
+            t.assert.equal(r[0], 'abc', '段內零寬空格已清除，不破壞逗號分割')
+        } },
+    { input: 'abc, def​',
+        note: 'cleanup: trailing zero-width space removed',
+        assertResult: (r, t) => {
+            assertNoInvisibleChars(r, t)
+            t.assert.equal(r[1], 'def', '末段應為 def（尾隨零寬空格已清除）')
+        } },
+    { input: 'a\u0000b, c',
+        note: 'cleanup: NULL char removed',
+        assertResult: (r, t) => {
+            assertNoInvisibleChars(r, t)
+            t.assert.equal(r[0], 'ab', 'NULL 字元移除後 a、b 併為一段')
+        } },
+    { input: '  abc ,  def  ',
+        note: 'cleanup: edge spaces trimmed, internal kept',
+        assertResult: (r, t) => {
+            assertNoEdgeWhitespace(r, t)
+            t.assert.deepEqual(r, ['abc', 'def'], '邊界空白清除後僅剩兩個純淨標籤')
+        } },
+    { input: ' \nabc\n ',
+        note: 'cleanup: edge spaces trimmed but boundary newlines preserved',
+        assertResult: (r, t) => {
+            assertNoEdgeWhitespace(r, t)
+            t.assert.deepEqual(r, ['\n', 'abc', '\n'],
+                '換行是結構：清理只移除邊界空白，分行標記位置與數量不得變動')
+        } },
+    { input: '​\u0000',
+        note: 'cleanup: invisible-chars-only input returns []',
+        assertResult: (r, t) => {
+            t.assert.deepEqual(r, [], '全為不可見字元時應視為空輸入')
+        } },
+    { input: '﻿abc, def',
+        note: 'cleanup: edge BOM (U+FEFF) removed — JS \\s includes U+FEFF',
+        assertResult: (r, t) => {
+            t.assert.equal(r[0], 'abc', '邊界 BOM 被 \\s 連帶清除（已知副作用，鎖定現況）')
+        } },
 
     /** ── 分行邊界 ── */
     { input: '\n',

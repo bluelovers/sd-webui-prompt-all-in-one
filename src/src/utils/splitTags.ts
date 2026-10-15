@@ -1,3 +1,4 @@
+import { trimPromptText } from './trimPromptText'
 import {
     EnumPromptBracketClose,
     EnumPromptBracketOpen,
@@ -88,16 +89,21 @@ const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
 /**
  * 分割标签（对外入口）。
  *
+ * 處理前先以 trimPromptText() 清理輸入：清除不可見字元（\x00、\u200b）
+ * 並修剪邊界水平空白（保留換行結構）。
+ *
  * @param {ISplitTagsInput} tags
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
  * @param {ISplitTagsOptions} [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
  * @returns {ITagSegment[]}
  */
-export default (tags: ISplitTagsInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): ITagSegment[] => {
+export function splitTags(tags: ISplitTagsInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): ITagSegment[] {
     if (tags === null || tags === undefined || tags === false || tags === "" || tags.trim() === "") return []
-    return splitRaw(tags, true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
+    return splitRaw(trimPromptText(tags), true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
 }
+
+export default splitTags
 
 /**
  * 建立「僅作用於當前行」的 runtime 狀態物件。
