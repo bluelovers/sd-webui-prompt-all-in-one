@@ -1,14 +1,100 @@
+import {
+    EnumPromptBracketClose,
+    EnumPromptBracketOpen,
+    EnumPromptBreakKeyword,
+    EnumPromptQuoteChar,
+    EnumPromptSplitMarker,
+    isPromptBracketOpen,
+    promptBracketPairs,
+    type IPromptBracketClose,
+    type IPromptBracketOpen,
+} from './splitPromptTypes'
+
+/**
+ * 分割選項。
+ * 廢充選項集中於此物件，避免參數隨功能增加而爆炸。
+ */
+export interface ISplitTagsOptions {
+    /** 是否允許保持一個空行（預設 false）。
+     *  false：連續換行一律壓縮為單一換行（\n+ → \n）。
+     *  true：連續換行最多保留一個空行（\n{3,} → \n\n），兩個以上的空行仍會被壓縮。 */
+    allowKeepEmptyLine?: boolean
+}
+
+/**
+ * 分割入口的輸入型別。
+ * 傳入 false / null / undefined 與空白字串時回傳空陣列（沿用既有防禦行為）。
+ * TODO: 目前為寬鬆型別——js 呼叫端可能傳入非預期值，日後收斂為 string 並在呼叫端修正。
+ */
+export type ISplitTagsInput = string | false | null | undefined
+
+/**
+ * 單一分割結果片段。
+ * TODO: 目前為寬鬆型別（純 string），日後收斂為區辨聯集
+ *       （文字片段 | 分行標記 | BREAK 關鍵字），以型別取代散布的字串比對。
+ */
+export type ITagSegment = string
+
+/**
+ * 行級 runtime 狀態介面。
+ * 所有「僅作用於當前行」的變數集中於此，分行時由 reset() 一併重置。
+ */
+export interface IPromptLineState {
+    /** null = 不在引號內；EnumPromptQuoteChar = 目前開啟的引號字元（不跨行保留） */
+    quoteChar: EnumPromptQuoteChar | null
+    /** 目前括號巢狀深度 */
+    bracketCount: number
+    /** 目前開啟的開括號（'' = 無括號） */
+    startBracketChar: IPromptBracketOpen | ''
+    /** 目前括號對應的閉括號（'' = 無括號） */
+    endBracketChar: IPromptBracketClose | ''
+    /** 重置括號狀態（逗號 / BREAK 分段時使用；引號不受影響） */
+    resetBracket(): void
+    /** 行級完整重置（分行時使用）：結束引號 + 重置括號 */
+    reset(): void
+}
+
+/**
+ * 表情符號保護占位組。
+ */
+interface IEmojiGuard {
+    /** 表情符號原文 */
+    emoji: string
+    /** 對應的比對正則（全域） */
+    re: RegExp
+}
+
+/**
+ * 表情符號占位符：切割期間以占位符取代表情，避免被誤判為括號/標點。
+ *
+ * @param {number} index - 表情在 EMOJI_GUARDS 中的索引
+ * @returns {string}
+ */
+const emojiPlaceholder = (index: number): string => `|||EXPRESSION${index}|||`
+
+/** 受保護的表情符號清單（索引即占位符編號，兩端共用）。 */
+const EMOJI_GUARDS: readonly IEmojiGuard[] = [
+    { emoji: ">_<", re: /\>_\</g },
+    { emoji: ":<", re: /\:\</g },
+    { emoji: ">:<", re: /\>\:\</g },
+    { emoji: ":>", re: /\:\>/g },
+    { emoji: ":-(", re: /\:\-\(/g },
+    { emoji: ":-)", re: /\:\-\)/g },
+]
+
+/** 「空白 + BREAK」字串：用於偵測段尾 BREAK 並移除。 */
+const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
+
 /**
  * 分割标签（对外入口）。
  *
- * @param {string}  tags
+ * @param {ISplitTagsInput} tags
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
- * @param {object}  [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
- *   @param {boolean} [options.allowKeepEmptyLine=false] - 是否允许保持一个空行。
- * @returns {string[]}
+ * @param {ISplitTagsOptions} [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
+ * @returns {ITagSegment[]}
  */
-export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options = {}) => {
+export default (tags: ISplitTagsInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): ITagSegment[] => {
     if (tags === null || tags === undefined || tags === false || tags === "" || tags.trim() === "") return []
     return splitRaw(tags, true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
 }
@@ -22,29 +108,19 @@ export default (tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, o
  * 集中為單一物件後，重置只需一行 lineState.reset()，
  * 未來新增行級變數只需加進 createLineState() 與 reset()，不會再有遺漏。
  *
- * @returns {{
- *   quoteChar: string|null,
- *   bracketCount: number,
- *   startBracketChar: string,
- *   endBracketChar: string,
- *   resetBracket: () => void,
- *   reset: () => void
- * }}
+ * @returns {IPromptLineState}
  */
-function createLineState() {
+function createLineState(): IPromptLineState {
     return {
-        /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元（不跨行保留） */
         quoteChar: null,
         bracketCount: 0,
         startBracketChar: '',
         endBracketChar: '',
-        /** 重置括號狀態（逗號 / BREAK 分段時使用；引號不受影響） */
         resetBracket() {
             this.bracketCount = 0
             this.startBracketChar = ''
             this.endBracketChar = ''
         },
-        /** 行級完整重置（分行時使用）：結束引號 + 重置括號 */
         reset() {
             this.quoteChar = null
             this.resetBracket()
@@ -63,20 +139,17 @@ function createLineState() {
  *   雙引號不受影響（未關閉雙引號仍保護到結尾）。
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
- * @param {object}  [options]
- * @param {boolean} [options.allowKeepEmptyLine=false] - 是否允許保持一個空行。
- *   false（預設）：連續換行一律壓縮為單一換行（\n+ → \n）。
- *   true：連續換行最多保留一個空行（\n{3,} → \n\n），兩個以上的空行仍會被壓縮。
- * @returns {string[]}
+ * @param {ISplitTagsOptions} [options]
+ * @returns {ITagSegment[]}
  */
-function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWrap, options = {}) {
-    const {allowKeepEmptyLine = false} = options
+function splitRaw(tags: string, allowSingleQuote: boolean, autoBreakBeforeWrap: boolean, autoBreakAfterWrap: boolean, options: ISplitTagsOptions = {}): ITagSegment[] {
+    const { allowKeepEmptyLine = false } = options
 
     /**
      * 中文/日文標點轉換（原為全域 pre-process，改為在迴圈內 quote-aware 執行）
      * 避免引號內的「、」。「」被提前轉換，失去原始語義。
      */
-    function convertPunctuation(ch) {
+    function convertPunctuation(ch: string): string {
         switch (ch) {
             /** ，中文逗号 */
             case '\uFF0C': return ','
@@ -93,9 +166,9 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
     }
 
     /** 制表符 */
-    tags = tags.replace(/\t/g, '\n')
+    tags = tags.replace(/\t/g, EnumPromptSplitMarker.newline)
     /** 回车符 */
-    tags = tags.replace(/\r/g, '\n')
+    tags = tags.replace(/\r/g, EnumPromptSplitMarker.newline)
     /**
      * 连续换行符压缩：
      *   allowKeepEmptyLine=false（预设）— 一律压缩为单个换行（\n+ → \n）
@@ -103,27 +176,12 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
      */
     tags = allowKeepEmptyLine
         ? tags.replace(/\n{3,}/g, '\n\n')
-        : tags.replace(/\n+/g, '\n')
+        : tags.replace(/\n+/g, EnumPromptSplitMarker.newline)
 
-    let emojis = [
-        {emoji: ">_<", re: /\>_\</g},
-        {emoji: ":<", re: /\:\</g},
-        {emoji: ">:<", re: /\>\:\</g},
-        {emoji: ":>", re: /\:\>/g},
-        {emoji: ":-(", re: /\:\-\(/g},
-        {emoji: ":-)", re: /\:\-\)/g},
-    ]
+    const emojis = EMOJI_GUARDS
     emojis.forEach((emoji, index) => {
-        tags = tags.replace(emoji.re, "|||EXPRESSION" + index + "|||")
+        tags = tags.replace(emoji.re, emojiPlaceholder(index))
     })
-
-    const brackets = {
-        '(': ')',
-        '[': ']',
-        '<': '>',
-        '{': '}'
-    }
-    const bracketStarts = Object.keys(brackets)
 
     let length = tags.length
     let temp = ''
@@ -133,7 +191,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
      * 新增行級變數時只需加進 createLineState()，不會再發生遺漏重置。
      */
     const lineState = createLineState()
-    let result = []
+    let result: ITagSegment[] = []
 
     /**
      * 推送一段文字：唯一的事實來源，分行分段、逗號分段、BREAK、收尾皆共用。
@@ -142,10 +200,10 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
      * 重新套用逗號／分行／BREAK／括號規則後再推送結果。
      * 未關閉的雙引號不觸發重處理（保持保護到結尾的既有行為）。
      */
-    function pushSegment() {
+    function pushSegment(): void {
         const text = temp.trim()
         if (text === '') return
-        if (allowSingleQuote && lineState.quoteChar === "'") {
+        if (allowSingleQuote && lineState.quoteChar === EnumPromptQuoteChar.single) {
             result.push(...splitRaw(text, false, autoBreakBeforeWrap, autoBreakAfterWrap, options))
         } else {
             result.push(text)
@@ -158,9 +216,9 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
      * 且引號不跨行保留：切割後由 lineState.reset() 將行級狀態（含 quoteChar）
      * 一併重置，下一行視為全新上下文（跨段括號亦不強制配對）。
      */
-    function splitAtNewline() {
+    function splitAtNewline(): void {
         pushSegment()
-        result.push("\n")
+        result.push(EnumPromptSplitMarker.newline)
         lineState.reset()
         temp = ''
     }
@@ -175,18 +233,18 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
                 lineState.quoteChar = null
             }
             /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割，並結束該行引號 */
-            if (char === "\n") {
+            if (char === EnumPromptSplitMarker.newline) {
                 splitAtNewline()
                 continue
             }
             temp += char
             continue
-        } else if (char === '"') {
+        } else if (char === EnumPromptQuoteChar.double) {
             /** 雙引號一律視為引號開啟（不會是撇號） */
-            lineState.quoteChar = char
+            lineState.quoteChar = EnumPromptQuoteChar.double
             temp += char
             continue
-        } else if (char === "'" && allowSingleQuote) {
+        } else if (char === EnumPromptQuoteChar.single && allowSingleQuote) {
             /**
              * 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
              * 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
@@ -199,7 +257,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
             const nextChar = i < length - 1 ? tags[i + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
-                lineState.quoteChar = char
+                lineState.quoteChar = EnumPromptQuoteChar.single
                 temp += char
                 continue
             }
@@ -210,7 +268,7 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
         /** 中文/日文標點轉換：僅在引號外執行，引號內保留原始字元 */
         const converted = convertPunctuation(char)
 
-        if (converted === "\n") {
+        if (converted === EnumPromptSplitMarker.newline) {
             /** 分行優先級大於引號：與引號內共用同一切割邏輯 */
             splitAtNewline()
         } else if (converted === ",") {
@@ -226,23 +284,23 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
         } else {
             if (lineState.startBracketChar === '') {
                 /** 前面没有括号 */
-                if (bracketStarts.includes(converted)) {
+                if (isPromptBracketOpen(converted)) {
                     /** 括号开始 */
                     lineState.bracketCount = 1
                     lineState.startBracketChar = converted
-                    lineState.endBracketChar = brackets[converted]
+                    lineState.endBracketChar = promptBracketPairs[converted]
                     temp += converted
                 } else {
-                    if (converted === " " && temp.trim() === 'BREAK') {
+                    if (converted === " " && temp.trim() === EnumPromptBreakKeyword.BREAK) {
                         pushSegment()
                         lineState.resetBracket()
                         temp = ''
                     } else {
                         temp += converted
-                        if (temp.endsWith(' BREAK')) {
-                            temp = temp.substring(0, temp.length - ' BREAK'.length)
+                        if (temp.endsWith(BREAK_WITH_SPACE)) {
+                            temp = temp.substring(0, temp.length - BREAK_WITH_SPACE.length)
                             pushSegment()
-                            result.push('BREAK')
+                            result.push(EnumPromptBreakKeyword.BREAK)
                             lineState.resetBracket()
                             temp = ''
                         }
@@ -273,23 +331,28 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
     }
     pushSegment()
 
-    let result2 = []
+    let result2: ITagSegment[] = []
     for (let value of result) {
-        if (value === "\n") {
+        if (value === EnumPromptSplitMarker.newline) {
             result2.push(value)
             continue
         }
         let start = value[0]
         let end = value[value.length - 1]
-        if (start === '[' && end === ']') {
+        /**
+         * 以明確字元比對（非 isPromptBracketOpen 全列）：
+         * 舊版僅保護 [ ( { 包裹的片段，<...> 不在此列（交由下方 lora 抽取處理），
+         * 保持行為一致，勿改為全括號判斷。
+         */
+        if (start === EnumPromptBracketOpen.square && end === EnumPromptBracketClose.square) {
             result2.push(value)
             continue
         }
-        if (start === '(' && end === ')') {
+        if (start === EnumPromptBracketOpen.paren && end === EnumPromptBracketClose.paren) {
             result2.push(value)
             continue
         }
-        if (start === '{' && end === '}') {
+        if (start === EnumPromptBracketOpen.curly && end === EnumPromptBracketClose.curly) {
             result2.push(value)
             continue
         }
@@ -299,8 +362,8 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
          * aaa <lora:KuutanKoihime:0.7>  <lora:add_detail:0.6><lora:clothesTransparent_v20:1:1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0>, [<lora:A:1>:<lora:B:1>:10], [lora:A:1::10], [<lora:A:1>:10], [<lora:A:1>:0.5], [[<lora:A:1>::25]:10], [<lora:A:1> #increment:10], [<lora:A:1> #decrease:10], [<lora:A:1> #cmd\(warmup\(0.5\)\):10]
          */
         let regex = /\<lora:[^\>]+\>/
-        let match = null
-        let values = []
+        let match: RegExpExecArray | null = null
+        let values: string[] = []
         while (match = regex.exec(value)) {
             let startIndex = match.index
             let endIndex = startIndex + match[0].length
@@ -315,50 +378,12 @@ function splitRaw(tags, allowSingleQuote, autoBreakBeforeWrap, autoBreakAfterWra
         for (let value2 of values) {
             if (value2 === '' || value2.trim() === '') continue
             emojis.forEach((emoji, index) => {
-                value2 = value2.replace("|||EXPRESSION" + index + "|||", emoji.emoji)
+                value2 = value2.replace(emojiPlaceholder(index), emoji.emoji)
             })
-            // value2 = value2.replace(/\|\|\|EXPRESSION1\|\|\|/g, '>_<')
             result2.push(value2)
         }
     }
     result = result2
-
-    /*let result2 = []
-    let len = result.length
-    for (let i = 0; i < len; i++) {
-        let value = result[i]
-        if (value === "BREAK") {
-            if (autoBreakBeforeWrap) {
-                // 如果是在“BREAK”关键词前面加换行符
-                // 判断上一个是否换行符
-                if (i > 0) {
-                    let prev = result[i - 1]
-                    if (prev === "\n" || prev === "\r\n") {
-                        // 上一个已经是换行了
-                    } else {
-                        // 上一个不是换行
-                        result2.push("\n")
-                    }
-                }
-            }
-            result2.push(value)
-            if (autoBreakAfterWrap) {
-                // 如果是在“BREAK”关键词后面加换行符
-                // 判断下一个是否换行符
-                if (i + 1 < len) {
-                    let next = result[i + 1]
-                    if (next === "\n" || next === "\r\n") {
-                        // 下一个已经是换行了
-                    } else {
-                        // 下一个不是换行
-                        result2.push("\n")
-                    }
-                }
-            }
-        } else {
-            result2.push(value)
-        }
-    }*/
 
     return result
 }

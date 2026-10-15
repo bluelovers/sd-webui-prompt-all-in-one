@@ -35,7 +35,8 @@ const _promptOptions = [
         /** 子元件未傳入時的預設 */
         propDefault: false,
         afterSave: EnumPromptOptionAfterSave.updatePrompt,
-        emittedBy: [EnumPromptOptionComponent.phystonPrompt, EnumPromptOptionComponent.promptFormat], // phystonPrompt 頭部選單與 promptFormat checkbox 都有 emit / emitted by both components' UIs
+        /** phystonPrompt 頭部選單與 promptFormat checkbox 都有 emit / emitted by both components' UIs */
+        emittedBy: [EnumPromptOptionComponent.phystonPrompt, EnumPromptOptionComponent.promptFormat],
         note: '移除 tag 前後多餘空白；變更後需重新產生輸出。',
     },
     {
@@ -59,7 +60,8 @@ const _promptOptions = [
         dataDefault: false,
         propDefault: false,
         afterSave: EnumPromptOptionAfterSave.saveOnly,
-        emittedBy: [], // 兩個子元件都沒有會 emit 此選項的 UI（無 checkbox），屬純 prop 選項 / no UI emits it in either child; prop-only
+        /** 兩個子元件都沒有會 emit 此選項的 UI（無 checkbox），屬純 prop 選項 */
+        emittedBy: [],
         note: '權重為 1 時保留 (x:1)；僅需儲存設定。',
     },
     {

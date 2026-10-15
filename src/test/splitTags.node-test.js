@@ -6,10 +6,10 @@
  * 不需手動複製或維護預期值。
  *
  * 執行方式：
- *   cd src && node --test test/splitTags.node-test.js
+ *   cd src && tsx --test test/splitTags.node-test.js
  *
  * 首次建立 / 內容變動後更新快照：
- *   cd src && node --test --test-update-snapshots test/splitTags.node-test.js
+ *   cd src && tsx --test --test-update-snapshots test/splitTags.node-test.js
  *
  * 快照檔案位置：test/splitTags.node-test.js.snapshot（與測試檔同目錄）
  *
@@ -17,18 +17,33 @@
  * 透過 glob pattern 做區隔，避免衝突。
  */
 
-const { describe, it } = require('node:test')
-const assert = require('node:assert/strict')
-const { compareWithOriginal, attachOriginalComparison, caseTitle } = require('./helpers/node-test-helpers')
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { compareWithOriginal, attachOriginalComparison, caseTitle } from './helpers/node-test-helpers'
 
 /* ====================================================================
  *  工具函式
  * ==================================================================== */
 
+/**
+ * 解析 ESM/CJS interop 的 default 匯出。
+ *
+ * package.json 無 "type": "module"，tsx 將 .ts 以 CJS 轉譯（exports.default），
+ * 動態 import() 再包一層 default，形成雙層 default；此函式取回真正的函式。
+ * 原生 ESM 載入（.js 檔）時 default 即函式，行為不變。
+ *
+ * @param {object} mod - 動態 import() 回傳的模組命名空間
+ * @returns {Function}
+ */
+function resolveDefaultExport(mod) {
+    const d = mod?.default
+    return typeof d === 'function' ? d : d?.default
+}
+
 /** 動態載入 ESM 模組。 */
 async function loadModule() {
-    const mod = await import('../src/utils/splitTags.js')
-    return mod.default
+    const mod = await import('../src/utils/splitTags.ts')
+    return resolveDefaultExport(mod)
 }
 
 /**
@@ -38,7 +53,7 @@ async function loadModule() {
 async function loadOriginal() {
     try {
         const mod = await import('../src/utils/splitTags_original.js')
-        return mod.default
+        return resolveDefaultExport(mod)
     } catch {
         return null
     }
@@ -46,8 +61,8 @@ async function loadOriginal() {
 
 /** 動態載入 splitByPeriod ESM 模組。 */
 async function loadSplitByPeriod() {
-    const mod = await import('../src/utils/splitByPeriod.js')
-    return mod.default
+    const mod = await import('../src/utils/splitByPeriod.ts')
+    return typeof mod.default === 'function' ? mod.default : mod.default?.default
 }
 
 /* ====================================================================

@@ -1,5 +1,16 @@
+import {
+    EnumPromptBracketClose,
+    EnumPromptQuoteChar,
+    EnumPromptSplitDelimiter,
+    EnumPromptSplitMarker,
+    isPromptBracketClose,
+    isPromptBracketOpen,
+    promptBracketPairsReversed,
+    type IPromptBracketOpen,
+} from './splitPromptTypes'
+
 /**
- * splitByPeriod.js
+ * splitByPeriod.ts
  *
  * 將字串以句號（"."）為分隔符切割為多個片段，
  * 同時尊重巢狀括號與引號的完整性——僅在括號已完全關閉、且不在引號內的位置才執行切割。
@@ -8,30 +19,67 @@
  *   1. 零外部依賴，純函式，可獨立測試。
  *   2. 不依賴任何前端框架（Vue / React）或瀏覽器 API。
  *   3. 透過 options 物件控制切割行為，支援未來擴充。
+ *
+ * @module utils/splitByPeriod
  */
 
 /**
- * 開括號 → 閉括號的映射表（用於 stack 配對驗證）
- * @type {Record<string, string>}
+ * 切割選項。
  */
-const PAREN_MAP = { ')': '(', ']': '[', '}': '{' }
-
-/**
- * 判斷字元是否為開括號。
- * @param {string} ch
- * @returns {boolean}
- */
-function isOpenParen(ch) {
-    return ch === '(' || ch === '[' || ch === '{'
+export interface ISplitByPeriodOptions {
+    /**
+     * 是否允許在括號前方切割（無預設值）。
+     * - true  ：句號後遇到開括號仍執行切割。
+     * - false / undefined：句號後遇到開括號時停止切割（保留括號與前段的關聯）。
+     */
+    includeParen?: boolean
+    /**
+     * 是否將 ASCII 分號 ";" 併入句號機制切割（預設關閉）。
+     * - true  ：";" 後接空白時切割，分隔符保留在段尾（與 "." 同一機制）；
+     *           多個連續 ";" 全數保留於段內，不縮減、不產生空段。
+     * - false / undefined：";" 不是分隔符。
+     */
+    splitSemicolon?: boolean
 }
 
 /**
- * 判斷字元是否為閉括號。
- * @param {string} ch
- * @returns {boolean}
+ * 切割結果片段。
+ * TODO: 目前為寬鬆型別（純 string），日後收斂為區辨聯集
+ *       （文字片段 | 分行標記），與 splitTags.ITagSegment 統一。
  */
-function isCloseParen(ch) {
-    return ch === ')' || ch === ']' || ch === '}'
+export type IPeriodPart = string
+
+/**
+ * 行級 runtime 狀態介面。
+ * 所有「僅作用於當前行」的變數集中於此，分行時由 reset() 一併重置。
+ */
+export interface IPeriodLineState {
+    /** null = 不在引號內；EnumPromptQuoteChar = 目前開啟的引號字元（不跨行保留） */
+    quoteChar: EnumPromptQuoteChar | null
+    /** 未關閉括號的 stack（不跨行配對，分行即清空） */
+    parenStack: IPromptBracketOpen[]
+    /** 行級完整重置（分行時使用）：結束引號 + 清空括號 stack */
+    reset(): void
+}
+
+/**
+ * 建立「僅作用於當前行」的 runtime 狀態物件。
+ *
+ * 與 splitTags.createLineState 同構（行級變數集中管理）：
+ * 分行時由 walk() 的 splitAtNewline() 呼叫 lineState.reset() 一併重置，
+ * 未來新增行級變數只需加進此處，不會再發生「忘了納入重置清單」的遺漏。
+ *
+ * @returns {IPeriodLineState}
+ */
+function createLineState(): IPeriodLineState {
+    return {
+        quoteChar: null,
+        parenStack: [],
+        reset() {
+            this.quoteChar = null
+            this.parenStack.length = 0
+        },
+    }
 }
 
 /**
@@ -51,16 +99,9 @@ function isCloseParen(ch) {
  *     重走整段，重新套用句號／分號／分行／括號規則（與 splitTags pushSegment 同規則）；
  *     未關閉雙引號則保持保護到結尾。
  *
- * @param {string}  str          - 要切割的原始字串。
- * @param {Object}  [options]             - 切割選項。
- * @param {boolean} [options.includeParen] - 是否允許在括號前方切割（無預設值）。
- *   - true  ：句號後遇到開括號仍執行切割。
- *   - false / undefined：句號後遇到開括號時停止切割（保留括號與前段的關聯）。
- * @param {boolean} [options.splitSemicolon] - 是否將 ASCII 分號 ";" 併入句號機制切割（預設關閉）。
- *   - true  ：";" 後接空白時切割，分隔符保留在段尾（與 "." 同一機制）；
- *             多個連續 ";" 全數保留於段內，不縮減、不產生空段。
- *   - false / undefined：";" 不是分隔符。
- * @returns {string[]} 切割後的片段陣列。若無可切割點則回傳包含完整字串的單元素陣列。
+ * @param {unknown} str - 要切割的原始字串。非字串時以 String() 轉換為單一元素陣列回傳（防禦 js 呼叫端）。
+ * @param {ISplitByPeriodOptions} [options] - 切割選項。
+ * @returns {IPeriodPart[]} 切割後的片段陣列。若無可切割點則回傳包含完整字串的單元素陣列。
  *
  * @example
  *   splitByPeriod("xxx. (111. 222)", { includeParen: true })
@@ -90,32 +131,9 @@ function isCloseParen(ch) {
  *   splitByPeriod("a;;; b", { splitSemicolon: true })
  *   // → ["a;;;", "b"]       （連續分號全數保留，不縮減）
  */
-export function splitByPeriod(str, { includeParen, splitSemicolon } = {}) {
+export function splitByPeriod(str: unknown, { includeParen, splitSemicolon }: ISplitByPeriodOptions = {}): IPeriodPart[] {
     if (typeof str !== 'string') return [String(str)]
     return walk(str, includeParen, splitSemicolon, true)
-}
-
-/**
- * 建立「僅作用於當前行」的 runtime 狀態物件。
- *
- * 與 splitTags.createLineState 同構（行級變數集中管理）：
- * 分行時由 walk() 的 splitAtNewline() 呼叫 lineState.reset() 一併重置，
- * 未來新增行級變數只需加進此處，不會再發生「忘了納入重置清單」的遺漏。
- *
- * @returns {{quoteChar: string|null, parenStack: string[], reset: () => void}}
- */
-function createLineState() {
-    return {
-        /** null = 不在引號內，'"' 或 "'" = 目前開啟的引號字元（不跨行保留） */
-        quoteChar: null,
-        /** 未關閉括號的 stack（不跨行配對，分行即清空） */
-        parenStack: [],
-        /** 行級完整重置（分行時使用）：結束引號 + 清空括號 stack */
-        reset() {
-            this.quoteChar = null
-            this.parenStack.length = 0
-        },
-    }
 }
 
 /**
@@ -128,12 +146,12 @@ function createLineState() {
  *   主呼叫為 true；若收尾時單引號仍未關閉（false positive，如所有格 orks'），
  *   以 false 重走——忽略該單引號，重新套用句號／分號／分行／括號規則。
  *   未關閉雙引號不觸發重走（保持保護到結尾）。
- * @returns {string[]}
+ * @returns {IPeriodPart[]}
  */
-function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
+function walk(str: string, includeParen: boolean | undefined, splitSemicolon: boolean | undefined, allowSingleQuote: boolean): IPeriodPart[] {
 
     const len = str.length
-    const parts = []
+    const parts: IPeriodPart[] = []
     /**
      * 行級 runtime 狀態：所有「僅作用於當前行」的變數集中於此。
      * 分行時由 splitAtNewline() 呼叫 lineState.reset() 一併重置。
@@ -150,10 +168,10 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
      * 切割後由 lineState.reset() 將行級狀態（含 quoteChar、parenStack）
      * 一併重置，下一行視為全新上下文（引號不跨行保留，跨段括號不強制配對）。
      */
-    function splitAtNewline(ci) {
+    function splitAtNewline(ci: number): void {
         const seg = str.substring(start, ci)
         if (seg !== '') parts.push(seg)
-        parts.push('\n')
+        parts.push(EnumPromptSplitMarker.newline)
         start = ci + 1
         lineState.reset()
     }
@@ -168,17 +186,17 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
                 lineState.quoteChar = null
             }
             /** 分行優先級大於引號：即使在引號內，\n 仍觸發切割，並結束該行引號 */
-            if (ch === '\n') {
+            if (ch === EnumPromptSplitMarker.newline) {
                 splitAtNewline(ci)
                 continue
             }
             /** 在引號內的其他字元（含句號）都不做切割判斷 */
             continue
-        } else if (ch === '"') {
+        } else if (ch === EnumPromptQuoteChar.double) {
             /** 雙引號一律視為引號開啟（不會是撇號） */
-            lineState.quoteChar = ch
+            lineState.quoteChar = EnumPromptQuoteChar.double
             continue
-        } else if (ch === "'" && allowSingleQuote) {
+        } else if (ch === EnumPromptQuoteChar.single && allowSingleQuote) {
             /**
              * 單引號需區分撇號（it's、pathâ's、👍's）與引號開啟（'hello'）。
              * 撇號的特徵：前後都不是空白（\S 已涵蓋 tab、nbsp 及所有 Unicode 空白）。
@@ -191,27 +209,27 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
             const nextChar = ci < len - 1 ? str[ci + 1] : ''
             const isApostrophe = /^\S$/.test(prevChar) && /^\S$/.test(nextChar)
             if (!isApostrophe) {
-                lineState.quoteChar = ch
+                lineState.quoteChar = EnumPromptQuoteChar.single
             }
             continue
         }
 
         /** ── 分行：優先級最高，不論括號狀態一律切割 ── */
-        if (ch === '\n') {
+        if (ch === EnumPromptSplitMarker.newline) {
             splitAtNewline(ci)
             continue
         }
 
         /** ── 括號追蹤 ── */
         const parenStack = lineState.parenStack
-        if (isOpenParen(ch)) {
+        if (isPromptBracketOpen(ch)) {
             parenStack.push(ch)
-        } else if (isCloseParen(ch)) {
+        } else if (isPromptBracketClose(ch)) {
             /** 僅在 stack 頂端為配對的開括號時才 pop，避免不配對的閉括號干扰 */
-            if (parenStack.length > 0 && parenStack[parenStack.length - 1] === PAREN_MAP[ch]) {
+            if (parenStack.length > 0 && parenStack[parenStack.length - 1] === promptBracketPairsReversed[ch]) {
                 parenStack.pop()
             }
-        } else if ((ch === '.' || (splitSemicolon && ch === ';')) && parenStack.length === 0) {
+        } else if ((ch === EnumPromptSplitDelimiter.period || (splitSemicolon && ch === EnumPromptSplitDelimiter.semicolon)) && parenStack.length === 0) {
             /**
              * 僅在括號已全部關閉（parenStack 為空）時才考慮切割。
              * "." 與 ";"（splitSemicolon 開啟時）共用同一機制：
@@ -230,7 +248,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
 
                 /** includeParen=false 時，若下一個非空白字元是開括號則停止切割 */
                 const nextChar = nextStart < len ? str[nextStart] : ''
-                if (notAllowParen && isOpenParen(nextChar)) {
+                if (notAllowParen && isPromptBracketOpen(nextChar)) {
                     break
                 }
 
@@ -247,7 +265,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
      * 未關閉的單引號：忽略它並以 allowSingleQuote=false 重走
      *（與 splitTags pushSegment 同規則；重走時單引號不再開啟，不會遞迴）。
      */
-    if (allowSingleQuote && lineState.quoteChar === "'") {
+    if (allowSingleQuote && lineState.quoteChar === EnumPromptQuoteChar.single) {
         return walk(str, includeParen, splitSemicolon, false)
     }
 
@@ -257,7 +275,7 @@ function walk(str, includeParen, splitSemicolon, allowSingleQuote) {
      *（如輸入 "\n" → ["\n"]，保證 splitTags 標記直通）。
      */
     const tail = str.substring(start)
-    if (tail !== '' || parts.length === 0 || parts[parts.length - 1] !== '\n') {
+    if (tail !== '' || parts.length === 0 || parts[parts.length - 1] !== EnumPromptSplitMarker.newline) {
         parts.push(tail)
     }
 

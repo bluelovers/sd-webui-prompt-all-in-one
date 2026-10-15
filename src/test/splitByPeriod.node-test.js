@@ -6,15 +6,15 @@
  * 本檔案僅負責定義「測試案例資料」與模組載入。
  *
  * 執行方式：
- *   cd src && node --test test/splitByPeriod.node-test.js
+ *   cd src && tsx --test test/splitByPeriod.node-test.js
  *
  * 檔名採用 .node-test.js 後綴，與未來可能引入的第三方測試框架（Jest / Vitest）
  * 透過 glob pattern 做區隔，避免衝突。
  */
 
-const { describe, it } = require('node:test')
-const assert = require('node:assert/strict')
-const { runCases } = require('./helpers/node-test-helpers')
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { runCases } from './helpers/node-test-helpers'
 
 /* ====================================================================
  *  測試案例定義
@@ -245,7 +245,7 @@ const quoteProtectionCases = [
  * ==================================================================== */
 
 async function loadSplitByPeriod() {
-    const mod = await import('../src/utils/splitByPeriod.js')
+    const mod = await import('../src/utils/splitByPeriod.ts')
     return mod.splitByPeriod
 }
 

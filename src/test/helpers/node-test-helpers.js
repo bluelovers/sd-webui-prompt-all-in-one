@@ -9,16 +9,16 @@
  * 樣板代碼。
  *
  * 使用方式：
- *   const { runCases } = require('./helpers/node-test-helpers')
+ *   import { runCases } from './helpers/node-test-helpers'
  *   const fn = await loadSomething()
  *   runCases('suite name', fn, [ ...testCases ])
  *
  * @module helpers/node-test-helpers
  */
 
-const { describe, it } = require('node:test')
-const assert = require('node:assert/strict')
-const crypto = require('node:crypto')
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import crypto from 'node:crypto'
 
 /**
  * 截斷字串並以 "…" 結尾（共用工具）。
@@ -26,7 +26,7 @@ const crypto = require('node:crypto')
  * @param {number} [maxLen=60]
  * @returns {string}
  */
-function truncate(str, maxLen = 60) {
+export function truncate(str, maxLen = 60) {
     if (str.length <= maxLen) return str
     return str.slice(0, maxLen) + '…'
 }
@@ -42,7 +42,7 @@ function truncate(str, maxLen = 60) {
  * @param {number} [maxLen=60] 截斷上限（先截斷再 stringify，避免截斷落在轉義序列中）
  * @returns {string}
  */
-function formatTitle(input, maxLen = 60) {
+export function formatTitle(input, maxLen = 60) {
     const notString = typeof input !== 'string'
     const raw = notString ? String(input) : input
 
@@ -67,7 +67,7 @@ function formatTitle(input, maxLen = 60) {
  * @param {Object} tc
  * @returns {string}
  */
-function caseTitle(tc) {
+export function caseTitle(tc) {
     let title
     if (typeof tc.input === 'string') {
         const identified = `[${promptHash(tc.input)}] ${formatTitle(tc.input)}`
@@ -118,7 +118,7 @@ function caseTitle(tc) {
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
  *   ])
  */
-function runCases(suiteName, fn, cases, options = {}) {
+export function runCases(suiteName, fn, cases, options = {}) {
     /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
@@ -156,7 +156,7 @@ function runCases(suiteName, fn, cases, options = {}) {
  * @param {*}             result     - 新版函式結果
  * @returns {{ changedFromOriginal: boolean|null, originalResult: *|null }}
  */
-function compareWithOriginal(originalFn, tc, result) {
+export function compareWithOriginal(originalFn, tc, result) {
     if (!originalFn) return { changedFromOriginal: null, originalResult: null }
     const originalResult = originalFn(tc.input, ...(tc.args || []))
     const changedFromOriginal = JSON.stringify(result) !== JSON.stringify(originalResult)
@@ -171,7 +171,7 @@ function compareWithOriginal(originalFn, tc, result) {
  * @param {boolean|null} changedFromOriginal
  * @param {*}       originalResult
  */
-function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
+export function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
     if (changedFromOriginal === null) return
     snap.changedFromOriginal = changedFromOriginal
     if (changedFromOriginal) snap.originalResult = originalResult
@@ -182,8 +182,6 @@ function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
  * @param {string} str
  * @returns {string} 8 字元 hex
  */
-function promptHash(str) {
+export function promptHash(str) {
     return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
 }
-
-module.exports = { runCases, formatTitle, caseTitle, compareWithOriginal, attachOriginalComparison, promptHash, truncate }
