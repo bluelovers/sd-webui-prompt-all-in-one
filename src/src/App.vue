@@ -164,7 +164,7 @@
     </div>
 </template>
 
-<script lang="ts">
+<script>
 import PhystonPrompt from "./components/phystonPrompt.vue"
 import TranslateSetting from "@/components/translateSetting.vue";
 import common from "@/utils/common";
