@@ -266,7 +266,7 @@
                                          v-show="appendListSelected !== null && appendListChildSelected !== null && appendListSelected === index && (item.type === 'favorite' || item.type === 'history')">
                                         <div class="tags-list">
                                             <template v-for="(tag, tagIndex) in appendListChildItemTags" :key="tagIndex">
-                                                <div v-if="tag.type && tag.type === 'wrap'" class="item-wrap"></div>
+                                                <div v-if="tagIsWrap(tag)" class="item-wrap"></div>
                                                 <div v-else class="tags-item">
                                                     <div class="item-tag-value">{{ tag.value }}</div>
                                                     <div class="item-tag-local-value">{{ tag.localValue }}</div>
@@ -297,14 +297,14 @@
 
                      <!--<TransitionGroup name="fadeLeft">-->
                     <div v-for="(tag, index) in tags" :key="tag.id"
-                         :class="['prompt-tag', tag.disabled ? 'disabled': '', tag.type === 'wrap' ? 'wrap-tag' : '']"
+                         :class="['prompt-tag', tag.disabled ? 'disabled': '', tagIsWrap(tag) ? 'wrap-tag' : '']"
                          :ref="'promptTag-' + tag.id" :data-id="tag.id">
                         <div class="prompt-tag-main"
                              @mouseenter="onTagMouseEnter(tag.id)"
                              @mousemove.stop="onTagMouseMove(tag.id)"
                              @mouseleave.stop="onTagMouseLeave(tag.id)">
                             <div class="prompt-tag-edit">
-                                <template v-if="tag.type === 'wrap'">
+                                <template v-if="tagIsWrap(tag)">
                                     <div class="prompt-tag-value"
                                          :ref="'promptTagValue-' + tag.id"
                                          v-tooltip="getLang('line_break_character') + '<br/>' + getLang('drop_to_order')"
@@ -321,7 +321,7 @@
                                          :class="tag.classes"
                                          :style="getTagColorStyle(tag)"
                                          :ref="'promptTagValue-' + tag.id"
-                                         v-tooltip="tag.isLora || tag.isLyco ? '' : getLang('click_to_edit') + '<br/>' + getLang('dblclick_to_disable') + '<br/>' + getLang('drop_to_order')"
+                                         v-tooltip="tagIsLoraLike(tag) ? '' : getLang('click_to_edit') + '<br/>' + getLang('dblclick_to_disable') + '<br/>' + getLang('drop_to_order')"
                                          @click="onTagClick(tag.id, $event)"
                                          @dblclick="onTagDblclick(tag.id)"
                                          @click.right.prevent="onTagRightClick(tag.id, $event)"
@@ -426,7 +426,7 @@
                         </div>
                     </div>
                     <div v-for="(tag, index) in tags" :key="tag.id"
-                         :class="['prompt-wrap', tag.type === 'wrap' ? 'wrap-tag' : '']" :data-id="tag.id"
+                         :class="['prompt-wrap', tagIsWrap(tag) ? 'wrap-tag' : '']" :data-id="tag.id"
                          ref="promptTagWrap"
                          @mousedown.stop="" @mousemove.stop="" @mouseup.stop=""></div>
                 </div>
@@ -478,7 +478,7 @@
                             <div class="sub-group-header" v-if="item.tabKey == groupTagsActive">
                                 <div v-for="(group, subIndex) in item.groups"
                                      :key="subIndex"
-                                     :class="[group.type && group.type === 'wrap' ? 'sub-group-tag-wrap': 'sub-group-tab', group.tabKey == subGroupTagsActive ? 'active' : '']"
+                                     :class="[tagIsWrap(group) ? 'sub-group-tag-wrap': 'sub-group-tab', group.tabKey == subGroupTagsActive ? 'active' : '']"
                                      @click="activeSubGroupTab(index, subIndex)"
                                      :data-name="group.name">{{ group.name }}</div>
                             </div>
@@ -586,9 +586,10 @@ import TagMixin from "@/mixins/phystonPrompt/tagMixin"
 import GroupTagsMixin from "@/mixins/phystonPrompt/groupTagsMixin"
 import IconSvg from "@/components/iconSvg.vue"
 import HighlightPrompt from "@/components/highlightPrompt.vue"
-import {ColorPicker} from "vue3-colorpicker"
+import { ColorPicker } from "vue3-colorpicker"
 import { splitByPeriod } from "@/utils/splitByPeriod"
 import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
+import { tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
 
 export default {
     name: 'PhystonPrompt',
@@ -803,7 +804,7 @@ export default {
             let line = 1
             let isFirstInLine = true
             this.tags.forEach((tag, index) => {
-                if (typeof tag['type'] === 'string' && tag.type === 'wrap') {
+                if (tagIsWrap(tag)) {
                     /**
                      * wrap 是行邊界。當它是「行首」時代表一個空行
                      * （例如拖曳標籤後留在列首的 wrap），此時應顯示該行行號；
@@ -1007,7 +1008,7 @@ export default {
             let lineHasSharp = false
             tags2.forEach((tag, index) => {
                 let prompt = ''
-                if (typeof tag['type'] === 'string' && tag.type === 'wrap') {
+                if (tagIsWrap(tag)) {
                     // 換行結束當前行 → 重置行狀態，供下一行重新累計
                     lineHasSharp = false
                     prompt = "\n"
@@ -1049,19 +1050,16 @@ export default {
                     let nextTag = null
                     let nextIsWarp = false
                     let nextIsBreak = false
-                    let nextIsLora = false
-                    let nextIsLyco = false
+                    let nextIsLoraLike = false
                     // 获取下一个按钮
                     if (index + 1 < length) {
                         nextTag = tags2[index + 1]
-                        if (typeof nextTag['type'] === 'string' && nextTag.type === 'wrap') {
+                        if (tagIsWrap(nextTag)) {
                             nextIsWarp = true
-                        } else if (nextTag.value === 'BREAK') {
+                        } else if (tagIsBreak(nextTag)) {
                             nextIsBreak = true
-                        } else if (nextTag.isLora) {
-                            nextIsLora = true
-                        } else if (nextTag.isLyco) {
-                            nextIsLyco = true
+                        } else if (tagIsLoraLike(nextTag)) {
+                            nextIsLoraLike = true
                         }
                     }
 
@@ -1103,11 +1101,11 @@ export default {
                         }
                     } else if (nextIsBreak) {
                         splitSymbol = ' '
-                    } else if ((nextIsLora || nextIsLyco) && this.autoRemoveLoraBeforeComma) {
+                    } else if (nextIsLoraLike && this.autoRemoveLoraBeforeComma) {
                         splitSymbol = (this.autoRemoveSpace ? '' : ' ')
                     }
 
-                    if (tag.value === 'BREAK') {
+                    if (tagIsBreak(tag)) {
                         if (nextIsWarp) {
                             splitSymbol = ''
                         } else {
@@ -1120,7 +1118,7 @@ export default {
                         splitSymbol = ''
                     }
 
-                    if (splitSymbol === splitSymbolDefault && (tag.isLora || tag.isLyco) && this.autoRemoveLoraAfterComma) {
+                    if (splitSymbol === splitSymbolDefault && tagIsLoraLike(tag) && this.autoRemoveLoraAfterComma) {
                         splitSymbol = (this.autoRemoveSpace ? '' : ' ')
                     }
 
@@ -1168,7 +1166,7 @@ export default {
             /** 規則 1：換行前的 tag 以「:」結尾 */
             if (value.endsWith(':')) return true
             /** 規則 2：換行前的 tag 是 Lora / Lyco */
-            if (tag.isLora || tag.isLyco) return true
+            if (tagIsLoraLike(tag)) return true
             /** 規則 3：該行任一 tag 以「#」開頭或結尾（由呼叫端遍歷期間累計傳入） */
             // if (lineHasSharp) return true
             /** 規則 4：換行前的 tag 以句號結尾 */
@@ -1200,27 +1198,24 @@ export default {
          */
         _shouldRemoveCommaByAutoOptimize(tag, tags2, index) {
             if (!tag) return false
-            const isLoraLike = item => !!item && (item.isLora || item.isLyco)
-            const isWrap = item => !!item && typeof item['type'] === 'string' && item.type === 'wrap'
-            const isBreak = item => !!item && typeof item.value === 'string' && item.value.trim() === 'BREAK'
             const nextTag = index + 1 < tags2.length ? tags2[index + 1] : null
             /** 已是最後一個 tag → 由 autoRemoveLastComma 處理，此處不移除 */
             if (!nextTag) return false
 
             /** 規則 1：當前是 Lora / Lyco，且下一個也是 Lora / Lyco */
-            if (isLoraLike(tag) && isLoraLike(nextTag)) return true
+            if (tagIsLoraLike(tag) && tagIsLoraLike(nextTag)) return true
             /** 規則 2-1：下一個 tag 是 BREAK */
-            if (isBreak(nextTag)) return true
+            if (tagIsBreak(nextTag)) return true
             /** 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK */
-            if (isWrap(nextTag)) {
+            if (tagIsWrap(nextTag)) {
                 let nextIndex = index + 1
-                while (nextIndex < tags2.length && isWrap(tags2[nextIndex])) {
+                while (nextIndex < tags2.length && tagIsWrap(tags2[nextIndex])) {
                     nextIndex++
                 }
-                if (isBreak(nextIndex < tags2.length ? tags2[nextIndex] : null)) return true
+                if (tagIsBreak(nextIndex < tags2.length ? tags2[nextIndex] : null)) return true
             }
             /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
-            if (/[;}:'"]$/.test((tag.value || '').trim()) && (isWrap(nextTag) || isLoraLike(nextTag))) return true
+            if (/[;}:'"]$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
 
             return false
         },
@@ -1252,11 +1247,11 @@ export default {
                 return;
             }
 
-            const nextIsWrap = nextTag?.type === 'wrap'
-            const nextIsBreak = nextTag?.value === 'BREAK'
+            const nextIsWrap = tagIsWrap(nextTag)
+            const nextIsBreak = tagIsBreak(nextTag)
             const originalHasTrailingPeriod = /\.\s*$/.test(tag.value)
             const nextIsLoraOrLyco = originalHasTrailingPeriod
-                && (nextTag?.isLora || nextTag?.isLyco)
+                && tagIsLoraLike(nextTag)
                 && !this.autoRemoveLoraBeforeComma
 
             if (this.autoOptimizeSplitSymbol && (originalHasTrailingPeriod && nextIsWrap || nextIsLoraOrLyco)) {
@@ -1290,7 +1285,7 @@ export default {
             while (i < this.tags.length) {
                 let tag = this.tags[i]
                 /** 跳過不應分割的標籤：換行、BREAK、Lora、Lyco */
-                if (tag?.type === 'wrap' || tag.value === 'BREAK' || tag.isLora || tag.isLyco) {
+                if (tagIsWrap(tag) || tagIsBreak(tag) || tagIsLoraLike(tag)) {
                     i++
                     continue
                 }
@@ -1354,13 +1349,13 @@ export default {
             let length = this.tags.length
             for (let i = 0; i < length; i++) {
                 let tag = this.tags[i]
-                if (tag.value === 'BREAK') {
+                if (tagIsBreak(tag)) {
                     if (this.autoBreakBeforeWrap) {
                         // 如果是在“BREAK”关键词前面加换行符
                         // 判断上一个是否换行符
                         if (i - 1 >= 0) {
                             let prevTag = this.tags[i - 1]
-                            if (typeof prevTag['type'] === 'string' && prevTag.type === 'wrap') {
+                            if (tagIsWrap(prevTag)) {
                                 // 上一个已经是换行了
                             } else {
                                 insertWrapIndexes.push(i)
@@ -1372,7 +1367,7 @@ export default {
                         // 判断下一个是否换行符
                         if (i + 1 < length) {
                             let nextTag = this.tags[i + 1]
-                            if (typeof nextTag['type'] === 'string' && nextTag.type === 'wrap') {
+                            if (tagIsWrap(nextTag)) {
                                 // 下一个已经是换行了
                             } else {
                                 insertWrapIndexes.push(i + 1)

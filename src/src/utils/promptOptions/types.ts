@@ -3,8 +3,6 @@
  */
 import type { ITSTypeAndStringLiteral } from 'ts-type'
 
-
-
 /**
  * 實際會 emit 該選項 v-model 事件（update:key）的子元件。
  * Child components that actually emit the option's v-model event (update:key).
