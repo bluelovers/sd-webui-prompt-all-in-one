@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "test": "node --run test:node",
-    "test:node": "node --run typecheck && tsx --test --test-update-snapshots test/**/*.node-test.js",
+    "test:node": "node --run typecheck && tsx --test --test-update-snapshots test/**/*.node-test.js test/**/*.node-test.ts",
     "posttest": "pnpm run build",
     "build": "vite build",
     "build:all": "pnpm run build && node --run build:css",

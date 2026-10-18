@@ -19,7 +19,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { compareWithOriginal, attachOriginalComparison, caseTitle } from './helpers/node-test-helpers'
+import { compareWithOriginal, attachOriginalComparison, caseTitle } from './helpers/node-test-helpers.js'
 
 /* ====================================================================
  *  工具函式

@@ -14,7 +14,7 @@
 
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { runCases } from './helpers/node-test-helpers'
+import { runCases } from './helpers/node-test-helpers.js'
 
 /* ====================================================================
  *  測試案例定義
