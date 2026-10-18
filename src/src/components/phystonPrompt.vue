@@ -199,6 +199,10 @@
                                  @click="$emit('click:showChatgpt', $event)">
                                 <icon-svg class="hover-scale-120" name="chatgpt"/>
                             </div>
+                            <div class="extend-btn-item" v-tooltip="getLang('paste_to_default_input_box')"
+                                 @click="onPasteToDefaultInputClick">
+                                <icon-svg class="hover-scale-120" name="paste"/>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -881,6 +885,8 @@ export default {
         })
     },
     methods: {
+        tagIsWrap,
+        tagIsLoraLike,
         init() {
             this.tags = []
             this.onTextareaChange()
@@ -1215,7 +1221,7 @@ export default {
                 if (tagIsBreak(nextIndex < tags2.length ? tags2[nextIndex] : null)) return true
             }
             /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
-            if (/[;}:'"]$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
+            if (/(?:[;}:'"*—]|[-=]{2,})$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
 
             return false
         },

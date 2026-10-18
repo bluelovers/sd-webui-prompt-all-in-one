@@ -169,6 +169,43 @@ export default {
         onClickLoadWebuiPrompt() {
             this.onTextareaChange(true)
         },
+        onPasteToDefaultInputClick() {
+            // 先 focus 默認輸入框，確保文件取得焦點，再嘗試程式化讀取剪貼簿
+            // Focus the default input box first to ensure the document is focused, then try reading the clipboard
+            if (this.textarea && typeof this.textarea.focus === 'function') {
+                this.textarea.focus()
+            }
+            // 讀取失敗時提示手動貼上 / Prompt manual paste when reading fails
+            const pasteFailed = () => {
+                this.$toastr.error(this.getLang('paste_clipboard_failed'))
+            }
+            if (!navigator.clipboard?.readText) {
+                pasteFailed()
+                return
+            }
+            setTimeout(() => {
+                this.textarea.focus()
+                navigator.clipboard.readText().then(text => {
+                    if (typeof text !== 'string' || text.trim() === '') {
+                        pasteFailed()
+                        return
+                    }
+                    this.textarea.value = text
+                    common.hideCompleteResults(this.textarea)
+                    if (typeof updateInput === "function") {
+                        updateInput(this.textarea)
+                    } else {
+                        this.textarea.dispatchEvent(new Event('input'))
+                    }
+                    this.onTextareaChange(true)
+                }).catch(() => {
+                    // 權限被拒、非 secure context、或焦點被搶走都會走到這裡
+                    // Permission denied, non-secure context, or focus stolen all land here
+                    pasteFailed()
+                })
+            }, 200)
+
+        },
         appendListItemName(item) {
             let names = []
             if (typeof item.name === "object") {

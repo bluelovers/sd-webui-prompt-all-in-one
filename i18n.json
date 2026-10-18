@@ -188,7 +188,9 @@
                 "is_auto_optimize_split_symbol": "自动优化分割符号：自动移除不合适的逗号分隔符，使输出更符合 Stable Diffusion 的语法习惯（如分行前、连续 Lora 之间、BREAK 前后等场景）。此为独立选项，无需勾选“按句号分割关键词”。",
                 "is_allow_keep_empty_line": "是否允许在解析提示词时保留一个空行。<br/>勾选后，连续换行最多压缩为一个空行（即保留两个换行符）；未勾选则连续换行全部压缩为单个换行。",
                 "auto_load_webui_prompt": "自动加载WebUI提示词变动。<br/>勾选后，当WebUI中提示词输入框的内容变动时，插件会自动加载关键词解析并格式化。<br/>未勾选，当WebUI中提示词输入框的内容变动时，需要手动点击加载提示词按钮。",
-                "load_webui_prompt": "加载WebUI提示词"
+                "load_webui_prompt": "加载WebUI提示词",
+                "paste_to_default_input_box": "粘贴剪贴板到提示词输入框",
+                "paste_clipboard_failed": "自動貼上失敗，請點擊輸入框後手動按貼上"
             }
         },
         {
@@ -378,7 +380,9 @@
                 "is_auto_optimize_split_symbol": "自動優化分割符號：自動移除不適合的逗號分隔符，使輸出更符合 Stable Diffusion 的語法習慣（如分行前、連續 Lora 之間、BREAK 前後等情境）。此為獨立選項，無需勾選「在句號+空格處分割關鍵詞」。",
                 "is_allow_keep_empty_line": "是否允許在解析提示詞時保留一個空行。<br/>勾選後，連續換行最多壓縮為一個空行（即保留兩個換行符）；未勾選則連續換行全部壓縮為單個換行。",
                 "auto_load_webui_prompt": "自動加載WebUI提示詞變動。<br/>勾選後，當WebUI中提示詞輸入框的內容變動時，插件會自動加載關鍵詞解析並格式化。<br/>未勾選，當WebUI中提示詞輸入框的內容變動時，需要手動點擊加載提示詞按鈕。",
-                "load_webui_prompt": "加載WebUI提示詞"
+                "load_webui_prompt": "加載WebUI提示詞",
+                "paste_to_default_input_box": "粘貼剪貼簿到提示詞輸入框",
+                "paste_clipboard_failed": "自動貼上失敗，請點擊輸入框後手動按貼上"
             }
         },
         {
@@ -568,7 +572,9 @@
                 "is_auto_optimize_split_symbol": "自動優化分割符號：自動移除不適合的逗號分隔符，使輸出更符合 Stable Diffusion 的語法習慣（如分行前、連續 Lora 之間、BREAK 前後等情境）。此為獨立選項，無需勾選「在句號+空格處分割關鍵詞」。",
                 "is_allow_keep_empty_line": "是否允許在解析提示詞時保留一個空行。<br/>勾選後，連續換行最多壓縮為一個空行（即保留兩個換行符）；未勾選則連續換行全部壓縮為單個換行。",
                 "auto_load_webui_prompt": "自動載入WebUI提示詞變動。<br/>勾選後，當WebUI中提示詞輸入框的內容變動時，插件會自動載入關鍵詞解析並格式化。<br/>未勾選，當WebUI中提示詞輸入框的內容變動時，需要手動點擊載入提示詞按鈕。",
-                "load_webui_prompt": "載入WebUI提示詞"
+                "load_webui_prompt": "載入WebUI提示詞",
+                "paste_to_default_input_box": "貼上剪貼簿到提示詞輸入框",
+                "paste_clipboard_failed": "自動貼上失敗，請點擊輸入框後手動按貼上"
             }
         },
         {
@@ -758,7 +764,9 @@
                 "is_auto_optimize_split_symbol": "Auto-optimize split symbol: automatically removes inappropriate comma separators so the output better follows Stable Diffusion syntax conventions (e.g. before a line break, between consecutive Loras, around BREAK, etc.). This is a standalone option and does not require \"split keywords at period+space\".",
                 "is_allow_keep_empty_line": "Whether to allow keeping one empty line when parsing the prompt.<br/>When checked, consecutive line breaks are compressed to at most one empty line (i.e. two newline characters); when unchecked, all consecutive line breaks are compressed into a single one.",
                 "auto_load_webui_prompt": "Auto-load WebUI prompt changes.<br/>When checked, the plugin will automatically load and format keyword parsing when the content of the prompt input box in WebUI changes.<br/>When unchecked, you need to manually click the load prompt button when the content of the prompt input box in WebUI changes.",
-                "load_webui_prompt": "Load WebUI prompt"
+                "load_webui_prompt": "Load WebUI prompt",
+                "paste_to_default_input_box": "Paste clipboard to prompt input box",
+                "paste_clipboard_failed": "Auto paste failed. Click the input box, then press paste manually."
             }
         },
         {
