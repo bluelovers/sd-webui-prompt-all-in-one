@@ -139,7 +139,7 @@ export default {
      * @param options.allowKeepEmptyLine {boolean} 是否允许保持一个空行（连续换行压缩上限为一个空行）
      * @returns {string[]}
      */
-    splitTags(tags, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options = {}) {
+    splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options) {
         return splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options)
     },
 
