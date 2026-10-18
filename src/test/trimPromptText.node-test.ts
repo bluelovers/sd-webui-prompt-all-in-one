@@ -12,7 +12,7 @@
  */
 
 import { describe } from 'node:test'
-import { runCases } from './helpers/node-test-helpers.js'
+import { runCases } from './helpers/node-test-helpers'
 
 /** 動態載入 trimPromptText（tsx CJS interop：可能為雙層 default）。 */
 async function loadTrimPromptText() {
