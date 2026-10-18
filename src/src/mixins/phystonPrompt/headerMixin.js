@@ -171,11 +171,10 @@ export default {
         },
         onPasteToDefaultInputClick() {
             // 先 focus 默認輸入框，確保文件取得焦點，再嘗試程式化讀取剪貼簿
-            // Focus the default input box first to ensure the document is focused, then try reading the clipboard
             if (this.textarea && typeof this.textarea.focus === 'function') {
                 this.textarea.focus()
             }
-            // 讀取失敗時提示手動貼上 / Prompt manual paste when reading fails
+            // 讀取失敗時提示手動貼上
             const pasteFailed = () => {
                 this.$toastr.error(this.getLang('paste_clipboard_failed'))
             }
@@ -192,6 +191,7 @@ export default {
                     }
                     this.textarea.value = text
                     common.hideCompleteResults(this.textarea)
+                    // 參照既有實作：此處照抄 phystonPrompt.vue updateTags() 寫入 textarea 後的通知方式
                     if (typeof updateInput === "function") {
                         updateInput(this.textarea)
                     } else {
@@ -200,7 +200,6 @@ export default {
                     this.onTextareaChange(true)
                 }).catch(() => {
                     // 權限被拒、非 secure context、或焦點被搶走都會走到這裡
-                    // Permission denied, non-secure context, or focus stolen all land here
                     pasteFailed()
                 })
             }, 200)
