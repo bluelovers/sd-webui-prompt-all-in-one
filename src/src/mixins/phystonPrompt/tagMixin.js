@@ -1,5 +1,6 @@
 import common from "@/utils/common";
 import autoSizeInput from "autosize-input";
+import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap } from "@/utils/promptTags/util";
 
 export default {
     data() {
@@ -366,6 +367,49 @@ export default {
                     this._handleHoverTag(id)
                     break
             }
+        },
+        /**
+         * 雙擊行號（.prompt-tag-line-no）時的行為：
+         *
+         * - 該行為「空行」（只計算未被停用的 tag）→ 不做任何變更。
+         * - 該行第一個 tag 不是 `#` → 在行首插入一個 value 為 `#` 的普通 tag。
+         * - 該行第一個 tag 已是 `#` → 切換該 `#` tag 自身的停用狀態。
+         *
+         * 註：`#` 是普通 tag（value 恰為 `#`），並非特殊型別。
+         *
+         * @param {string} id - 行首 tag 的 id（line-no 元素的 data-id）
+         */
+        onLineNumberDblclick(id) {
+            const startIndex = this.tags.findIndex(tag => tag.id === id)
+            if (startIndex === -1) return
+
+            const firstTag = this.tags[startIndex]
+
+            /**
+             * 找出該行結尾：略過所有「非分行」tag，停在第一個分行 tag。
+             * 找不到分行 tag 時（最後一行無結尾換行）以陣列末端為界。
+             */
+            const wrapScan = findTagUntil(this.tags, {
+                startIndex,
+                ignore: tag => !tagIsWrap(tag),
+                untilTarget: tag => tagIsWrap(tag),
+            })
+
+            if (tagIsSharp(firstTag)) {
+                /** 規則：已是 # → 只切換該 # tag 自身的停用狀態 */
+                firstTag.disabled = !firstTag.disabled
+            } else {
+                const lineEnd = wrapScan.found ? wrapScan.index : this.tags.length
+                /** 該行的 tag（不含結尾的分行 tag；行首為分行 tag 時為空陣列） */
+                const lineTags = this.tags.slice(startIndex, lineEnd)
+
+                /** 規則：空行（只檢查未被停用的 tag）→ 無任何變化 */
+                if (!lineTags.length || !lineTags.some(tag => !tagIsDisabled(tag))) return
+
+                /** 規則：不是 # → 於行首插入 value 為 # 的普通 tag */
+                this._appendTag('#', '', false, startIndex, 'text')
+            }
+            this.updateTags()
         },
         onTagRightClick(id, e) {
             switch (this.hotkey.rightClick) {

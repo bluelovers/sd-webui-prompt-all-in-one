@@ -175,7 +175,8 @@ export default {
                 this.textarea.focus()
             }
             // 讀取失敗時提示手動貼上
-            const pasteFailed = () => {
+            const pasteFailed = (text) => {
+                console.log(`Clipboard is empty or failed to read: ${text}`)
                 this.$toastr.error(this.getLang('paste_clipboard_failed'))
             }
             if (!navigator.clipboard?.readText) {
@@ -185,9 +186,9 @@ export default {
             setTimeout(() => {
                 this.textarea.focus()
                 navigator.clipboard.readText().then(text => {
-                    if (typeof text !== 'string' || text.trim() === '') {
-                        pasteFailed()
-                        return
+                    console.log('Clipboard content:', text)
+                    if (!text?.trim()?.length) {
+                        return pasteFailed(text)
                     }
                     this.textarea.value = text
                     common.hideCompleteResults(this.textarea)
@@ -198,9 +199,9 @@ export default {
                         this.textarea.dispatchEvent(new Event('input'))
                     }
                     this.onTextareaChange(true)
-                }).catch(() => {
+                }).catch((e) => {
                     // 權限被拒、非 secure context、或焦點被搶走都會走到這裡
-                    pasteFailed()
+                    return pasteFailed(e)
                 })
             }, 200)
 

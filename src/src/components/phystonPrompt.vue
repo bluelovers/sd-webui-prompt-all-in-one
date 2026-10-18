@@ -293,11 +293,17 @@
                 <div class="prompt-tags-list" ref="promptTagsList">
 
                     <div v-for="(tag, index) in tags" :key="'line-' + tag.id"
-                         :class="['prompt-tag-line-no', tagLineNumbers[index] ? 'line-no' : '']"
+                         :class="['prompt-tag-line-no display-none', tagLineNumbers[index] ? 'line-no' : '']"
                          :data-line="tagLineNumbers[index]"
                          :data-id="tag.id"
                          ref="promptTagLineNo"
-                         @mousedown.stop="" @mousemove.stop="" @mouseup.stop=""></div>
+                         @mousedown.stop="" @mousemove.stop="" @mouseup.stop=""
+                    >
+                         <div v-if="tagLineNumbers[index]"
+                            class="prompt-tag-line-no-main"
+                            @dblclick="onLineNumberDblclick(tag.id)"
+                         >{{ tagLineNumbers[index] }}</div>
+                    </div>
 
                      <!--<TransitionGroup name="fadeLeft">-->
                     <div v-for="(tag, index) in tags" :key="tag.id"
@@ -593,7 +599,7 @@ import HighlightPrompt from "@/components/highlightPrompt.vue"
 import { ColorPicker } from "vue3-colorpicker"
 import { splitByPeriod } from "@/utils/splitByPeriod"
 import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
-import { tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
+import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
 
 export default {
     name: 'PhystonPrompt',
@@ -1214,11 +1220,13 @@ export default {
             if (tagIsBreak(nextTag)) return true
             /** 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK */
             if (tagIsWrap(nextTag)) {
-                let nextIndex = index + 1
-                while (nextIndex < tags2.length && tagIsWrap(tags2[nextIndex])) {
-                    nextIndex++
-                }
-                if (tagIsBreak(nextIndex < tags2.length ? tags2[nextIndex] : null)) return true
+                /** 略過連續分行，停在第一個非分行 tag（邏輯抽離至 findTagUntil） */
+                const scan = findTagUntil(tags2, {
+                    startIndex: index + 1,
+                    ignore: tagIsWrap,
+                    untilTarget: tagIsBreak,
+                })
+                if (scan.found) return true
             }
             /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
             if (/(?:[;}:'"*—]|[-=]{2,})$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true

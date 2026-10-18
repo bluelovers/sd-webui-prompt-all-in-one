@@ -1,12 +1,15 @@
-import type { ITSAnyOfUnion, ITSUnionToOptional, ITSNullable } from 'ts-type'
+import type { ITSAnyOfUnion, ITSUnionToOptional, ITSNullable, ITSTypeAndStringLiteral } from 'ts-type'
 
 export const enum EnumPromptTagType
 {
 	lora = 'lora',
 	lyco = 'lyco',
 	wrap = 'wrap',
+
 	/** when value is "BREAK" */
 	BREAK = 'BREAK',
+	/** when value is "#" */
+	SHARP = '#',
 }
 
 export const enum EnumIsEnglish
@@ -15,6 +18,9 @@ export const enum EnumIsEnglish
 	ENGLISH = 1,
 	UNKNOWN = -1,
 }
+
+export type IPromptTagValueEnum = EnumPromptTagType.BREAK | EnumPromptTagType.SHARP;
+export type IPromptTagValue = ITSTypeAndStringLiteral<IPromptTagValueEnum> | (string & {});
 
 /**
  * src/src/mixins/phystonPrompt/tagMixin.js
@@ -28,7 +34,7 @@ export interface IPromptTagExtraProps
 export interface IPromptTag extends IPromptTagExtraProps
 {
 	type: string;
-	value: string | EnumPromptTagType.BREAK;
+	value: IPromptTagValue;
 	originalValue?: string;
 
 	disabled?: boolean;
