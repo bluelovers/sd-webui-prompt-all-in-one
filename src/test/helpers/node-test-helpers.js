@@ -1,23 +1,5 @@
-/**
- * node-test-helpers.js
- *
- * 可複用的 Node.js 原生測試輔助工具。
- * 提供 data-driven 的測試執行器，消除每個測試案例中重複的
- *   1. 模組載入（lazy import）
- *   2. 函式呼叫
- *   3. 結果斷言
- * 樣板代碼。
- *
- * 使用方式：
- *   import { runCases } from './helpers/node-test-helpers'
- *   const fn = await loadSomething()
- *   runCases('suite name', fn, [ ...testCases ])
- *
- * @module helpers/node-test-helpers
- */
 
 import { describe, it } from 'node:test'
-import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 
 /**
@@ -122,11 +104,10 @@ export function runCases(suiteName, fn, cases, options = {}) {
     /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
-        const resolvedFn = typeof fn === 'function' ? await fn() : fn
         for (const tc of cases) {
             const title = caseTitle(tc)
             const handler = async (t) => {
-                const result = await resolvedFn(tc.input, ...(tc.args || []))
+                const result = await fn(tc.input, ...(tc.args || []))
                 if (snapshot) {
                     const snap = { input: tc.input }
                     if (tc.args !== undefined) snap.args = tc.args
@@ -136,7 +117,7 @@ export function runCases(suiteName, fn, cases, options = {}) {
                 if (tc.assert) {
                     tc.assert(result)
                 } else {
-                    assert.deepEqual(result, tc.expected)
+                    t.assert.deepEqual(result, tc.expected)
                 }
             }
             if (tc.skip) {
@@ -146,6 +127,85 @@ export function runCases(suiteName, fn, cases, options = {}) {
             }
         }
     })
+}
+
+/**
+ * 執行一組 splitTags 測試案例（可選接上 splitByPeriod 管線）。
+ *
+ * 單一事實來源：splitTags 單獨測試、splitTags → splitByPeriod 管線測試、
+ * 管線專屬測試與 issues 回歸測試共用此函式，
+ * 差別僅在 splitByPeriod 是否為 null，以及案例上帶的斷言欄位。
+ *
+ * 流程：
+ *   Step 1    splitTags 切割
+ *   Step 1.5  可選 — 案例級 assertResult（splitTags 中間結果斷言）
+ *   Step 2    可選 — splitByPeriod 管線
+ *   Step 2.5  可選 — 案例級 assertPipeline（管線最終結果斷言，驗證兩階段合計的不變式）
+ *   Step 3    與原版比較
+ *   Step 4    組裝快照
+ *
+ * @param {Object}   opts
+ * @param {Object[]} opts.cases          - 測試案例陣列
+ * @param {Function} opts.splitTags      - 新版 splitTags 函式
+ * @param {Function|null} opts.originalFn - 原版 splitTags_original（可為 null）
+ * @param {Function|null} opts.splitByPeriod - 若提供，對每個 tag 結果再做 splitByPeriod
+ */
+export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
+    for (const tc of cases) {
+        const title = caseTitle(tc)
+        it(title, (t) => {
+            /** Step 1: splitTags 切割 */
+            const tagResult = splitTags(tc.input, ...(tc.args || []))
+
+            /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
+            if (tc.assertResult) tc.assertResult(tagResult, t)
+
+            /** Step 2: 可選 — splitByPeriod 管線 */
+            let finalResult = tagResult
+            let changed = false
+            if (splitByPeriod) {
+                finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
+                changed = JSON.stringify(tagResult) !== JSON.stringify(finalResult)
+
+                if (tc.expectChanged !== undefined) {
+                    t.assert.equal(changed, tc.expectChanged)
+                }
+
+                if (changed) {
+                    console.log(`  ⚠ splitByPeriodChanged: true  (${tagResult.length} → ${finalResult.length} segments)`)
+                } else {
+                    console.log(`  ✓ splitByPeriodChanged: false`)
+                }
+            }
+
+            /** Step 2.5: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
+            if (tc.assertPipeline) tc.assertPipeline(finalResult, t, tc)
+
+            /** Step 3: 與原版比較 */
+            const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
+
+            if (tc.expectOriginalChanged !== undefined) {
+                t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
+            }
+
+            /** Step 4: 組裝快照 */
+            const snap = splitByPeriod
+                ? { input: tc.input, splitTagsResult: tagResult }
+                : { input: tc.input, result: tagResult }
+
+            if (splitByPeriod) {
+                if (changed) {
+                    snap.splitByPeriodChanged = true
+                    snap.splitByPeriodResult = finalResult
+                } else {
+                    snap.splitByPeriodChanged = false
+                }
+            }
+
+            attachOriginalComparison(snap, changedFromOriginal, originalResult)
+            t.assert.snapshot(snap)
+        })
+    }
 }
 
 /**

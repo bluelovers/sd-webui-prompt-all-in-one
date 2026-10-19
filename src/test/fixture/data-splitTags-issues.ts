@@ -3,6 +3,7 @@ import {
 	assertNoInvisibleChars,
 	assertNoOrphanCommaRegressions,
 } from '../helpers/node-test-helper2';
+import type { ISplitTagsCase } from '../helpers/node-test-case-types';
 
 /**
  * ====================================================================
@@ -26,9 +27,11 @@ import {
  *  鎖定行為：
  *    - 分行結束引號（引號不跨行保留）。
  *    - 不得產生孤兒逗號 tag、不得有尾隨逗號 tag、lora tag 完整獨立。
+ *
+ *  型別契約：helpers/node-test-case-types.ts → ISplitTagsCase
  * ====================================================================
  */
-export const issuesCases001 = [
+export const issuesCases001: ISplitTagsCase[] = [
 	/** issue #1 — 使用者回報的完整原始輸入（兩行，含孤立 "） */
 	{
 		input: 'Bright, direct mid-day sunlight illuminates the scene, casting clear light across her face and chest above water while creating shimmering ripple patterns through the turquoise sea floor below.   Background, Composition & SettingSetting: An open tropical sea or lagoon with crystal-clear turquoise water over a pale sandy seabed. The horizon features a vast blue sky filled with fluffy white cumulus clouds.   Composition: An over-under (split-level) water shot using a wide-angle dome lens, capturing both the vibrant underwater scene in the lower half and the sunny sky with the subject in the upper half., "}, }\nGrainy smartphone photo with high ISO noise, selfie, raw unedited aesthetic, moody boudoir erotica, voyeuristic sensual editorial look, heroin chic vibe. Candid photo raking from the side, muted desaturated colors, nostalgic film look, photo dump style. Shot on a 28mm lens at f/1.8 with visible digital grain., <lora:realism_engine_krea2_v3.1:0.4>, <lora:babegenerator.ink-realism_helper:1> <lora:2_Strongx3_wl7:1>, <lora:realism_engine_krea2_v3.1:0.25>, <lora:babegenerator.ink-realism_helper:0.65>, <lora:Krea2_TextFusion_Refusal_Reduction:2>',
@@ -61,6 +64,6 @@ export const issuesCases001 = [
 	/** --- */
 ]
 
-export const issuesCases = [
+export const issuesCases: ISplitTagsCase[] = [
 	...issuesCases001
 ]

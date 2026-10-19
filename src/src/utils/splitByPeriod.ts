@@ -10,20 +10,6 @@ import {
 } from './splitPromptTypes'
 
 /**
- * splitByPeriod.ts
- *
- * 將字串以句號（"."）為分隔符切割為多個片段，
- * 同時尊重巢狀括號與引號的完整性——僅在括號已完全關閉、且不在引號內的位置才執行切割。
- *
- * 設計目標：
- *   1. 零外部依賴，純函式，可獨立測試。
- *   2. 不依賴任何前端框架（Vue / React）或瀏覽器 API。
- *   3. 透過 options 物件控制切割行為，支援未來擴充。
- *
- * @module utils/splitByPeriod
- */
-
-/**
  * 切割選項。
  */
 export interface ISplitByPeriodOptions {

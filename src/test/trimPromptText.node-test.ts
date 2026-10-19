@@ -13,13 +13,7 @@
 
 import { describe } from 'node:test'
 import { runCases } from './helpers/node-test-helpers'
-
-/** 動態載入 trimPromptText（tsx CJS interop：可能為雙層 default）。 */
-async function loadTrimPromptText() {
-    const mod = await import('../src/utils/trimPromptText.ts')
-    const d = mod?.default
-    return typeof d === 'function' ? d : d?.default
-}
+import { trimPromptText } from '../src/utils/trimPromptText'
 
 /* ====================================================================
  *  測試案例定義 — 每筆皆以 expected 直接断言意圖
@@ -82,5 +76,5 @@ const cleanupCases = [
 
 describe('trimPromptText', async () => {
     /** runCases 的 fn 參數為 lazy factory（內部會 await fn()），故傳入載入函式 */
-    runCases('cleanup intent (direct assertions, no snapshot)', loadTrimPromptText, cleanupCases)
+    runCases('cleanup intent (direct assertions, no snapshot)', trimPromptText, cleanupCases)
 })

@@ -1,36 +1,12 @@
-/* ====================================================================
- *  測試案例定義
- *
- *  每筆案例格式：
- *    { input, args?, note? }
- *
- *  - input : 傳入 splitTags 的第一個參數（tags 字串）
- *  - args  : 額外參數陣列 [autoBreakBeforeWrap, autoBreakAfterWrap, options]
- *            options 為物件（如 { allowKeepEmptyLine: true }），集中承載新選項，
- *            後續新增選項只需擴充物件欄位，不必更動既有案例。
- *  - note  : 附加說明（顯示在測試標題中）
- *  - assertResult : 可選，自訂斷言函式 (result, t) => void。
- *                   用於 issues 回歸案例——除快照外再以明確斷言鎖住關鍵行為，
- *                   避免未來維護者盲目更新快照時讓 bug 行為被悄悄固化。
- *
- *  斷言方式：
- *    - 短輸入：t.assert.snapshot(result)
- *    - 長輸入（> 100 字元）：t.assert.snapshot({ input, result })
- *      快照內同時保存原始輸入與切割結果，方便 review。
- *
- *  設計原則：
- *    - 每筆案例只測試一個行為，從真實輸入中擷取小片段。
- *    - 案例之間完全獨立，新增不會導致既有快照名稱移位。
- *    - 長輸入以雜湊作為快照名稱前綴，避免名稱過長且保持穩定。
- * ==================================================================== */
 
 import {
 	assertNoEdgeWhitespace,
 	assertNoInvisibleChars,
 	assertNoOrphanCommaRegressions,
 } from '../helpers/node-test-helper2';
+import type { ISplitTagsCase, ISplitTagsPipelineCase } from '../helpers/node-test-case-types';
 
-export const cases = [
+export const cases: ISplitTagsCase[] = [
 	/** ── 基本切割 ── */
 	{
 		input: 'a, b, c',
@@ -731,7 +707,7 @@ export const cases = [
 
 
 /** 需要進行跨模組驗證的特定提示詞 */
-export const pipelineCases = [
+export const pipelineCases: ISplitTagsPipelineCase[] = [
 	/** 完整提示詞 */
 	{
 		input: 'Prominent readable text and placement: the main illuminated facade at upper left-center reads "Sakura Stop" with "くらしに、さくらを。" beneath. The right side of the fascia reads "いつもの日を、少し特別に。" with "Small joys. Brighter days." below. The tall illuminated sign above the slope reads "Sakura Stop" and lists "たばこ", "お弁当", "飲み物", "スイーツ", and "日用品". The left window poster reads "今日も、いい一日を。" with "Good day. Better tomorrow." below. The right window poster reads "さくらの季節をもっと身近に。". A pink vertical banner beside the store reads "さくらと、いい毎日を。". The roadside vertical sign at far right reads "海の見える町". The downhill road includes the white marking "止まれ" near the lower distance.',

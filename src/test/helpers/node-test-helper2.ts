@@ -88,3 +88,26 @@ export function assertNoEdgeWhitespace(tagResult, t)
 		`末段不得有尾隨空白: ${JSON.stringify(last)}`,
 	)
 }
+
+/**
+ * 斷言：管線最終結果中 '#' 的數量與原始輸入完全相同。
+ *
+ * '#' 是提示詞中獨立成行的標記（不帶標點）：splitTags 負責切段、
+ * splitByPeriod 負責切句，兩者都只能「切開」文字，
+ * 不得新增或丟棄標記字元。數量守恆即代表管線沒有吞字或造字。
+ *
+ * 供案例的 assertPipeline 欄位使用（見 helpers/node-test-case-types）。
+ *
+ * @param {string[]} finalResult - splitTags → splitByPeriod 的最終結果
+ * @param {object}   t           - node:test 的 TestContext（提供 assert）
+ * @param {{ input: unknown }} tc - 測試案例（以 input 計算基準數量）
+ */
+export function assertHashCountPreserved(finalResult, t, tc)
+{
+	const count = text => String(text).split('#').length - 1
+	const expected = count(tc.input)
+	const actual = count(finalResult.join(''))
+	t.assert.equal(actual, expected,
+		`管線輸出的 '#' 數量應與輸入相同：input=${expected}, output=${actual}`,
+	)
+}

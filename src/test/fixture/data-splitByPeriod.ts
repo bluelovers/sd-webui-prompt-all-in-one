@@ -1,19 +1,7 @@
 
-/* ====================================================================
- *  測試案例定義
- *
- *  每筆案例格式：
- *    { input, args?, expected, note?, assert?, skip? }
- *
- *  - input    : 傳入函式的第一個參數
- *  - args     : 額外參數陣列（會 spread 到 fn(input, ...args)）
- *  - expected : 期望回傳值（與 assert 二選一）
- *  - note     : 附加說明（顯示在測試標題中）
- *  - assert   : 自訂斷言 fn(result)，若有則取代 expected
- *  - skip     : true 時跳過此案例
- * ==================================================================== */
+import type { ISplitByPeriodCase } from '../helpers/node-test-case-types';
 
-export const basicCases = [
+export const basicCases: ISplitByPeriodCase[] = [
 	{ input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
 	{ input: 'hello. world', expected: ['hello.', 'world'] },
 	{
@@ -33,14 +21,14 @@ export const basicCases = [
 		note: 'period without surrounding space — no split',
 	},
 ]
-export const noPeriodCases = [
+export const noPeriodCases: ISplitByPeriodCase[] = [
 	{ input: 'hello world', expected: ['hello world'] },
 	{
 		input: '', expected: [''],
 		note: 'empty string',
 	},
 ]
-export const bracketProtectionCases = [
+export const bracketProtectionCases: ISplitByPeriodCase[] = [
 	{ input: 'xxx. (111. 222)', args: [{ includeParen: true }], expected: ['xxx.', '(111. 222)'] },
 	{ input: '(111. 222). xxx', args: [{ includeParen: true }], expected: ['(111. 222).', 'xxx'] },
 	{
@@ -72,7 +60,7 @@ export const bracketProtectionCases = [
 		expected: ['a.', '([b. c]).', 'd'], note: 'mixed bracket types',
 	},
 ]
-export const includeParenFalseCases = [
+export const includeParenFalseCases: ISplitByPeriodCase[] = [
 	{
 		input: 'xxx. (111. 222)', args: [{ includeParen: false }], expected: ['xxx. (111. 222)'],
 		note: 'first open paren stops',
@@ -98,7 +86,7 @@ export const includeParenFalseCases = [
 		note: 'no parens — all splits work',
 	},
 ]
-export const mismatchedBracketCases = [
+export const mismatchedBracketCases: ISplitByPeriodCase[] = [
 	{
 		input: 'a. )b. c', args: [{ includeParen: true }], expected: ['a.', ')b.', 'c'],
 		note: 'stray close paren ignored',
@@ -116,14 +104,14 @@ export const mismatchedBracketCases = [
 		expected: ['((a. b). (c. d)).', 'e'], note: 'multiple nested groups',
 	},
 ]
-export const nonStringGuardCases = [
+export const nonStringGuardCases: ISplitByPeriodCase[] = [
 	{ input: 42, expected: ['42'], note: 'number' },
 	{ input: null, expected: ['null'], note: 'null' },
 	{ input: undefined, expected: ['undefined'], note: 'undefined' },
 	{ input: true, expected: ['true'], note: 'boolean' },
 	{ input: { a: 1 }, expected: ['[object Object]'], note: 'object' },
 ]
-export const whitespaceCases = [
+export const whitespaceCases: ISplitByPeriodCase[] = [
 	{ input: 'a.\tb. c', expected: ['a.', 'b.', 'c'], note: 'tab after period' },
 	{ input: 'a.\t  \tb. c', expected: ['a.', 'b.', 'c'], note: 'multiple tabs + spaces' },
 	{
@@ -135,7 +123,7 @@ export const whitespaceCases = [
 		note: 'many spaces then open paren',
 	},
 ]
-export const semicolonCases = [
+export const semicolonCases: ISplitByPeriodCase[] = [
 	{
 		input: 'her legs; gnarled trees', expected: ['her legs; gnarled trees'],
 		note: 'default off — semicolon is not a split point',
@@ -185,7 +173,7 @@ export const semicolonCases = [
 		note: 'unclosed single quote (possessive) ignored — semicolon still splits',
 	},
 ]
-export const newlineCases = [
+export const newlineCases: ISplitByPeriodCase[] = [
 	{
 		input: 'a\nb', expected: ['a', '\n', 'b'],
 		note: 'newline always splits — same rule as splitTags (priority > quotes/parens)',
@@ -239,7 +227,7 @@ export const newlineCases = [
 		note: 'unclosed quote ends at newline — line 2 period splits normally (quote not carried over)',
 	},
 ]
-export const realWorldCases = [
+export const realWorldCases: ISplitByPeriodCase[] = [
 	{
 		input: 'masterpiece, best quality. (1girl:1.2), looking at viewer',
 		args: [{ includeParen: true }],
@@ -261,7 +249,7 @@ export const realWorldCases = [
 		expected: ['tag.', '(nested. prompt. here).', 'end'],
 	},
 ]
-export const quoteProtectionCases = [
+export const quoteProtectionCases: ISplitByPeriodCase[] = [
 	{
 		input: 'with "Small joys. Brighter days." below.',
 		args: [{ includeParen: true }],
