@@ -25,6 +25,48 @@ interface ICaseBare {
 }
 
 /**
+ * 比較兩份結果是否不同（單一事實來源）。
+ *
+ * 以 JSON 序列化比較：被測函式回傳的是純資料陣列（無函式、無 undefined 欄位），
+ * 序列化結果與結構相等一致。
+ * 抽出的理由：原先 runSplitTagsTests 與 compareWithOriginal 各寫一次
+ * `JSON.stringify(a) !== JSON.stringify(b)`，改動比較策略時易漏改其一。
+ */
+export function resultsDiffer(a: unknown, b: unknown): boolean {
+    return JSON.stringify(a) !== JSON.stringify(b)
+}
+
+/**
+ * 逐案例註冊 it()（單一事實來源）。
+ *
+ * 三組 runner（runCases / runSplitTagsTests / runUpdatePromptTests）原本各自重寫
+ * 「caseTitle → it(title, handler)」這段骨架，且只有 runCases 支援 skip，
+ * 導致 IUpdatePromptCase.skip 宣告了卻從未被讀取。
+ * 抽出後註冊方式只有一份，skip 語意也對三組一致生效。
+ *
+ * @param cases   - 案例陣列
+ * @param toTitle - 由案例產生標題（各 runner 傳入不同的 caseTitle 包裝）
+ * @param handler - 案例主體（已帶上 tc，呼叫端不必在閉包重取）
+ */
+export function forEachCase<TCase>(
+    cases: readonly TCase[],
+    toTitle: (tc: TCase) => string,
+    handler: (tc: TCase, t: TestContext) => void | Promise<void>,
+): void {
+    for (const tc of cases) {
+        const title = toTitle(tc)
+        /** 案例可宣告 skip（IRunCase / ISplitTagsCase / IUpdatePromptCase 皆有此欄位） */
+        const skip = (tc as { skip?: boolean }).skip === true
+        const run = (t: TestContext) => handler(tc, t)
+        if (skip) {
+            it.skip(title, run)
+        } else {
+            it(title, run)
+        }
+    }
+}
+
+/**
  * 截斷字串並以 "…" 結尾（共用工具）。
  */
 export function truncate(str: string, maxLen = 60): string {
@@ -106,31 +148,23 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
     /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
-        for (const tc of cases) {
-            const title = caseTitle(tc)
-            /** 獨立成 const，無法從 it() 取得 t 的 contextually-typed，故明確標註 TestContext */
-            const handler = async (t: TestContext) => {
-                /** args 為空時展開空陣列：等價於「不傳額外參數」 */
-                const result = await fn(tc.input, ...(tc.args ?? ([] as unknown as TArgs)))
-                if (snapshot) {
-                    /** key 順序 input → args? → result 會被序列化到 .snapshot，須與既有快照一致 */
-                    const snap: IRunCasesSnap<TInput, TArgs, TResult> = tc.args !== undefined
-                        ? { input: tc.input, args: tc.args, result }
-                        : { input: tc.input, result }
-                    t.assert.snapshot(snap)
-                }
-                if (tc.assert) {
-                    tc.assert(result)
-                } else {
-                    t.assert.deepEqual(result, tc.expected)
-                }
+        /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
+        forEachCase(cases, caseTitle, async (tc, t) => {
+            /** args 為空時展開空陣列：等價於「不傳額外參數」 */
+            const result = await fn(tc.input, ...(tc.args ?? ([] as unknown as TArgs)))
+            if (snapshot) {
+                /** key 順序 input → args? → result 會被序列化到 .snapshot，須與既有快照一致 */
+                const snap: IRunCasesSnap<TInput, TArgs, TResult> = tc.args !== undefined
+                    ? { input: tc.input, args: tc.args, result }
+                    : { input: tc.input, result }
+                t.assert.snapshot(snap)
             }
-            if (tc.skip) {
-                it.skip(title, handler)
+            if (tc.assert) {
+                tc.assert(result)
             } else {
-                it(title, handler)
+                t.assert.deepEqual(result, tc.expected)
             }
-        }
+        })
     })
 }
 
@@ -155,61 +189,60 @@ export function runSplitTagsTests({
     originalFn,
     splitByPeriod,
 }: ISplitTagsTestsOptions): void {
-    for (const tc of cases) {
-        const title = caseTitle(tc)
-        it(title, (t) => {
-            /** Step 1: splitTags 切割 */
-            const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
+    /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
+    forEachCase(cases, caseTitle, (tc, t) => {
+        /** Step 1: splitTags 切割 */
+        const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
 
-            /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
-            if (tc.assertResult) tc.assertResult(tagResult, t)
+        /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
+        if (tc.assertResult) tc.assertResult(tagResult, t)
 
-            /** Step 2: 可選 — splitByPeriod 管線 */
-            let finalResult: ITagSegment[] = tagResult
-            let changed = false
-            if (splitByPeriod) {
-                finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
-                changed = JSON.stringify(tagResult) !== JSON.stringify(finalResult)
+        /** Step 2: 可選 — splitByPeriod 管線 */
+        let finalResult: ITagSegment[] = tagResult
+        let changed = false
+        if (splitByPeriod) {
+            finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
+            /** 比較邏輯共用 resultsDiffer（單一事實來源） */
+            changed = resultsDiffer(tagResult, finalResult)
 
-                if (tc.expectChanged !== undefined) {
-                    t.assert.equal(changed, tc.expectChanged)
-                }
-
-                if (changed) {
-                    console.log(`  ⚠ splitByPeriodChanged: true  (${tagResult.length} → ${finalResult.length} segments)`)
-                } else {
-                    console.log(`  ✓ splitByPeriodChanged: false`)
-                }
+            if (tc.expectChanged !== undefined) {
+                t.assert.equal(changed, tc.expectChanged)
             }
 
-            /** Step 2.5: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
-            if (tc.assertPipeline) tc.assertPipeline(finalResult, t, tc)
-
-            /** Step 3: 與原版比較 */
-            const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
-
-            if (tc.expectOriginalChanged !== undefined) {
-                t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
-            }
-
-            /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
-            let snap: ISplitTagsPipelineSnap | ISplitTagsSnap
-            if (splitByPeriod) {
-                const pipelineSnap: ISplitTagsPipelineSnap = {
-                    input: tc.input,
-                    splitTagsResult: tagResult,
-                    splitByPeriodChanged: changed,
-                }
-                if (changed) pipelineSnap.splitByPeriodResult = finalResult
-                snap = pipelineSnap
+            if (changed) {
+                console.log(`  ⚠ splitByPeriodChanged: true  (${tagResult.length} → ${finalResult.length} segments)`)
             } else {
-                snap = { input: tc.input, result: tagResult }
+                console.log(`  ✓ splitByPeriodChanged: false`)
             }
+        }
 
-            attachOriginalComparison(snap, changedFromOriginal, originalResult)
-            t.assert.snapshot(snap)
-        })
-    }
+        /** Step 2.5: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
+        if (tc.assertPipeline) tc.assertPipeline(finalResult, t, tc)
+
+        /** Step 3: 與原版比較 */
+        const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
+
+        if (tc.expectOriginalChanged !== undefined) {
+            t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
+        }
+
+        /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
+        let snap: ISplitTagsPipelineSnap | ISplitTagsSnap
+        if (splitByPeriod) {
+            const pipelineSnap: ISplitTagsPipelineSnap = {
+                input: tc.input,
+                splitTagsResult: tagResult,
+                splitByPeriodChanged: changed,
+            }
+            if (changed) pipelineSnap.splitByPeriodResult = finalResult
+            snap = pipelineSnap
+        } else {
+            snap = { input: tc.input, result: tagResult }
+        }
+
+        attachOriginalComparison(snap, changedFromOriginal, originalResult)
+        t.assert.snapshot(snap)
+    })
 }
 
 /**
@@ -222,7 +255,7 @@ export function compareWithOriginal(
 ): { changedFromOriginal: boolean | null, originalResult: ITagSegment[] | null } {
     if (!originalFn) return { changedFromOriginal: null, originalResult: null }
     const originalResult = originalFn(tc.input, ...(tc.args ?? []))
-    const changedFromOriginal = JSON.stringify(result) !== JSON.stringify(originalResult)
+    const changedFromOriginal = resultsDiffer(result, originalResult)
     return { changedFromOriginal, originalResult }
 }
 

@@ -17,6 +17,19 @@ import type {
 } from './node-test-case-types'
 
 /**
+ * 測試中使用的佔位字串列舉。
+ *
+ * updatePrompt 的宿主替身在「未注入真 genPrompt」時，commit 會收到此字串。
+ * 它是快照契約的一部分：*.snapshot 檔的 committed 陣列內實際出現這個值，
+ * 因此值本身不可任意修改，否則既有快照會全部失敗。
+ * 過去各處以字面值 '<genPrompt>' 重複維護，抽出為 enum 後成為單一事實來源。
+ */
+export enum EnumPromptPlaceholder {
+	/** 未注入真 genPrompt 時，宿主替身回傳的佔位 prompt */
+	GenPrompt = '<genPrompt>',
+}
+
+/**
  * 與原版函式比較後附加到快照的欄位。
  * 由 helpers/node-test-helpers.attachOriginalComparison 附加；
  * 無原版（originalFn 為 null）時兩個欄位都不會寫入。

@@ -1,19 +1,6 @@
 
-import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt';
 import type { IUpdatePromptCase } from '../../helpers/types/node-test-case-types';
-
-
-/** 一般文字標籤（對應 _appendTag 的 type='text'）。 */
-const text = (value: string): IGenPromptTag => ({ type: 'text', value, localValue: '' })
-
-/** 換行標籤（對應 _appendTag 的 type='wrap'）。 */
-const wrap = (): IGenPromptTag => ({ type: 'wrap', value: '\n', localValue: '\n' })
-
-/** BREAK 標籤（tagIsBreak 以 value.trim() === 'BREAK' 判定）。 */
-const brk = (value = 'BREAK'): IGenPromptTag => ({ type: 'BREAK', value, localValue: '' })
-
-/** Lora 標籤（tagIsLoraLike 以 isLora / isLyco 判定）。 */
-const lora = (name: string): IGenPromptTag => ({ type: 'lora', value: `<lora:${name}:1>`, isLora: true, localValue: '' })
+import { brk, lora, text, wrap } from '../../helpers/tag-factories';
 
 
 export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [

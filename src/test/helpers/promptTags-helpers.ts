@@ -7,9 +7,8 @@ import type {
 	IUpdatePromptSummary,
 	IUpdatePromptTestsOptions,
 } from './types/node-test-case-types'
-import type { IUpdatePromptSnap } from './types/snap-types'
-import { caseTitle } from './node-test-helpers'
-import { describe, it } from 'node:test'
+import { EnumPromptPlaceholder, type IUpdatePromptSnap } from './types/snap-types'
+import { caseTitle, forEachCase } from './node-test-helpers'
 
 /**
  * 建立 updatePrompt 的宿主替身。
@@ -57,7 +56,19 @@ export function createUpdatePromptHost({
 		},
 		genPrompt() {
 			summary.genPromptCount++
-			return genPrompt ? genPrompt(workingTags) : '<genPrompt>'
+			/**
+			 * 未注入真 genPrompt 時回傳 EnumPromptPlaceholder.GenPrompt（刻意非空）。
+			 *
+			 * 為何不回傳 ''：updatePrompt 在無插入時會 commit(host.genPrompt())，
+			 * 回傳空字串會讓 commit 變成「有提交但內容為空」，與「未提交」難以區分。
+			 * 回傳可辨識的佔位字串，快照的 committed 就會明確出現該佔位值，
+			 * 讀者一眼可辨「此案例走的是宿主替身、非真組字邏輯」。
+			 * 對照欄位：快照 args.usesRealGenPrompt=false 即代表使用此佔位
+			 * （見 helpers/types/snap-types.IUpdatePromptSnapArgs）。
+			 * 值本身定義於 EnumPromptPlaceholder（見 helpers/types/snap-types），
+			 * 與各 fixture 的 expectedPrompt 共用同一份。
+			 */
+			return genPrompt ? genPrompt(workingTags) : EnumPromptPlaceholder.GenPrompt
 		},
 		commit(prompt: string) {
 			summary.committed.push(prompt)
@@ -74,7 +85,7 @@ export function createUpdatePromptHost({
  * 這裡只負責「建立宿主替身 → 執行 → 對照期望 → 組裝快照」。
  *
  * 流程：
- *   Step 1  建立宿主替身（見 helpers/node-test-helper2.createUpdatePromptHost）
+ *   Step 1  建立宿主替身（見本檔 createUpdatePromptHost）
  *   Step 2  執行 updatePrompt
  *   Step 3  對照期望（expectedWrapCount / expectedPrompt，或案例自訂 assert）
  *   Step 4  組裝快照 { input, appended, refreshCount, committed }
@@ -91,10 +102,12 @@ export function runUpdatePromptTests({
 	genPrompt = null,
 	reenter = false,
 }: IUpdatePromptTestsOptions): void {
-    for (const tc of cases) {
+    /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
+    forEachCase(
+        cases,
         /** 案例以 tags 描述輸入，這裡補上 input 供 caseTitle 產生可讀標題 */
-        const title = caseTitle({ ...tc, input: tc.tags })
-        it(title, (t) => {
+        tc => caseTitle({ ...tc, input: tc.tags }),
+        (tc, t) => {
             /** Step 1: 建立宿主替身 */
             const { host, summary } = createUpdatePromptHost({
                 tags: tc.tags,
@@ -139,6 +152,6 @@ export function runUpdatePromptTests({
                 committed: summary.committed,
             }
             t.assert.snapshot(snap)
-        })
-    }
+        },
+    )
 }

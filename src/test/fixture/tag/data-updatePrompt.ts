@@ -1,16 +1,7 @@
 
-import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt';
 import type { IUpdatePromptCase } from '../../helpers/types/node-test-case-types';
-
-
-/** 一般文字標籤（對應 _appendTag 的 type='text'）。 */
-const text = (value: string): IGenPromptTag => ({ type: 'text', value, localValue: '' })
-
-/** 換行標籤（對應 _appendTag 的 type='wrap'）。 */
-const wrap = (): IGenPromptTag => ({ type: 'wrap', value: '\n', localValue: '\n' })
-
-/** BREAK 標籤（tagIsBreak 以 value.trim() === 'BREAK' 判定）。 */
-const brk = (value = 'BREAK'): IGenPromptTag => ({ type: 'BREAK', value, localValue: '' })
+import { EnumPromptPlaceholder } from '../../helpers/types/snap-types';
+import { brk, text, wrap } from '../../helpers/tag-factories';
 
 
 export const updatePromptCases: IUpdatePromptCase[] = [
@@ -21,26 +12,26 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 		tags: [text('cat'), text('dog')],
 		note: '沒有 BREAK — 不插入、不 refresh，直接提交 genPrompt 結果',
 		expectedWrapCount: 0,
-		expectedPrompt: '<genPrompt>',
+		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	{
 		tags: [],
 		note: '空標籤陣列 — 不插入、不 refresh，直接提交 genPrompt 結果',
 		expectedWrapCount: 0,
-		expectedPrompt: '<genPrompt>',
+		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	{
 		tags: [text('cat'), brk(), text('dog')],
 		note: 'BREAK 但兩個自動換行選項皆關閉 — 不插入，直接提交',
 		expectedWrapCount: 0,
-		expectedPrompt: '<genPrompt>',
+		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	{
 		tags: [text('cat'), wrap(), brk(), text('dog')],
 		autoBreakBeforeWrap: true,
 		note: 'BREAK 前已是換行 — 不重複插入，直接提交',
 		expectedWrapCount: 0,
-		expectedPrompt: '<genPrompt>',
+		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	/**
 	 * ── 第二組：需要插入換行 — 走 refresh，不提交 ──
@@ -88,7 +79,7 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 		autoBreakBeforeWrap: true,
 		note: 'BREAK 位於開頭 — 不產生前方換行（原行為保留），改走提交',
 		expectedWrapCount: 0,
-		expectedPrompt: '<genPrompt>',
+		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	{
 		tags: [text('a'), brk(), text('b'), brk(), text('c')],

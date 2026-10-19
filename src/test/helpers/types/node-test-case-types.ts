@@ -98,6 +98,8 @@ export interface ISplitTagsCase {
 	expectOriginalChanged?: boolean
 	/** 自訂斷言 fn(tagResult, t)——除快照外再鎖定關鍵行為 */
 	assertResult?: (tagResult: ITagSegment[], t: TestContext) => void
+	/** true 時跳過此案例（由 helpers/node-test-helpers.forEachCase 統一處理） */
+	skip?: boolean
 }
 
 /**
@@ -214,8 +216,14 @@ export interface IUpdatePromptHostOptions {
 	/** BREAK 後補換行 */
 	autoBreakAfterWrap?: boolean
 	/**
-	 * 真正的 genPrompt（複合測試注入）。
-	 * 不傳時以固定字串代替，讓個別測試只驗證編排流程、不受組字邏輯影響。
+	 * 宿主替身的「產生 prompt」行為，契約為 (tags) => string。
+	 *
+	 * 注意：這「不是」真 genPrompt 的簽名——真 genPrompt 為 IGenPromptFn
+	 * （多兩個參數，見 IUpdatePromptTestsOptions.genPrompt）。
+	 * 宿主端只依 this.genPrompt() 的形式被呼叫（無參數、由閉包決定要用哪些 tags），
+	 * 故此處刻意收窄為「給定當前 tags → 回傳字串」；複合測試由呼叫端把真 genPrompt
+	 * 適配成此形狀（見 runUpdatePromptTests）。
+	 * 不傳時替身回傳 EnumPromptPlaceholder.GenPrompt，讓個別測試只驗證編排流程、不受組字邏輯影響。
 	 */
 	genPrompt?: (tags: IGenPromptTag[]) => string
 	/**
@@ -259,7 +267,7 @@ export interface IUpdatePromptTestsOptions {
 	 * 不傳（null）時以宿主替身取代，讓個別測試只驗證編排流程。
 	 * 第二、三參數對應 genPrompt(tags, ignoreDisabled, options)。
 	 */
-	genPrompt?: ((tags: IGenPromptTag[], ignoreDisabled: boolean, options?: IGenPromptOptions) => string) | null
+	genPrompt?: IGenPromptFn | null
 	/** true 時 refresh() 重入 updatePrompt（模擬元件遞迴） */
 	reenter?: boolean
 }

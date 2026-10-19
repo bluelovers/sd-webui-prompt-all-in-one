@@ -14,6 +14,7 @@
     "build:css:extensions": "node build-css.js extensions",
     "build:watch": "vite build --watch",
     "preview": "vite preview",
+    "typecheck:test": "cd test && vue-tsc --noEmit & echo Type checking completed",
     "typecheck": "vue-tsc --noEmit & echo Type checking completed"
   },
   "dependencies": {
