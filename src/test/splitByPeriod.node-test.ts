@@ -22,8 +22,8 @@ import { splitByPeriod } from '../src/utils/splitByPeriod'
  * ==================================================================== */
 
 describe('splitByPeriod', async () => {
-    it('module loads successfully', async (t: TestContext) => {
-        return splitByPeriod
+    it('module loads successfully', (t: TestContext) => {
+        t.assert.equal(typeof splitByPeriod, 'function')
     })
 
     runCases('basic splitting without brackets',           splitByPeriod, basicCases, { snapshot: true })

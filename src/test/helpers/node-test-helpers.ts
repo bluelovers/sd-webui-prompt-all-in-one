@@ -50,7 +50,12 @@ export function resultsDiffer(a: unknown, b: unknown): boolean {
  */
 export function forEachCase<TCase>(
     cases: readonly TCase[],
-    toTitle: (tc: TCase) => string,
+    /**
+     * toTitle 以 NoInfer 包住：caseTitle 的參數是較寬的 ICaseBare，
+     * 若讓此參數參與 TCase 推斷，TS 會以 ICaseBare 統一各候選值，
+     * 使 handler 內的 tc 喪失具體案例欄位。
+     */
+    toTitle: (tc: NoInfer<TCase>) => string,
     handler: (tc: TCase, t: TestContext) => void | Promise<void>,
 ): void {
     for (const tc of cases) {
@@ -84,14 +89,18 @@ export function truncate(str: string, maxLen = 60): string {
 export function formatTitle(input: unknown, maxLen = 60): string {
     const notString = typeof input !== 'string'
     const raw = notString ? String(input) : input
+    const truncated = truncate(raw, maxLen)
 
-    let result = truncate(raw, maxLen)
-
-    if (notString && result.length === raw.length) {
-        result = input
+    /**
+     * 非字串且未被截斷時，改以「原值」序列化。
+     * raw 是 String(input) 的結果，會把物件壓成 "[object Object]"，
+     * 保留原值才能讓 JSON.stringify 呈現結構。
+     */
+    if (notString && truncated.length === raw.length) {
+        return JSON.stringify(input)
     }
 
-    return JSON.stringify(result)
+    return JSON.stringify(truncated)
 }
 
 /**

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "test": "node --run test:node",
-    "test:node": "node --run typecheck && tsx --test --test-update-snapshots test/**/*.node-test.js test/**/*.node-test.ts",
+    "test:node": "node --run typecheck:all && tsx --test --test-update-snapshots test/**/*.node-test.js test/**/*.node-test.ts",
     "posttest": "pnpm run build",
     "build": "vite build",
     "build:all": "pnpm run build && node --run build:css",
@@ -14,8 +14,9 @@
     "build:css:extensions": "node build-css.js extensions",
     "build:watch": "vite build --watch",
     "preview": "vite preview",
-    "typecheck:test": "cd test && vue-tsc --noEmit & echo Type checking completed",
-    "typecheck": "vue-tsc --noEmit & echo Type checking completed"
+    "typecheck:test": "cd test && vue-tsc --noEmit & echo Type checking completed (test)",
+    "typecheck:all": "node --run typecheck && node --run typecheck:test",
+    "typecheck": "vue-tsc --noEmit & echo Type checking completed (main)"
   },
   "dependencies": {
     "autosize-input": "^1.0.2",
