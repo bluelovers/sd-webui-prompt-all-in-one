@@ -1,5 +1,5 @@
 
-import type { ISplitByPeriodCase } from '../helpers/node-test-case-types';
+import type { ISplitByPeriodCase } from '../helpers/types/node-test-case-types';
 
 export const basicCases: ISplitByPeriodCase[] = [
 	{ input: 'a. b. c', expected: ['a.', 'b.', 'c'] },

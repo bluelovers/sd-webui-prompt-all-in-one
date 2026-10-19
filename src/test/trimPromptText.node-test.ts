@@ -13,6 +13,7 @@
 
 import { describe } from 'node:test'
 import { runCases } from './helpers/node-test-helpers'
+import type { IRunCase } from './helpers/types/node-test-case-types'
 import { trimPromptText } from '../src/utils/trimPromptText'
 
 /* ====================================================================
@@ -25,7 +26,7 @@ import { trimPromptText } from '../src/utils/trimPromptText'
  *    4. 執行順序：先清不可見字元再修剪（被零寬空格卡住的邊界空白也要清）
  * ==================================================================== */
 
-const cleanupCases = [
+const cleanupCases: IRunCase<string, [], string>[] = [
     /** ── 1. 不可見字元 ── */
     { input: '\u200babc, def', expected: 'abc, def',
         note: 'leading ZWSP removed' },

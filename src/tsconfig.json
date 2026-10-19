@@ -20,9 +20,13 @@
     "newLine": "lf",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "#/*": ["./*"],
+      "@/*": ["./src/*"]
     },
-    "types": ["vite/client", "./shims-vue.d.ts"]
+    "types": [
+      "vite/client",
+      "./shims-vue.d.ts"
+    ]
   },
   "include": [
     "src/**/*.ts",

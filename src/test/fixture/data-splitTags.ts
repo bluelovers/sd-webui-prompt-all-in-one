@@ -4,7 +4,7 @@ import {
 	assertNoInvisibleChars,
 	assertNoOrphanCommaRegressions,
 } from '../helpers/node-test-helper2';
-import type { ISplitTagsCase, ISplitTagsPipelineCase } from '../helpers/node-test-case-types';
+import type { ISplitTagsCase, ISplitTagsPipelineCase } from '../helpers/types/node-test-case-types';
 
 export const cases: ISplitTagsCase[] = [
 	/** ── 基本切割 ── */

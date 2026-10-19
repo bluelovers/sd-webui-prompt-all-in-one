@@ -599,7 +599,9 @@ import HighlightPrompt from "@/components/highlightPrompt.vue"
 import { ColorPicker } from "vue3-colorpicker"
 import { splitByPeriod } from "@/utils/splitByPeriod"
 import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
-import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
+import { tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
+import { genPrompt as genPromptCore } from "@/utils/promptTags/genPrompt"
+import { updatePrompt as updatePromptCore } from "@/utils/promptTags/updatePrompt"
 
 export default {
     name: 'PhystonPrompt',
@@ -999,239 +1001,17 @@ export default {
             })
         },
         genPrompt(tags = null, ignoreDisabled = false) {
-            tags = tags || this.tags
-            let prompts = []
-            let tags2 = []
-            if (!ignoreDisabled) {
-                for (let key in tags) {
-                    if (!tags[key].disabled) {
-                        tags2.push(tags[key])
-                    }
-                }
-            } else {
-                tags2 = tags
-            }
-            let length = tags2.length
-            /**
-             * 自動優化分割符號：於單次前向遍歷中累計「該行是否含 # 開頭/結尾 tag」。
-             * 遇換行 tag 時重置，使 # 判定均為 O(1)，
-             * 避免每遇到換行就回頭掃描整行（多個換行時最壞 O(n²)）。
-             */
-            let lineHasSharp = false
-            tags2.forEach((tag, index) => {
-                let prompt = ''
-                if (tagIsWrap(tag)) {
-                    // 換行結束當前行 → 重置行狀態，供下一行重新累計
-                    lineHasSharp = false
-                    prompt = "\n"
-                } else {
-                    let value = common.replaceTag(tag.value)
-                    if (value !== tag.value) {
-                        tag.value = value
-                        this._setTag(tag)
-                    }
-                    let localValue = common.replaceTag(tag.localValue)
-                    if (localValue !== tag.localValue) {
-                        tag.localValue = localValue
-                    }
-
-                    if (tag.weightNum > 0 || tag.weightNum < 0) {
-                        tag.weightNum = Number(parseFloat(tag.weightNum).toFixed(6))
-                        tag.value = tag.value.replace(common.weightNumRegex, '$1:' + tag.weightNum)
-                        if (tag.localValue !== '') {
-                            tag.localValue = tag.localValue.replace(common.weightNumRegex, '$1:' + tag.weightNum)
-                        }
-                    }
-                    if (tag.disabled && !ignoreDisabled) return
-
-                    /**
-                     * 自動優化分割符號：累計當前行的 # 狀態（O(1) 檢查，
-                     * 行內已確認含 # 時略過後續 tag 的重複檢查）。
-                     * 當前 tag 也屬於該行，必須在下方 nextIsWarp 判定之前更新。
-                     */
-                    if (this.autoOptimizeSplitSymbol && !lineHasSharp) {
-                        const sharpValue = (tag.value || '').trim()
-                        if (sharpValue.startsWith('#') || sharpValue.endsWith('#')) {
-                            lineHasSharp = true
-                        }
-                    }
-
-                    let splitSymbol = ',' + (this.autoRemoveSpace ? '' : ' ')
-                    let splitSymbolDefault = splitSymbol
-
-                    let nextTag = null
-                    let nextIsWarp = false
-                    let nextIsBreak = false
-                    let nextIsLoraLike = false
-                    // 获取下一个按钮
-                    if (index + 1 < length) {
-                        nextTag = tags2[index + 1]
-                        if (tagIsWrap(nextTag)) {
-                            nextIsWarp = true
-                        } else if (tagIsBreak(nextTag)) {
-                            nextIsBreak = true
-                        } else if (tagIsLoraLike(nextTag)) {
-                            nextIsLoraLike = true
-                        }
-                    }
-
-                    /**
-                     * 自動優化分割符號（autoOptimizeSplitSymbol）：
-                     * 符合下列任一條件時，移除當前 tag 後的逗號（不論其他選項是否啟用）。
-                     * 詳細規則見 _shouldRemoveCommaByAutoOptimize()。
-                     * 換行情境（下一個為分行）連同空白一併移除，其餘僅移除逗號、保留空白。
-                     */
-                    if (this.autoOptimizeSplitSymbol && splitSymbol.includes(',')) {
-                        if (this._shouldRemoveCommaByAutoOptimize(tag, tags2, index)) {
-                            splitSymbol = nextIsWarp ? '' : splitSymbol.replace(/,/g, '')
-                        }
-                    }
-
-                    if (nextIsWarp) {
-                        // 如果下一个是换行
-
-                        if (this.autoRemoveBeforeLineComma) {
-                            splitSymbol = ''
-                        } else {
-                            /**
-                             * 自動優化分割符號（autoOptimizeSplitSymbol）：
-                             * 換行前符合任一條件時移除逗號。
-                             * 在輸出層直接判定，不依賴 autoSplitByPeriod，選項獨立啟用時即生效。
-                             * 行內 # 狀態由 forEach 遍歷期間累計，以物件選項傳入（預留未來擴充）。
-                             */
-                            if (this.autoOptimizeSplitSymbol && this._shouldRemoveCommaBeforeWrap(tag, {lineHasSharp})) {
-                                splitSymbol = ''
-                            }
-                            // sd-webui-regional-prompter
-                            const regionals = [' BREAK', ' ADDCOL', ' ADDROW', ' ADDCOMM', ' ADDBASE']
-                            for (const regional of regionals) {
-                                if (tag.value.endsWith(regional)) {
-                                    // 如果是sd-webui-regional-prompter，那么就不需要加逗号
-                                    splitSymbol = ''
-                                }
-                            }
-                        }
-                    } else if (nextIsBreak) {
-                        splitSymbol = ' '
-                    } else if (nextIsLoraLike && this.autoRemoveLoraBeforeComma) {
-                        splitSymbol = (this.autoRemoveSpace ? '' : ' ')
-                    }
-
-                    if (tagIsBreak(tag)) {
-                        if (nextIsWarp) {
-                            splitSymbol = ''
-                        } else {
-                            splitSymbol = ' '
-                        }
-                    }
-
-                    if (this.autoRemoveLastComma && index + 1 === length) {
-                        // 如果是最后一个，那么就不需要加逗號
-                        splitSymbol = ''
-                    }
-
-                    if (splitSymbol === splitSymbolDefault && tagIsLoraLike(tag) && this.autoRemoveLoraAfterComma) {
-                        splitSymbol = (this.autoRemoveSpace ? '' : ' ')
-                    }
-
-                    // autoSplitByPeriod：若此 tag 是分割產生的中間段且原始 tag 無逗號，則移除逗號
-                    if (this.autoSplitByPeriod && tag.splitNoComma && splitSymbol.includes(',')) {
-                        splitSymbol = splitSymbol.replace(/,/g, '')
-                    }
-
-                    prompt = tag.value + splitSymbol
-
-                }
-
-                if (prompt) prompts.push(prompt)
+            return genPromptCore(tags || this.tags, ignoreDisabled, {
+                autoOptimizeSplitSymbol: this.autoOptimizeSplitSymbol,
+                autoRemoveSpace: this.autoRemoveSpace,
+                autoRemoveBeforeLineComma: this.autoRemoveBeforeLineComma,
+                autoRemoveLoraBeforeComma: this.autoRemoveLoraBeforeComma,
+                autoRemoveLastComma: this.autoRemoveLastComma,
+                autoRemoveLoraAfterComma: this.autoRemoveLoraAfterComma,
+                autoSplitByPeriod: this.autoSplitByPeriod,
+            }, {
+                onTagChanged: tag => this._setTag(tag),
             })
-            if (prompts.length <= 0) return ''
-            // console.log('update tags', prompts)
-            return prompts.join('')
-        },
-        /**
-         * 自動優化分割符號（autoOptimizeSplitSymbol）：判斷換行前的逗號是否應被移除。
-         *
-         * 此方法在 genPrompt() 的輸出層直接判定，不經過 applySplitByPeriod()，
-         * 因此不依賴 autoSplitByPeriod，選項成為獨立選項後單獨啟用即會生效。
-         *
-         * 效能設計：行內 # 判定改由 genPrompt() 的 tags2.forEach 於單次前向遍歷中累計，
-         * 以 options 物件傳入，此方法本身為 O(1)，
-         * 避免每次遇到換行都回頭掃描整行（多個換行時最壞 O(n²)）。
-         *
-         * 判定規則（呼叫時當前 tag 必為換行前的最後一個 tag，任一符合即移除）：
-         *   1. 當前 tag 以「:」結尾（如前綴式寫法「xxx:」，表示內容尚未結束）
-         *   2. 當前 tag 是 Lora / Lyco
-         *   3. options.lineHasSharp=true：該行（自上一個換行至當前 tag）任一 tag 以「#」開頭或結尾
-         *   4. 當前 tag 以句號結尾（沿用原有的 period + wrap 移除行為）
-         *
-         * @param {object}  tag               - 當前標籤（換行前的最後一個 tag）
-         * @param {object}  [options]         - 擴充選項（以物件傳入，便於未來新增欄位而不更動簽名）
-         * @param {boolean} [options.lineHasSharp=false] - 該行是否含 # 開頭/結尾的 tag
-         *                                                （由 genPrompt() 於遍歷期間累計，遇換行重置）
-         * @returns {boolean} true = 應移除換行前的逗號
-         */
-        _shouldRemoveCommaBeforeWrap(tag, options = {}) {
-            if (!tag) return false
-            const {lineHasSharp = false} = options
-            const value = (tag.value || '').trim()
-            /** 規則 1：換行前的 tag 以「:」結尾 */
-            if (value.endsWith(':')) return true
-            /** 規則 2：換行前的 tag 是 Lora / Lyco */
-            if (tagIsLoraLike(tag)) return true
-            /** 規則 3：該行任一 tag 以「#」開頭或結尾（由呼叫端遍歷期間累計傳入） */
-            // if (lineHasSharp) return true
-            /** 規則 4：換行前的 tag 以句號結尾 */
-            return /\.\s*$/.test(tag.value)
-        },
-        /**
-         * 自動優化分割符號（autoOptimizeSplitSymbol）：判斷當前 tag 後的逗號是否應被移除。
-         *
-         * 與 _shouldRemoveCommaBeforeWrap()（僅處理換行前一個 tag）不同，
-         * 此方法涵蓋任意下一個 tag（分行 / BREAK / Lora / 一般 tag），
-         * 於 genPrompt() 的輸出層直接判定，不經過 applySplitByPeriod()，
-         * 因此不依賴 autoSplitByPeriod，選項獨立啟用時即生效。
-         *
-         * 判定規則（任一符合即移除逗號）：
-         *   1. 當前 tag 是 Lora / Lyco，且下一個 tag 也是 Lora / Lyco
-         *      （連續 Lora 間不需要逗號，避免破壞 Lora 語法）
-         *   2. 下一個 tag 是 BREAK，或「分行 + BREAK」
-         *      （分行可連續多個，略過後取第一個非分行 tag 判定）
-         *   3. 當前 tag 以「;」或「}」結尾（表示語法尚未結束），
-         *      且下一個 tag 是 分行 或 Lora / Lyco
-         *
-         * 效能：僅在下一個 tag 為分行時才會向後前瞻，並連續略過分行 tag，
-         *       攤還 O(1)，不會因多個分行造成整體 O(n²)。
-         *
-         * @param {object} tag   - 當前標籤
-         * @param {Array}  tags2 - 已過濾（排除 disabled）的標籤陣列，與 genPrompt() 使用同一份
-         * @param {number} index - 當前標籤在 tags2 中的索引
-         * @returns {boolean} true = 應移除當前 tag 後的逗號
-         */
-        _shouldRemoveCommaByAutoOptimize(tag, tags2, index) {
-            if (!tag) return false
-            const nextTag = index + 1 < tags2.length ? tags2[index + 1] : null
-            /** 已是最後一個 tag → 由 autoRemoveLastComma 處理，此處不移除 */
-            if (!nextTag) return false
-
-            /** 規則 1：當前是 Lora / Lyco，且下一個也是 Lora / Lyco */
-            if (tagIsLoraLike(tag) && tagIsLoraLike(nextTag)) return true
-            /** 規則 2-1：下一個 tag 是 BREAK */
-            if (tagIsBreak(nextTag)) return true
-            /** 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK */
-            if (tagIsWrap(nextTag)) {
-                /** 略過連續分行，停在第一個非分行 tag（邏輯抽離至 findTagUntil） */
-                const scan = findTagUntil(tags2, {
-                    startIndex: index + 1,
-                    ignore: tagIsWrap,
-                    untilTarget: tagIsBreak,
-                })
-                if (scan.found) return true
-            }
-            /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
-            if (/(?:[;}:'"*—]|[-=]{2,})$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
-
-            return false
         },
         /**
          * 判斷指定 tag 的最後一個逗號是否應被移除（供 applySplitByPeriod 設定 splitNoComma）。
@@ -1359,54 +1139,26 @@ export default {
             }
         },
         updatePrompt() {
-            let insertWrapIndexes = []
-            let length = this.tags.length
-            for (let i = 0; i < length; i++) {
-                let tag = this.tags[i]
-                if (tagIsBreak(tag)) {
-                    if (this.autoBreakBeforeWrap) {
-                        // 如果是在“BREAK”关键词前面加换行符
-                        // 判断上一个是否换行符
-                        if (i - 1 >= 0) {
-                            let prevTag = this.tags[i - 1]
-                            if (tagIsWrap(prevTag)) {
-                                // 上一个已经是换行了
-                            } else {
-                                insertWrapIndexes.push(i)
-                            }
-                        }
+            updatePromptCore({
+                tags: this.tags,
+                autoBreakBeforeWrap: this.autoBreakBeforeWrap,
+                autoBreakAfterWrap: this.autoBreakAfterWrap,
+                appendTag: (value, localValue, disabled, index, type) => {
+                    this._appendTag(value, localValue, disabled, index, type)
+                },
+                refresh: () => this.updateTags(),
+                genPrompt: () => this.genPrompt(),
+                commit: prompt => {
+                    this.prompt = prompt
+                    this.textarea.value = this.prompt
+                    common.hideCompleteResults(this.textarea)
+                    if (typeof updateInput === "function") {
+                        updateInput(this.textarea)
+                    } else {
+                        this.textarea.dispatchEvent(new Event('input'))
                     }
-                    if (this.autoBreakAfterWrap) {
-                        // 如果是在“BREAK”关键词后面加换行符
-                        // 判断下一个是否换行符
-                        if (i + 1 < length) {
-                            let nextTag = this.tags[i + 1]
-                            if (tagIsWrap(nextTag)) {
-                                // 下一个已经是换行了
-                            } else {
-                                insertWrapIndexes.push(i + 1)
-                            }
-                        }
-                    }
-                }
-            }
-            for (let i = 0; i < insertWrapIndexes.length; i++) {
-                let index = insertWrapIndexes[i] + i
-                this._appendTag("\n", "\n", false, index, 'wrap')
-            }
-            if (insertWrapIndexes.length) {
-                this.updateTags()
-                return
-            }
-
-            this.prompt = this.genPrompt()
-            this.textarea.value = this.prompt
-            common.hideCompleteResults(this.textarea)
-            if (typeof updateInput === "function") {
-                updateInput(this.textarea)
-            } else {
-                this.textarea.dispatchEvent(new Event('input'))
-            }
+                },
+            })
         },
         updateTags() {
             console.log('tags change', this.tags)

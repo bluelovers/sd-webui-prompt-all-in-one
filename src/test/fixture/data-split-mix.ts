@@ -1,5 +1,5 @@
 
-import type { ISplitTagsPipelineCase } from '../helpers/node-test-case-types';
+import type { ISplitTagsPipelineCase } from '../helpers/types/node-test-case-types';
 import { assertHashCountPreserved } from '../helpers/node-test-helper2';
 
 

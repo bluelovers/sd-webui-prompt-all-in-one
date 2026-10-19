@@ -4,9 +4,6 @@ import crypto from 'node:crypto'
 
 /**
  * 截斷字串並以 "…" 結尾（共用工具）。
- * @param {string} str
- * @param {number} [maxLen=60]
- * @returns {string}
  */
 export function truncate(str, maxLen = 60) {
     if (str.length <= maxLen) return str
@@ -19,10 +16,6 @@ export function truncate(str, maxLen = 60) {
  *   a. b. c                          → "a. b. c"
  *   with "Small joys." below.        → "with \"Small joys.\" below."（引號正確轉義）
  *   a<newline>b                      → "a\nb"
- *
- * @param {*}      input
- * @param {number} [maxLen=60] 截斷上限（先截斷再 stringify，避免截斷落在轉義序列中）
- * @returns {string}
  */
 export function formatTitle(input, maxLen = 60) {
     const notString = typeof input !== 'string'
@@ -46,8 +39,6 @@ export function formatTitle(input, maxLen = 60) {
  *   - 非字串輸入        ：note，無 note 時以 formatTitle 呈現值
  *   - 有 args 時附加「 ({...})」後綴（同輸入不同參數時避免標題碰撞）
  *
- * @param {Object} tc
- * @returns {string}
  */
 export function caseTitle(tc) {
     let title
@@ -69,22 +60,6 @@ export function caseTitle(tc) {
 
 /**
  * 執行一組 data-driven 的測試案例。
- *
- * @param {string}   suiteName    - describe() 的標題。
- * @param {Function} fn           - 被測函式（同步或非同步皆可）。
- *                                  若 fn 回傳 Promise（例如 factory function），
- *                                  會先 await 取得真正的函式後再逐一執行案例。
- * @param {Object[]} cases        - 測試案例陣列。每個物件包含：
- *   @param {*}        tc.input    - 傳入 fn 的第一個參數。
- *   @param {*[]}      [tc.args]   - 額外參數（會 spread 到 fn(input, ...args)）。
- *   @param {*|string}  tc.expected - 期望的回傳值。
- *   @param {string}   [tc.note]   - 附加說明，顯示在測試標題中。
- *   @param {Function} [tc.assert] - 自訂斷言函式(fn(result) → void)，
- *                                    若提供則取代預設 deepEqual。
- *   @param {boolean}  [tc.skip]   - 若為 true 則跳過此案例。
- * @param {Object}   [options]           - 額外選項。
- *   @param {boolean} [options.snapshot] - true 時額外寫入快照
- *                                         { input, args?, result }（與 splitTags 同格式）。
  *
  * @example
  *   // 直接傳入已載入的函式
@@ -143,12 +118,6 @@ export function runCases(suiteName, fn, cases, options = {}) {
  *   Step 2.5  可選 — 案例級 assertPipeline（管線最終結果斷言，驗證兩階段合計的不變式）
  *   Step 3    與原版比較
  *   Step 4    組裝快照
- *
- * @param {Object}   opts
- * @param {Object[]} opts.cases          - 測試案例陣列
- * @param {Function} opts.splitTags      - 新版 splitTags 函式
- * @param {Function|null} opts.originalFn - 原版 splitTags_original（可為 null）
- * @param {Function|null} opts.splitByPeriod - 若提供，對每個 tag 結果再做 splitByPeriod
  */
 export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
     for (const tc of cases) {
@@ -210,11 +179,6 @@ export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod 
 
 /**
  * 將新舊版函式結果進行比較。
- *
- * @param {Function|null} originalFn - 原版函式（null 時跳過比較）
- * @param {Object}        tc         - 測試案例（含 input、args）
- * @param {*}             result     - 新版函式結果
- * @returns {{ changedFromOriginal: boolean|null, originalResult: *|null }}
  */
 export function compareWithOriginal(originalFn, tc, result) {
     if (!originalFn) return { changedFromOriginal: null, originalResult: null }
@@ -227,9 +191,9 @@ export function compareWithOriginal(originalFn, tc, result) {
  * 將原版比較結果附加到快照物件。
  * changedFromOriginal=true 時同時附加 originalResult。
  *
- * @param {Object}  snap                  - 快照物件（會被 mutate）
- * @param {boolean|null} changedFromOriginal
- * @param {*}       originalResult
+ * @param snap                  - 快照物件（會被 mutate）
+ * @param changedFromOriginal
+ * @param originalResult
  */
 export function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
     if (changedFromOriginal === null) return
@@ -239,9 +203,8 @@ export function attachOriginalComparison(snap, changedFromOriginal, originalResu
 
 /**
  * 產生輸入字串的短期雜湊（前 8 碼 hex），用於長輸入的快照標題。
- * @param {string} str
- * @returns {string} 8 字元 hex
  */
 export function promptHash(str) {
     return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
 }
+

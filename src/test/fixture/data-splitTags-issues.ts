@@ -3,7 +3,7 @@ import {
 	assertNoInvisibleChars,
 	assertNoOrphanCommaRegressions,
 } from '../helpers/node-test-helper2';
-import type { ISplitTagsCase } from '../helpers/node-test-case-types';
+import type { ISplitTagsCase } from '../helpers/types/node-test-case-types';
 
 /**
  * ====================================================================

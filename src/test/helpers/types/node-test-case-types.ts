@@ -1,0 +1,192 @@
+
+import type { TestContext } from 'node:test'
+import type {
+	ISplitTagsInput,
+	ISplitTagsOptions,
+	ITagSegment,
+} from '../../../src/utils/splitTags'
+import type {
+	ISplitByPeriodOptions,
+	IPeriodPart,
+} from '../../../src/utils/splitByPeriod'
+import type {
+	IGenPromptHooks,
+	IGenPromptOptions,
+	IGenPromptTag,
+} from '../../../src/utils/promptTags/genPrompt'
+
+/**
+ * splitTags 的額外參數 tuple。
+ * 與 splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options) 對應。
+ */
+export type ISplitTagsArgs = [
+	autoBreakBeforeWrap?: boolean,
+	autoBreakAfterWrap?: boolean,
+	options?: ISplitTagsOptions,
+]
+
+/**
+ * splitByPeriod 的額外參數 tuple。
+ * 與 splitByPeriod(str, options) 對應。
+ */
+export type ISplitByPeriodArgs = [
+	options?: ISplitByPeriodOptions,
+]
+
+/**
+ * data-driven 測試案例的共用泛型基底。
+ * 供 runCases 系列的案例使用：輸入、額外參數、期望值、自訂斷言與 skip。
+ * 各被測函式的案例型別皆由此衍生，避免重複定義同一組欄位。
+ */
+export interface IRunCase<
+	TInput = unknown,
+	TArgs extends unknown[] = [],
+	TResult = unknown,
+> {
+	/** 傳入被測函式的第一個參數 */
+	input: TInput
+	/** 額外參數陣列（會 spread 到被測函式(input, ...args)） */
+	args?: TArgs
+	/** 附加說明（顯示在測試標題中） */
+	note?: string
+	/** 期望回傳值（與 assert 二選一） */
+	expected?: TResult
+	/** 自訂斷言 fn(result)，若有則取代 expected */
+	assert?: (result: TResult) => void
+	/** true 時跳過此案例 */
+	skip?: boolean
+}
+
+/**
+ * splitByPeriod 單獨測試案例。
+ * 格式與 fixture/data-splitByPeriod.ts 表頭說明一致。
+ */
+export type ISplitByPeriodCase = IRunCase<unknown, ISplitByPeriodArgs, IPeriodPart[]>
+
+/**
+ * splitTags 測試案例。
+ * 格式與 fixture/data-splitTags.ts 表頭說明一致。
+ */
+export interface ISplitTagsCase {
+	/** 傳入 splitTags 的第一個參數（非字串防禦值亦可） */
+	input: ISplitTagsInput
+	/** 額外參數陣列 [autoBreakBeforeWrap, autoBreakAfterWrap, options] */
+	args?: ISplitTagsArgs
+	/** 附加說明（顯示在測試標題中） */
+	note?: string
+	/** 期望與 splitTags_original 的結果是否有差異 */
+	expectOriginalChanged?: boolean
+	/** 自訂斷言 fn(tagResult, t)——除快照外再鎖定關鍵行為 */
+	assertResult?: (tagResult: ITagSegment[], t: TestContext) => void
+}
+
+/**
+ * splitTags → splitByPeriod 串接管線案例。
+ * 在 ISplitTagsCase 之上追加管線階段的欄位。
+ */
+export interface ISplitTagsPipelineCase extends ISplitTagsCase {
+	/** 逐 tag 傳入 splitByPeriod 的選項 */
+	splitByPeriodOptions?: ISplitByPeriodOptions
+	/** 期望 splitByPeriod 是否改變了 splitTags 的輸出 */
+	expectChanged?: boolean
+	/**
+	 * 管線最終結果的自訂斷言 fn(finalResult, t, tc)。
+	 * 與 assertResult 的差異：拿到的是 splitByPeriod 之後的最終陣列，
+	 * 可驗證「兩階段合計」的不變式（如分隔符數量守恆）。
+	 */
+	assertPipeline?: (finalResult: ITagSegment[], t: TestContext, tc: ISplitTagsPipelineCase) => void
+}
+
+/**
+ * genPrompt 的額外參數 tuple。
+ * 與 genPrompt(tags, ignoreDisabled, options, hooks) 對應；
+ * 只需 options 時仍須把 ignoreDisabled 明寫為 false，避免參數位移。
+ */
+export type IGenPromptArgs = [
+	ignoreDisabled?: boolean,
+	options?: IGenPromptOptions,
+	hooks?: IGenPromptHooks,
+]
+
+/**
+ * genPrompt 測試案例。
+ * 與既有案例同構：input = 標籤陣列、args = 額外參數、expected/assert 二選一。
+ */
+export type IGenPromptCase = IRunCase<IGenPromptTag[], IGenPromptArgs, string>
+
+/** updatePrompt 宿主回報的執行摘要（由 helpers 建立的測試替身收集）。 */
+export interface IUpdatePromptSummary {
+	/** 宿主 appendTag 收到的參數（依呼叫順序） */
+	appended: IUpdatePromptAppendRecord[]
+	/** refresh 呼叫次數（元件實作為 updateTags()） */
+	refreshCount: number
+	/** genPrompt 呼叫次數 */
+	genPromptCount: number
+	/** commit 收到的 prompt（未提交時為空陣列） */
+	committed: string[]
+	/** 插入換行後的標籤陣列 */
+	tags: IGenPromptTag[]
+}
+
+/** appendTag 的單次呼叫記錄。 */
+export interface IUpdatePromptAppendRecord {
+	value: string
+	localValue: string
+	disabled: boolean
+	index: number
+	type: string
+}
+
+/**
+ * updatePrompt 測試案例。
+ * 與既有案例同構，但被測函式無回傳值，改以 tags + 期望欄位描述，
+ * 由 runner 建立宿主替身並收集 IUpdatePromptSummary。
+ */
+export interface IUpdatePromptCase {
+	/** 宿主持有的標籤陣列（會被插入換行 mutate，故每案例各自獨立建立） */
+	tags: IGenPromptTag[]
+	/** BREAK 前補換行 */
+	autoBreakBeforeWrap?: boolean
+	/** BREAK 後補換行 */
+	autoBreakAfterWrap?: boolean
+	/**
+	 * 複合測試專用：呼叫真 genPrompt 時的選項。
+	 * 個別測試（未注入 genPrompt）會忽略此欄位。
+	 */
+	genPromptOptions?: IGenPromptOptions
+	/** 附加說明（顯示在測試標題中） */
+	note?: string
+	/** 期望被 appendTag 插入的換行數量 */
+	expectedWrapCount?: number
+	/** 期望提交的 prompt；null 表示期望「不提交」（流程停留在 refresh 之後） */
+	expectedPrompt?: string | null
+	/** 自訂斷言 fn(summary, t)，若有則取代 expectedWrapCount / expectedPrompt */
+	assert?: (summary: IUpdatePromptSummary, t: TestContext) => void
+	/** true 時跳過此案例 */
+	skip?: boolean
+}
+
+/** createUpdatePromptHost 的選項。 */
+export interface IUpdatePromptHostOptions {
+	/**
+	 * 宿主持有的標籤陣列。
+	 * 傳入的陣列「不會」被 mutate：建立時會複製一份，
+	 * 避免 fixture 內的案例資料被上一個案例的插入動作污染。
+	 */
+	tags: readonly IGenPromptTag[]
+	/** BREAK 前補換行 */
+	autoBreakBeforeWrap?: boolean
+	/** BREAK 後補換行 */
+	autoBreakAfterWrap?: boolean
+	/**
+	 * 真正的 genPrompt（複合測試注入）。
+	 * 不傳時以固定字串代替，讓個別測試只驗證編排流程、不受組字邏輯影響。
+	 */
+	genPrompt?: (tags: IGenPromptTag[]) => string
+	/**
+	 * true 時 refresh() 會重新呼叫 updatePrompt。
+	 * 用來重現元件的實際行為：updatePrompt → updateTags → updatePrompt。
+	 * 僅在「已無換行可插入」時才會收斂，fixture 資料須可收斂。
+	 */
+	reenter?: boolean
+}

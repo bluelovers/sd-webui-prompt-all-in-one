@@ -1,0 +1,309 @@
+exports[`genPrompt > genPrompt cases > BREAK 標籤 — 前段以空白分隔，BREAK 後段以空白分隔 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "BREAK",
+      "value": "BREAK",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "result": "cat BREAK dog, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol + autoRemoveLoraAfterComma — 末段 Lora 的逗號換成空白（autoRemoveSpace 關閉時保留空白） (false, {autoOptimizeSplitSymbol: true, autoRemoveLoraAfterComma: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "lora",
+      "value": "<lora:foo:1>",
+      "isLora": true,
+      "localValue": ""
+    },
+    {
+      "type": "lora",
+      "value": "<lora:bar:1>",
+      "isLora": true,
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoOptimizeSplitSymbol": true,
+      "autoRemoveLoraAfterComma": true
+    }
+  ],
+  "result": "<lora:foo:1> <lora:bar:1> "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — '#' 本身不觸發換行前逗號移除（規則 3 目前停用） (false, {autoOptimizeSplitSymbol: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "#",
+      "localValue": ""
+    },
+    {
+      "type": "wrap",
+      "value": "\\n",
+      "localValue": "\\n"
+    },
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoOptimizeSplitSymbol": true
+    }
+  ],
+  "result": "#, \\ncat, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — 連續 Lora 之間的逗號被移除（規則 1） (false, {autoOptimizeSplitSymbol: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "lora",
+      "value": "<lora:foo:1>",
+      "isLora": true,
+      "localValue": ""
+    },
+    {
+      "type": "lora",
+      "value": "<lora:bar:1>",
+      "isLora": true,
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoOptimizeSplitSymbol": true
+    }
+  ],
+  "result": "<lora:foo:1> <lora:bar:1>, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoRemoveBeforeLineComma — 換行前的逗號一併移除 (false, {autoRemoveBeforeLineComma: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "wrap",
+      "value": "\\n",
+      "localValue": "\\n"
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoRemoveBeforeLineComma": true
+    }
+  ],
+  "result": "cat\\ndog, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoRemoveLastComma — 最後一個標籤不加逗號 (false, {autoRemoveLastComma: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoRemoveLastComma": true
+    }
+  ],
+  "result": "cat, dog"
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoRemoveSpace — 分割符號不含空白 (false, {autoRemoveSpace: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoRemoveSpace": true
+    }
+  ],
+  "result": "cat,dog,"
+}
+`;
+
+exports[`genPrompt > genPrompt cases > autoSplitByPeriod — 已標記 splitNoComma 的中間段不加逗號 (false, {autoSplitByPeriod: true}) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "a",
+      "localValue": "",
+      "splitNoComma": true
+    },
+    {
+      "type": "text",
+      "value": "b",
+      "localValue": ""
+    }
+  ],
+  "args": [
+    false,
+    {
+      "autoSplitByPeriod": true
+    }
+  ],
+  "result": "a b, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > ignoreDisabled=true — 保留 disabled 標籤 (true) 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": "",
+      "disabled": true
+    }
+  ],
+  "args": [
+    true
+  ],
+  "result": "cat, dog, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > 中間為換行標籤 — 換行符獨立成段，前段仍保留預設逗號 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "wrap",
+      "value": "\\n",
+      "localValue": "\\n"
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "result": "cat, \\ndog, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > 全部為 disabled — 回傳空字串 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": "",
+      "disabled": true
+    }
+  ],
+  "result": ""
+}
+`;
+
+exports[`genPrompt > genPrompt cases > 兩個一般標籤 — 預設以 \", \" 串接，末段仍帶逗號（autoRemoveLastComma 關閉） 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": ""
+    }
+  ],
+  "result": "cat, dog, "
+}
+`;
+
+exports[`genPrompt > genPrompt cases > 空標籤陣列 — 回傳空字串 1`] = `
+{
+  "input": [],
+  "result": ""
+}
+`;
+
+exports[`genPrompt > genPrompt cases > 預設過濾 disabled 標籤 1`] = `
+{
+  "input": [
+    {
+      "type": "text",
+      "value": "cat",
+      "localValue": ""
+    },
+    {
+      "type": "text",
+      "value": "dog",
+      "localValue": "",
+      "disabled": true
+    }
+  ],
+  "result": "cat, "
+}
+`;
