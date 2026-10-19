@@ -19,7 +19,11 @@
 
 import { describe, it } from 'node:test'
 import { attachOriginalComparison, caseTitle, compareWithOriginal } from './helpers/node-test-helpers'
-import { cases, issuesCases, pipelineCases } from './fixture/data-splitTags';
+import { cases, pipelineCases } from './fixture/data-splitTags';
+import { splitTags } from '../src/utils/splitTags';
+import splitTagsOriginal from '../src/utils/splitTags_original';
+import { splitByPeriod } from '../src/utils/splitByPeriod';
+import { issuesCases } from './fixture/data-splitTags-issues';
 
 /* ====================================================================
  *  工具函式
@@ -158,11 +162,11 @@ describe('splitTags', async () => {
 })
 
 describe('splitTags → splitByPeriod pipeline', async () => {
-    const splitTags = await loadModule()
-    const splitByPeriod = await loadSplitByPeriod()
-    const originalFn = await loadOriginal()
+    // const splitTags = await loadModule()
+    // const splitByPeriod = await loadSplitByPeriod()
+    // const originalFn = await loadOriginal()
 
-    runSplitTagsTests({ cases: pipelineCases, splitTags, originalFn, splitByPeriod })
+    runSplitTagsTests({ cases: pipelineCases, splitTags, originalFn: splitTagsOriginal, splitByPeriod })
 })
 
 /**
@@ -170,7 +174,7 @@ describe('splitTags → splitByPeriod pipeline', async () => {
  * 失敗時可立即從標題辨識為「已知 bug 復發」而非一般行為變更。
  */
 describe('issues regression cases', async () => {
-    const splitTags = await loadModule()
+    // const splitTags = await loadModule()
 
     runSplitTagsTests({ cases: issuesCases, splitTags, originalFn: null, splitByPeriod: null })
 })
