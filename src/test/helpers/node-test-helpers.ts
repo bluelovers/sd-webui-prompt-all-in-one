@@ -18,7 +18,7 @@ import type {
 } from './types/node-test-case-types'
 import { assertSplitShape } from './node-test-helper2'
 
-/** caseTitle / compareWithOriginal 需要的最小案例形狀（各類案例皆滿足）。 */
+/** caseTitle 需要的最小案例形狀（各類案例皆滿足）。 */
 interface ICaseBare {
     input: unknown
     args?: unknown[]
@@ -26,27 +26,20 @@ interface ICaseBare {
 }
 
 /**
- * 比較兩份結果是否不同（單一事實來源）。
+ * 比較兩份結果是否不同。
  *
  * 以 JSON 序列化比較：被測函式回傳的是純資料陣列（無函式、無 undefined 欄位），
  * 序列化結果與結構相等一致。
- * 抽出的理由：原先 runSplitTagsTests 與 compareWithOriginal 各寫一次
- * `JSON.stringify(a) !== JSON.stringify(b)`，改動比較策略時易漏改其一。
  */
 export function resultsDiffer(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) !== JSON.stringify(b)
 }
 
 /**
- * 逐案例註冊 it()（單一事實來源）。
- *
- * 三組 runner（runCases / runSplitTagsTests / runUpdatePromptTests）原本各自重寫
- * 「caseTitle → it(title, handler)」這段骨架，且只有 runCases 支援 skip，
- * 導致 IUpdatePromptCase.skip 宣告了卻從未被讀取。
- * 抽出後註冊方式只有一份，skip 語意也對三組一致生效。
+ * 逐案例註冊 it()；skip 為 true 的案例改以 it.skip 註冊。
  *
  * @param cases   - 案例陣列
- * @param toTitle - 由案例產生標題（各 runner 傳入不同的 caseTitle 包裝）
+ * @param toTitle - 由案例產生標題
  * @param handler - 案例主體（已帶上 tc，呼叫端不必在閉包重取）
  */
 export function forEachCase<TCase>(
@@ -105,7 +98,7 @@ export function formatTitle(input: unknown, maxLen = 60): string {
 }
 
 /**
- * 產生測試標題 — splitTags 與 splitByPeriod 共用（單一事實來源）。
+ * 產生測試標題 — splitTags 與 splitByPeriod 共用。
  *
  * 規則：
  *   - 字串輸入 + 有 note ：「note — [sha256前8碼] "引號包裹值"」（note、hash、值完整呈現）
@@ -158,14 +151,11 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
     /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
-        /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
         forEachCase(cases, caseTitle, async (tc, t) => {
             /**
-             * 必要性驗證：案例必須自帶期望（expected 或 assert 其一）。
-             *
-             * 以 in 而非 !== undefined 判斷：允許案例明寫 expected: undefined
-             * 描述「回傳 undefined」的合法結果，同時擋下「兩者皆未宣告」而只剩
-             * 快照一個驗證點的情況（--test-update-snapshots 會覆寫快照使其永遠通過）。
+             * 案例必須自帶期望（expected 或 assert 其一），快照僅為回歸紀錄、不構成驗證。
+             * 以 in 而非 !== undefined 判斷：允許案例明寫 expected: undefined 描述
+             * 「回傳 undefined」的合法結果。
              */
             if (tc.assert === undefined && !('expected' in tc)) {
                 throw new Error(`案例缺少必要性驗證（需提供 expected 或 assert）：${caseTitle(tc)}`)
@@ -191,23 +181,22 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
 /**
  * 執行一組 splitTags 測試案例（可選接上 splitByPeriod 管線）。
  *
- * 單一事實來源：splitTags 單獨測試、splitTags → splitByPeriod 管線測試、
+ * splitTags 單獨測試、splitTags → splitByPeriod 管線測試、
  * 管線專屬測試與 issues 回歸測試共用此函式，
- * 差別僅在 splitByPeriod 是否為 null，以及案例上帶的斷言欄位。
+ * 差別僅在是否接 splitByPeriod，以及案例上帶的斷言欄位。
  *
  * 流程：
  *   Step 1    splitTags 切割
- *   Step 1.5  必要性驗證 — 無條件（切割輸出的形狀不變式，見 node-test-helper2.assertSplitShape）
- *   Step 1.6  可選 — 案例級 assertResult（splitTags 中間結果斷言）
- *   Step 2    可選 — splitByPeriod 管線
- *   Step 2.5  必要性驗證 — 無條件（管線最終輸出的形狀不變式）
- *   Step 2.6  可選 — 案例級 assertPipeline（管線最終結果斷言，驗證兩階段合計的不變式）
- *   Step 3    與原版比較
+ *   Step 1.5  形狀不變式（assertSplitShape，無條件）
+ *   Step 1.6  案例級 assertResult
+ *   Step 2    splitByPeriod 管線
+ *   Step 2.5  形狀不變式（assertSplitShape，僅管線時）
+ *   Step 2.6  案例級 assertPipeline
+ *   Step 3    與原版比較並對照 expectOriginalChanged
  *   Step 4    組裝快照
  *
- * 必要性驗證排在案例級斷言之前、快照之前：案例四個斷言欄位全 optional，
- * 缺齊者原本只剩快照一個驗證點，而 --test-update-snapshots 會覆寫快照使其永遠通過。
- * 先跑不變式，任何案例都不可能只靠快照過關。
+ * 形狀不變式與原版比較的驗證排在案例級斷言與快照之前：兩者與案例宣告與否無關，
+ * 失敗即中止，該案例不會寫入快照。
  */
 export function runSplitTagsTests({
     cases,
@@ -215,23 +204,21 @@ export function runSplitTagsTests({
     originalFn,
     splitByPeriod,
 }: ISplitTagsTestsOptions): void {
-    /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
     forEachCase(cases, caseTitle, (tc, t) => {
         /** Step 1: splitTags 切割 */
         const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
 
-        /** Step 1.5: 必要性驗證 — 無條件，不允許只靠快照過關 */
-        assertSplitShape(tagResult, 'splitTags', t)
+        /** Step 1.5: 形狀不變式 */
+        assertSplitShape(tagResult, t)
 
-        /** Step 1.6: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
+        /** Step 1.6: 案例級 assertResult */
         if (tc.assertResult) tc.assertResult(tagResult, t)
 
-        /** Step 2: 可選 — splitByPeriod 管線 */
+        /** Step 2: splitByPeriod 管線 */
         let finalResult: ITagSegment[] = tagResult
         let changed = false
         if (splitByPeriod) {
             finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
-            /** 比較邏輯共用 resultsDiffer（單一事實來源） */
             changed = resultsDiffer(tagResult, finalResult)
 
             if (tc.expectChanged !== undefined) {
@@ -245,18 +232,14 @@ export function runSplitTagsTests({
             }
         }
 
-        /** Step 2.5: 必要性驗證 — 無條件（僅在有接管線時，finalResult 才是 splitByPeriod 產物） */
-        if (splitByPeriod) assertSplitShape(finalResult, 'pipeline', t)
+        /** Step 2.5: 形狀不變式（未接管線時 finalResult 即 tagResult，已於 Step 1.5 驗證） */
+        if (splitByPeriod) assertSplitShape(finalResult, t)
 
-        /** Step 2.6: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
-        if (tc.assertPipeline) tc.assertPipeline(finalResult, t, tc)
+        /** Step 2.6: 案例級 assertPipeline */
+        tc.assertPipeline?.(finalResult, t, tc)
 
-        /** Step 3: 與原版比較 */
-        const { changedFromOriginal, originalResult } = compareWithOriginal(originalFn, tc, tagResult)
-
-        if (tc.expectOriginalChanged !== undefined) {
-            t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
-        }
+        /** Step 3: 與原版比較並對照案例期望 */
+        const originalComparison = compareWithOriginal(originalFn, tc, tagResult, t)
 
         /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
         let snap: ISplitTagsPipelineSnap | ISplitTagsSnap
@@ -272,41 +255,69 @@ export function runSplitTagsTests({
             snap = { input: tc.input, result: tagResult }
         }
 
-        attachOriginalComparison(snap, changedFromOriginal, originalResult)
+        attachOriginalComparison(snap, originalComparison)
         t.assert.snapshot(snap)
     })
 }
 
 /**
- * 將新舊版函式結果進行比較。
+ * 與原版比較後的結果。
+ * 是否提供原版函式由 hasOriginal 辨識：未提供時沒有可比較的對象，
+ * 兩個比較欄位不存在。
+ */
+export type IOriginalComparison =
+    | { hasOriginal: false }
+    | {
+        hasOriginal: true
+        /** 與原版結果是否有差異 */
+        changedFromOriginal: boolean
+        /** 原版輸出；僅在 changedFromOriginal=true 時寫入快照 */
+        originalResult: ITagSegment[]
+    }
+
+/**
+ * 與原版比較，並對照案例宣告的 expectOriginalChanged。
+ *
+ * 案例期望的是「差異狀態」而非原版輸出本身，故比較與對照同屬一個步驟，
+ * 由本函式一併完成。
+ *
+ * @param originalFn - 原版函式；不傳表示無從比較
+ * @param tc         - 測試案例（取 input / args / expectOriginalChanged）
+ * @param result     - 被測函式的輸出
+ * @param t          - node:test 的 TestContext（提供 assert）
  */
 export function compareWithOriginal(
-    originalFn: ISplitTagsFn | null,
+    originalFn: ISplitTagsFn | undefined,
     tc: ISplitTagsPipelineCase,
     result: ITagSegment[],
-): { changedFromOriginal: boolean | null, originalResult: ITagSegment[] | null } {
-    if (!originalFn) return { changedFromOriginal: null, originalResult: null }
+    t: TestContext,
+): IOriginalComparison {
+    if (!originalFn) return { hasOriginal: false }
+
     const originalResult = originalFn(tc.input, ...(tc.args ?? []))
     const changedFromOriginal = resultsDiffer(result, originalResult)
-    return { changedFromOriginal, originalResult }
+    if (tc.expectOriginalChanged !== undefined) {
+        t.assert.equal(changedFromOriginal, tc.expectOriginalChanged,
+            `與原版的差異狀態不符：expected=${tc.expectOriginalChanged}, actual=${changedFromOriginal}`)
+    }
+    return { hasOriginal: true, changedFromOriginal, originalResult }
 }
 
 /**
  * 將原版比較結果附加到快照物件。
- * changedFromOriginal=true 時同時附加 originalResult。
+ * 無原版可比時兩個欄位都不寫入；有差異時才附加 originalResult，
+ * 未差異者不落盤以避免快照膨脹。
  *
- * @param snap                  - 快照物件（會被 mutate）
- * @param changedFromOriginal
- * @param originalResult
+ * @param snap       - 快照物件（會被 mutate；附加欄位須排在既有欄位之後）
+ * @param comparison - compareWithOriginal 的回傳值
  */
 export function attachOriginalComparison(
     snap: IOriginalComparisonSnap,
-    changedFromOriginal: boolean | null,
-    originalResult: ITagSegment[] | null,
+    comparison: IOriginalComparison,
 ): void {
-    if (changedFromOriginal === null) return
-    snap.changedFromOriginal = changedFromOriginal
-    if (changedFromOriginal) snap.originalResult = originalResult
+    if (!comparison.hasOriginal) return
+    snap.changedFromOriginal = comparison.changedFromOriginal
+    if (comparison.changedFromOriginal) snap.originalResult = comparison.originalResult
 }
 
 /**

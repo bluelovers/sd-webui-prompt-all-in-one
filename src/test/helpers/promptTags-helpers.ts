@@ -22,13 +22,12 @@ import { assertUpdatePromptContract } from './node-test-helper2'
  *   - commit    對應寫入 this.prompt / textarea 的那段程式
  *
  * @param opts - 見 IUpdatePromptHostOptions
- * @returns {{ host: object, summary: IUpdatePromptSummary }} 宿主與執行摘要
  */
 export function createUpdatePromptHost({
 	tags,
 	autoBreakBeforeWrap,
 	autoBreakAfterWrap,
-	genPrompt = null,
+	genPrompt,
 	reenter = false,
 }: IUpdatePromptHostOptions): { host: IUpdatePromptHost, summary: IUpdatePromptSummary } {
 	const workingTags: IGenPromptTag[] = tags.map(tag => ({ ...tag }))
@@ -83,31 +82,30 @@ export function createUpdatePromptHost({
  * 執行一組 updatePrompt 測試案例。
  *
  * 與 runSplitTagsTests 相同的做法：被測函式由呼叫端注入，
- * 這裡只負責「建立宿主替身 → 執行 → 必要性驗證 → 對照期望 → 組裝快照」。
+ * 這裡只負責「建立宿主替身 → 執行 → 編排契約 → 對照期望 → 組裝快照」。
  *
  * 流程：
  *   Step 1  建立宿主替身（見本檔 createUpdatePromptHost）
  *   Step 2  執行 updatePrompt
- *   Step 3  必要性驗證 — 無條件（編排契約，見 node-test-helper2.assertUpdatePromptContract）
+ *   Step 3  編排契約（assertUpdatePromptContract）
  *   Step 4  對照期望（expectedWrapCount / expectedPrompt，或案例自訂 assert）
  *   Step 5  組裝快照 { input, appended, refreshCount, committed }
  *
- * 必要性驗證排在案例級期望之前、快照之前：期望欄位全是 optional，
- * 缺齊者原本只剩快照一個驗證點，而 --test-update-snapshots 會覆寫快照使其永遠通過。
+ * 編排契約排在案例級期望與快照之前：與案例宣告與否無關，失敗即中止，
+ * 該案例不會寫入快照。
  *
  * @param {Object}   opts
  * @param {Object[]} opts.cases        - 測試案例陣列
  * @param {Function} opts.updatePrompt - 被測的 updatePrompt
- * @param {Function|null} [opts.genPrompt] - 注入真 genPrompt（複合測試）；不傳時以替身取代
+ * @param {Function} [opts.genPrompt]  - 注入真 genPrompt（複合測試）；不傳時以替身取代
  * @param {boolean}  [opts.reenter=false]  - refresh 時重入 updatePrompt（模擬元件遞迴）
  */
 export function runUpdatePromptTests({
 	cases,
 	updatePrompt,
-	genPrompt = null,
+	genPrompt,
 	reenter = false,
 }: IUpdatePromptTestsOptions): void {
-    /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
     forEachCase(
         cases,
         /** 案例以 tags 描述輸入，這裡補上 input 供 caseTitle 產生可讀標題 */
@@ -118,16 +116,14 @@ export function runUpdatePromptTests({
                 tags: tc.tags,
                 autoBreakBeforeWrap: tc.autoBreakBeforeWrap,
                 autoBreakAfterWrap: tc.autoBreakAfterWrap,
-                genPrompt: genPrompt
-                    ? () => genPrompt(host.tags, false, tc.genPromptOptions)
-                    : null,
+                genPrompt: genPrompt && ((tags) => genPrompt(tags, false, tc.genPromptOptions)),
                 reenter,
             })
 
             /** Step 2: 執行 */
             updatePrompt(host)
 
-            /** Step 3: 必要性驗證 — 無條件，不允許只靠快照過關 */
+            /** Step 3: 編排契約 */
             assertUpdatePromptContract(summary, { reenter }, t)
 
             /** Step 4: 對照期望 */
@@ -140,9 +136,8 @@ export function runUpdatePromptTests({
                     )
                 }
                 if (tc.expectedPrompt !== undefined) {
-                    const expectedCommitted = tc.expectedPrompt == null ? [] : [tc.expectedPrompt]
-                    t.assert.deepEqual(summary.committed, expectedCommitted,
-                        `提交的 prompt 不符：expected=${JSON.stringify(expectedCommitted)}, actual=${JSON.stringify(summary.committed)}`,
+                    t.assert.deepEqual(summary.committed, [tc.expectedPrompt],
+                        `提交的 prompt 不符：expected=${JSON.stringify([tc.expectedPrompt])}, actual=${JSON.stringify(summary.committed)}`,
                     )
                 }
             }

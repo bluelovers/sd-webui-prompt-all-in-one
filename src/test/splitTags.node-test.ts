@@ -16,7 +16,7 @@ describe('splitTags', async () => {
         t.assert.equal(typeof splitTags, 'function')
     })
 
-    runSplitTagsTests({ cases, splitTags, originalFn: splitTagsOriginal, splitByPeriod: null })
+    runSplitTagsTests({ cases, splitTags, originalFn: splitTagsOriginal })
 })
 
 describe('splitTags → splitByPeriod pipeline', async () => {
@@ -28,5 +28,5 @@ describe('splitTags → splitByPeriod pipeline', async () => {
  * 失敗時可立即從標題辨識為「已知 bug 復發」而非一般行為變更。
  */
 describe('issues regression cases', async () => {
-    runSplitTagsTests({ cases: issuesCases, splitTags, originalFn: null, splitByPeriod: null })
+    runSplitTagsTests({ cases: issuesCases, splitTags })
 })

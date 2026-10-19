@@ -110,13 +110,10 @@ export function assertHashCountPreserved(
 }
 
 /**
- * 必要性驗證：切割輸出的形狀不變式（由 runner 無條件呼叫）。
+ * 斷言切割輸出的形狀不變式。
  *
- * 為何不能只靠案例級斷言：assertResult / assertPipeline / expectChanged /
- * expectOriginalChanged 四個欄位全是 optional，缺齊的案例原本只剩快照一個驗證點；
- * 而 --test-update-snapshots 會直接覆寫快照，等於該案例永遠通過。
- * 把「任何切割結果都必須成立」的條件收在這裡，每個案例（含未宣告任何斷言的案例）
- * 都會先被驗證，快照才降級為回歸紀錄、而非唯一的檢查。
+ * 這幾條與案例宣告的斷言無關，故由 runner 對每個案例無條件驗證；
+ * 快照僅為回歸紀錄，不構成驗證。
  *
  * 各條的實作依據：
  *   - splitTags.pushSegment 以 temp.trim() 推送、text==='' 直接 return
@@ -124,28 +121,27 @@ export function assertHashCountPreserved(
  *   - splitTags 入口 trimPromptText 清除 \x00 與 \u200b
  *   - splitTags 分行於 \n 即切割，故段內不會殘留 \n、段邊不會殘留水平空白
  *   - splitByPeriod 僅在分割符後接空白時切割，且分割符後的空白會被跳過；
- *     其輸入是已修剪的 splitTags 段落，故「句號後只剩空白」的情況不會發生，
- *     不會產生空段（對照 splitByPeriod 單獨測試可合法回傳 ['abc.', '']）。
+ *     其輸入是已修剪的 splitTags 段落，故不會產生空段
+ *     （splitByPeriod 單獨測試可合法回傳 ['abc.', '']，不適用此條）
  *
  * @param result - splitTags 或 splitTags → splitByPeriod 的輸出
- * @param stage  - 失敗訊息的階段標示（"splitTags" / "pipeline"）
  * @param t      - node:test 的 TestContext（提供 assert）
  */
-export function assertSplitShape(result: ITagSegment[], stage: string, t: TestContext): void {
-	t.assert.equal(Array.isArray(result), true, `${stage} 應回傳陣列`)
+export function assertSplitShape(result: ITagSegment[], t: TestContext): void {
+	t.assert.equal(Array.isArray(result), true, '切割結果應為陣列')
 	for (let i = 0; i < result.length; i++) {
 		const segment = result[i]
 		t.assert.equal(typeof segment, 'string',
-			`${stage} 第 ${i} 段應為字串: ${JSON.stringify(segment)}`)
+			`第 ${i} 段應為字串: ${JSON.stringify(segment)}`)
 		t.assert.notEqual(segment, '',
-			`${stage} 不得產生空段（第 ${i} 段）`)
+			`不得產生空段（第 ${i} 段）`)
 	}
 	assertNoInvisibleChars(result, t)
 	assertNoEdgeWhitespace(result, t)
 }
 
 /**
- * 必要性驗證：updatePrompt 的編排契約（由 runner 無條件呼叫）。
+ * updatePrompt 的編排契約。
  *
  * updatePrompt 只做編排，行為契約寫在函式自身（見 utils/promptTags/updatePrompt）：
  *   1. 有插入 → 依序 appendTag → refresh() → return（不 commit）

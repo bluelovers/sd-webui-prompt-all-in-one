@@ -22,7 +22,7 @@ import { EnumPromptInvisibleChar } from './splitPromptTypes'
 /**
  * 不可見字元清除正則（由 enum 派生，模組載入時構建一次）。
  * 由 EnumPromptInvisibleChar 取值組裝字元類別，確保新增不可見字元時
- * 只需擴充 enum，此處自動生效（單一事實來源）。
+ * 只需擴充 enum，此處自動生效。
  */
 const INVISIBLE_CHARS_RE = new RegExp(
     `[${EnumPromptInvisibleChar.nullChar}${EnumPromptInvisibleChar.zeroWidthSpace}]`,

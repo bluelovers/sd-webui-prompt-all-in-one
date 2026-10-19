@@ -1,12 +1,4 @@
 
-/**
- * 快照（snapshot）型別定義。
- *
- * 對應 helpers 內 t.assert.snapshot() 實際寫入的結構，
- * 與 *.node-test.ts.snapshot 檔的序列化結果逐欄位一致。
- * 建立此模組的目的是把「快照契約」從各 helper 的組裝程式中抽出來單一維護：
- * 日後若調整快照欄位，只需對照此檔與單一事實來源。
- */
 import type { IPeriodPart } from '../../../src/utils/splitByPeriod'
 import type { ITagSegment } from '../../../src/utils/splitTags'
 import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt'
@@ -23,7 +15,6 @@ import type {
  * updatePrompt 的宿主替身在「未注入真 genPrompt」時，commit 會收到此字串。
  * 它是快照契約的一部分：*.snapshot 檔的 committed 陣列內實際出現這個值，
  * 因此值本身不可任意修改，否則既有快照會全部失敗。
- * 過去各處以字面值 '<genPrompt>' 重複維護，抽出為 enum 後成為單一事實來源。
  */
 export enum EnumPromptPlaceholder {
 	/** 未注入真 genPrompt 時，宿主替身回傳的佔位 prompt */
@@ -33,7 +24,7 @@ export enum EnumPromptPlaceholder {
 /**
  * 與原版函式比較後附加到快照的欄位。
  * 由 helpers/node-test-helpers.attachOriginalComparison 附加；
- * 無原版（originalFn 為 null）時兩個欄位都不會寫入。
+ * 無原版可比時兩個欄位都不會寫入。
  */
 export interface IOriginalComparisonSnap {
 	/** 與原版結果是否有差異（原版不存在時不寫入此欄位） */
@@ -66,7 +57,7 @@ export type ISplitByPeriodSnap = IRunCasesSnap<unknown, ISplitByPeriodArgs, IPer
 export type IGenPromptSnap = IRunCasesSnap<IGenPromptTag[], IGenPromptArgs, string>
 
 /**
- * splitTags 單獨測試的快照（runSplitTagsTests，splitByPeriod 為 null）。
+ * splitTags 單獨測試的快照（runSplitTagsTests，未接 splitByPeriod）。
  * 此時只記錄第一階段結果，欄位名為 result。
  */
 export interface ISplitTagsSnap extends IOriginalComparisonSnap {
@@ -77,7 +68,7 @@ export interface ISplitTagsSnap extends IOriginalComparisonSnap {
 }
 
 /**
- * splitTags → splitByPeriod 串接管線快照（runSplitTagsTests，splitByPeriod 非 null）。
+ * splitTags → splitByPeriod 串接管線快照（runSplitTagsTests，已接 splitByPeriod）。
  * 管線時 splitTags 的結果改以 splitTagsResult 命名，並額外記錄管線階段。
  */
 export interface ISplitTagsPipelineSnap extends IOriginalComparisonSnap {
