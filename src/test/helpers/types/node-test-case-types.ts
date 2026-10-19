@@ -14,7 +14,7 @@ import type {
 	IGenPromptOptions,
 	IGenPromptTag,
 } from '../../../src/utils/promptTags/genPrompt'
-import type { IUpdatePromptHost } from '../../../src/utils/promptTags/updatePrompt'
+import type { IUpdatePromptHost, IWrapInsertOptions } from '../../../src/utils/promptTags/updatePrompt'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -178,14 +178,13 @@ export interface IUpdatePromptAppendRecord {
  * updatePrompt 測試案例。
  * 與既有案例同構，但被測函式無回傳值，改以 tags + 期望欄位描述，
  * 由 runner 建立宿主替身並收集 IUpdatePromptSummary。
+ *
+ * 兩個 BREAK 換行旗標不在此重複宣告，直接沿用被測模組的 IWrapInsertOptions：
+ * 案例描述的選項與 updatePrompt 實際認識的選項必須是同一份，改名或增減欄位時只改一處。
  */
-export interface IUpdatePromptCase {
+export interface IUpdatePromptCase extends IWrapInsertOptions {
 	/** 宿主持有的標籤陣列（會被插入換行 mutate，故每案例各自獨立建立） */
 	tags: IGenPromptTag[]
-	/** BREAK 前補換行 */
-	autoBreakBeforeWrap?: boolean
-	/** BREAK 後補換行 */
-	autoBreakAfterWrap?: boolean
 	/**
 	 * 複合測試專用：呼叫真 genPrompt 時的選項。
 	 * 個別測試（未注入 genPrompt）會忽略此欄位。
@@ -203,18 +202,19 @@ export interface IUpdatePromptCase {
 	skip?: boolean
 }
 
-/** createUpdatePromptHost 的選項。 */
-export interface IUpdatePromptHostOptions {
+/**
+ * createUpdatePromptHost 的選項。
+ *
+ * 兩個 BREAK 換行旗標沿用被測模組的 IWrapInsertOptions（IUpdatePromptHost 亦繼承它），
+ * 讓「選項的形狀」與 updatePrompt 實際認識的介面保持同一份。
+ */
+export interface IUpdatePromptHostOptions extends IWrapInsertOptions {
 	/**
 	 * 宿主持有的標籤陣列。
 	 * 傳入的陣列「不會」被 mutate：建立時會複製一份，
 	 * 避免 fixture 內的案例資料被上一個案例的插入動作污染。
 	 */
 	tags: readonly IGenPromptTag[]
-	/** BREAK 前補換行 */
-	autoBreakBeforeWrap?: boolean
-	/** BREAK 後補換行 */
-	autoBreakAfterWrap?: boolean
 	/**
 	 * 宿主替身的「產生 prompt」行為，契約為 (tags) => string。
 	 *

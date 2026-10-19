@@ -6,10 +6,15 @@ export const enum EnumPromptTagType
 	lyco = 'lyco',
 	wrap = 'wrap',
 
+	text = 'text',
+
 	/** when value is "BREAK" */
-	BREAK = 'BREAK',
+	VALUE_BREAK = 'BREAK',
 	/** when value is "#" */
-	SHARP = '#',
+	VALUE_SHARP = '#',
+
+	/** when value is "\n" */
+	VALUE_NEWLINE = '\n',
 }
 
 export const enum EnumIsEnglish
@@ -19,7 +24,7 @@ export const enum EnumIsEnglish
 	UNKNOWN = -1,
 }
 
-export type IPromptTagValueEnum = EnumPromptTagType.BREAK | EnumPromptTagType.SHARP;
+export type IPromptTagValueEnum = EnumPromptTagType.VALUE_BREAK | EnumPromptTagType.VALUE_SHARP;
 export type IPromptTagValue = ITSTypeAndStringLiteral<IPromptTagValueEnum> | (string & {});
 
 /**

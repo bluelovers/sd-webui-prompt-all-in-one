@@ -16,6 +16,7 @@ import type {
     ISplitTagsPipelineCase,
     ISplitTagsTestsOptions,
 } from './types/node-test-case-types'
+import { assertSplitShape } from './node-test-helper2'
 
 /** caseTitle / compareWithOriginal 需要的最小案例形狀（各類案例皆滿足）。 */
 interface ICaseBare {
@@ -159,6 +160,16 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
     describe(suiteName, async () => {
         /** 註冊骨架與 skip 處理共用 forEachCase（見 helpers/node-test-helpers.forEachCase） */
         forEachCase(cases, caseTitle, async (tc, t) => {
+            /**
+             * 必要性驗證：案例必須自帶期望（expected 或 assert 其一）。
+             *
+             * 以 in 而非 !== undefined 判斷：允許案例明寫 expected: undefined
+             * 描述「回傳 undefined」的合法結果，同時擋下「兩者皆未宣告」而只剩
+             * 快照一個驗證點的情況（--test-update-snapshots 會覆寫快照使其永遠通過）。
+             */
+            if (tc.assert === undefined && !('expected' in tc)) {
+                throw new Error(`案例缺少必要性驗證（需提供 expected 或 assert）：${caseTitle(tc)}`)
+            }
             /** args 為空時展開空陣列：等價於「不傳額外參數」 */
             const result = await fn(tc.input, ...(tc.args ?? ([] as unknown as TArgs)))
             if (snapshot) {
@@ -186,11 +197,17 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
  *
  * 流程：
  *   Step 1    splitTags 切割
- *   Step 1.5  可選 — 案例級 assertResult（splitTags 中間結果斷言）
+ *   Step 1.5  必要性驗證 — 無條件（切割輸出的形狀不變式，見 node-test-helper2.assertSplitShape）
+ *   Step 1.6  可選 — 案例級 assertResult（splitTags 中間結果斷言）
  *   Step 2    可選 — splitByPeriod 管線
- *   Step 2.5  可選 — 案例級 assertPipeline（管線最終結果斷言，驗證兩階段合計的不變式）
+ *   Step 2.5  必要性驗證 — 無條件（管線最終輸出的形狀不變式）
+ *   Step 2.6  可選 — 案例級 assertPipeline（管線最終結果斷言，驗證兩階段合計的不變式）
  *   Step 3    與原版比較
  *   Step 4    組裝快照
+ *
+ * 必要性驗證排在案例級斷言之前、快照之前：案例四個斷言欄位全 optional，
+ * 缺齊者原本只剩快照一個驗證點，而 --test-update-snapshots 會覆寫快照使其永遠通過。
+ * 先跑不變式，任何案例都不可能只靠快照過關。
  */
 export function runSplitTagsTests({
     cases,
@@ -203,7 +220,10 @@ export function runSplitTagsTests({
         /** Step 1: splitTags 切割 */
         const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
 
-        /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
+        /** Step 1.5: 必要性驗證 — 無條件，不允許只靠快照過關 */
+        assertSplitShape(tagResult, 'splitTags', t)
+
+        /** Step 1.6: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
         if (tc.assertResult) tc.assertResult(tagResult, t)
 
         /** Step 2: 可選 — splitByPeriod 管線 */
@@ -225,7 +245,10 @@ export function runSplitTagsTests({
             }
         }
 
-        /** Step 2.5: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
+        /** Step 2.5: 必要性驗證 — 無條件（僅在有接管線時，finalResult 才是 splitByPeriod 產物） */
+        if (splitByPeriod) assertSplitShape(finalResult, 'pipeline', t)
+
+        /** Step 2.6: 可選 — 管線最終結果的自訂斷言（不變式，獨立於快照之外） */
         if (tc.assertPipeline) tc.assertPipeline(finalResult, t, tc)
 
         /** Step 3: 與原版比較 */

@@ -11,9 +11,9 @@ export function tagIsWrap(item?: IPromptTag): item is IPromptTag & { type: EnumP
 	return item?.type === EnumPromptTagType.wrap
 }
 
-export function tagIsBreak(item?: IPromptTag): item is IPromptTag & { value: EnumPromptTagType.BREAK }
+export function tagIsBreak(item?: IPromptTag): item is IPromptTag & { value: EnumPromptTagType.VALUE_BREAK }
 {
-	return item?.value?.trim() === EnumPromptTagType.BREAK
+	return item?.value?.trim() === EnumPromptTagType.VALUE_BREAK
 }
 
 export function tagIsDisabled(item?: IPromptTag): item is IPromptTag & { disabled: true }
@@ -29,9 +29,9 @@ export function tagIsDisabled(item?: IPromptTag): item is IPromptTag & { disable
  *
  * @param item - 要判定的 tag
  */
-export function tagIsSharp(item?: IPromptTag): item is IPromptTag & { value: EnumPromptTagType.SHARP }
+export function tagIsSharp(item?: IPromptTag): item is IPromptTag & { value: EnumPromptTagType.VALUE_SHARP }
 {
-	return item?.value?.trim() === EnumPromptTagType.SHARP
+	return item?.value?.trim() === EnumPromptTagType.VALUE_SHARP
 }
 
 export interface IFindTagOptions<T extends IPromptTag>

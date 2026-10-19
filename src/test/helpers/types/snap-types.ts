@@ -10,6 +10,7 @@
 import type { IPeriodPart } from '../../../src/utils/splitByPeriod'
 import type { ITagSegment } from '../../../src/utils/splitTags'
 import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt'
+import type { IWrapInsertOptions } from '../../../src/utils/promptTags/updatePrompt'
 import type {
 	IGenPromptArgs,
 	ISplitByPeriodArgs,
@@ -90,12 +91,15 @@ export interface ISplitTagsPipelineSnap extends IOriginalComparisonSnap {
 	splitByPeriodResult?: ITagSegment[]
 }
 
-/** updatePrompt 快照的 args 區塊（固定為布林三元組，便於跨案例對照）。 */
-export interface IUpdatePromptSnapArgs {
-	/** BREAK 前補換行（未傳時以 false 落盤） */
-	autoBreakBeforeWrap: boolean
-	/** BREAK 後補換行（未傳時以 false 落盤） */
-	autoBreakAfterWrap: boolean
+/**
+ * updatePrompt 快照的 args 區塊（固定為布林三元組，便於跨案例對照）。
+ *
+ * 前兩個欄位以 Required<Pick<IWrapInsertOptions, ...>> 取自被測模組：
+ * 快照端要求必填（呼叫端已以 ?? false 補齊），但欄位名與語意必須與 updatePrompt 一致，
+ * 源頭改名時此處會於編譯期失效，而非靜默漂移。
+ */
+export interface IUpdatePromptSnapArgs
+	extends Required<Pick<IWrapInsertOptions, 'autoBreakBeforeWrap' | 'autoBreakAfterWrap'>> {
 	/** 是否注入真 genPrompt（個別測試為 false，複合測試為 true） */
 	usesRealGenPrompt: boolean
 }

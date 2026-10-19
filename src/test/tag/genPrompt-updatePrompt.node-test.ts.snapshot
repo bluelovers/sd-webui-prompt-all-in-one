@@ -3,23 +3,19 @@ exports[`genPrompt + updatePrompt composite > BREAK 前已是換行 — 不重�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "wrap",
-      "value": "\\n",
-      "localValue": "\\n"
+      "value": "\\n"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -40,28 +36,23 @@ exports[`genPrompt + updatePrompt composite > 兩個 BREAK 四處插入 — 第�
   "input": [
     {
       "type": "text",
-      "value": "a",
-      "localValue": ""
+      "value": "a"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "b",
-      "localValue": ""
+      "value": "b"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "c",
-      "localValue": ""
+      "value": "c"
     }
   ],
   "args": {
@@ -111,18 +102,15 @@ exports[`genPrompt + updatePrompt composite > 前後都補換行 + 移除換行�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -158,18 +146,15 @@ exports[`genPrompt + updatePrompt composite > 只在 BREAK 後補換行 — 前�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -198,18 +183,15 @@ exports[`genPrompt + updatePrompt composite > 未開 autoRemoveBeforeLineComma �
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -245,13 +227,11 @@ exports[`genPrompt + updatePrompt composite > 沒有 BREAK — 首輪直接以 g
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -273,14 +253,12 @@ exports[`genPrompt + updatePrompt composite > 連續 Lora — 與 BREAK 無關�
     {
       "type": "lora",
       "value": "<lora:foo:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     },
     {
       "type": "lora",
       "value": "<lora:bar:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     }
   ],
   "args": {

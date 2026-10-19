@@ -3,18 +3,15 @@ exports[`genPrompt > genPrompt cases > BREAK 標籤 — 前段以空白分隔，
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "result": "cat BREAK dog, "
@@ -27,14 +24,12 @@ exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol + autoRemoveLoraA
     {
       "type": "lora",
       "value": "<lora:foo:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     },
     {
       "type": "lora",
       "value": "<lora:bar:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     }
   ],
   "args": [
@@ -53,18 +48,15 @@ exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — '#' 本身不
   "input": [
     {
       "type": "text",
-      "value": "#",
-      "localValue": ""
+      "value": "#"
     },
     {
       "type": "wrap",
-      "value": "\\n",
-      "localValue": "\\n"
+      "value": "\\n"
     },
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     }
   ],
   "args": [
@@ -83,14 +75,12 @@ exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — 連續 Lora �
     {
       "type": "lora",
       "value": "<lora:foo:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     },
     {
       "type": "lora",
       "value": "<lora:bar:1>",
-      "isLora": true,
-      "localValue": ""
+      "isLora": true
     }
   ],
   "args": [
@@ -108,18 +98,15 @@ exports[`genPrompt > genPrompt cases > autoRemoveBeforeLineComma — 換行前�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "wrap",
-      "value": "\\n",
-      "localValue": "\\n"
+      "value": "\\n"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": [
@@ -137,13 +124,11 @@ exports[`genPrompt > genPrompt cases > autoRemoveLastComma — 最後一個標�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": [
@@ -161,13 +146,11 @@ exports[`genPrompt > genPrompt cases > autoRemoveSpace — 分割符號不含空
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": [
@@ -186,13 +169,11 @@ exports[`genPrompt > genPrompt cases > autoSplitByPeriod — 已標記 splitNoCo
     {
       "type": "text",
       "value": "a",
-      "localValue": "",
       "splitNoComma": true
     },
     {
       "type": "text",
-      "value": "b",
-      "localValue": ""
+      "value": "b"
     }
   ],
   "args": [
@@ -210,13 +191,11 @@ exports[`genPrompt > genPrompt cases > ignoreDisabled=true — 保留 disabled �
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
       "value": "dog",
-      "localValue": "",
       "disabled": true
     }
   ],
@@ -232,18 +211,15 @@ exports[`genPrompt > genPrompt cases > 中間為換行標籤 — 換行符獨立
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "wrap",
-      "value": "\\n",
-      "localValue": "\\n"
+      "value": "\\n"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "result": "cat, \\ndog, "
@@ -256,7 +232,6 @@ exports[`genPrompt > genPrompt cases > 全部為 disabled — 回傳空字串 1`
     {
       "type": "text",
       "value": "cat",
-      "localValue": "",
       "disabled": true
     }
   ],
@@ -269,13 +244,11 @@ exports[`genPrompt > genPrompt cases > 兩個一般標籤 — 預設以 \", \" �
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "result": "cat, dog, "
@@ -294,13 +267,11 @@ exports[`genPrompt > genPrompt cases > 預設過濾 disabled 標籤 1`] = `
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
       "value": "dog",
-      "localValue": "",
       "disabled": true
     }
   ],

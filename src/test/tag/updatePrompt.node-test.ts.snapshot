@@ -3,18 +3,15 @@ exports[`updatePrompt > BREAK 但兩個自動換行選項皆關閉 — 不插入
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -35,13 +32,11 @@ exports[`updatePrompt > BREAK 位於開頭 — 不產生前方換行（原行為
   "input": [
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     }
   ],
   "args": {
@@ -62,23 +57,19 @@ exports[`updatePrompt > BREAK 前已是換行 — 不重複插入，直接提交
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "wrap",
-      "value": "\\n",
-      "localValue": "\\n"
+      "value": "\\n"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -99,18 +90,15 @@ exports[`updatePrompt > autoBreakAfterWrap — 於 BREAK 後插入（索引 2）
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -137,18 +125,15 @@ exports[`updatePrompt > autoBreakBeforeWrap — 於 BREAK 前插入（索引 1�
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -175,28 +160,23 @@ exports[`updatePrompt > 兩個 BREAK — 四處插入，索引分別為 1 / 3 / 
   "input": [
     {
       "type": "text",
-      "value": "a",
-      "localValue": ""
+      "value": "a"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "b",
-      "localValue": ""
+      "value": "b"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "c",
-      "localValue": ""
+      "value": "c"
     }
   ],
   "args": {
@@ -244,18 +224,15 @@ exports[`updatePrompt > 前後都要插入 — 第二個索引需加上先前插
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "BREAK",
-      "value": "BREAK",
-      "localValue": ""
+      "value": "BREAK"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {
@@ -289,13 +266,11 @@ exports[`updatePrompt > 沒有 BREAK — 不插入、不 refresh，直接提交 
   "input": [
     {
       "type": "text",
-      "value": "cat",
-      "localValue": ""
+      "value": "cat"
     },
     {
       "type": "text",
-      "value": "dog",
-      "localValue": ""
+      "value": "dog"
     }
   ],
   "args": {

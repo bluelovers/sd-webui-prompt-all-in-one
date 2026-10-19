@@ -28,13 +28,14 @@ describe('genPrompt + updatePrompt composite', () => {
      * ── 複合案例 ──
      * 案例與期望值皆定義於 fixture/data-genPrompt-updatePrompt.ts，
      * 與個別測試共用 runUpdatePromptTests 與 IUpdatePromptCase，差別只在：
-     *   genPrompt — 注入被抽出的真 genPrompt
+     *   genPrompt — 注入被抽出的真 genPrompt（其簽名即 IGenPromptFn，直接傳入即可，
+     *               不需再包一層同參數轉發的 closure）
      *   reenter   — true，refresh 時重入 updatePrompt（模擬 updateTags 的遞迴）
      */
     runUpdatePromptTests({
         cases: genPromptUpdatePromptCases,
         updatePrompt,
-        genPrompt: (tags, ignoreDisabled, options) => genPrompt(tags, ignoreDisabled, options),
+        genPrompt,
         reenter: true,
     })
 })

@@ -9,6 +9,7 @@ import type {
 } from './types/node-test-case-types'
 import { EnumPromptPlaceholder, type IUpdatePromptSnap } from './types/snap-types'
 import { caseTitle, forEachCase } from './node-test-helpers'
+import { assertUpdatePromptContract } from './node-test-helper2'
 
 /**
  * 建立 updatePrompt 的宿主替身。
@@ -82,13 +83,17 @@ export function createUpdatePromptHost({
  * 執行一組 updatePrompt 測試案例。
  *
  * 與 runSplitTagsTests 相同的做法：被測函式由呼叫端注入，
- * 這裡只負責「建立宿主替身 → 執行 → 對照期望 → 組裝快照」。
+ * 這裡只負責「建立宿主替身 → 執行 → 必要性驗證 → 對照期望 → 組裝快照」。
  *
  * 流程：
  *   Step 1  建立宿主替身（見本檔 createUpdatePromptHost）
  *   Step 2  執行 updatePrompt
- *   Step 3  對照期望（expectedWrapCount / expectedPrompt，或案例自訂 assert）
- *   Step 4  組裝快照 { input, appended, refreshCount, committed }
+ *   Step 3  必要性驗證 — 無條件（編排契約，見 node-test-helper2.assertUpdatePromptContract）
+ *   Step 4  對照期望（expectedWrapCount / expectedPrompt，或案例自訂 assert）
+ *   Step 5  組裝快照 { input, appended, refreshCount, committed }
+ *
+ * 必要性驗證排在案例級期望之前、快照之前：期望欄位全是 optional，
+ * 缺齊者原本只剩快照一個驗證點，而 --test-update-snapshots 會覆寫快照使其永遠通過。
  *
  * @param {Object}   opts
  * @param {Object[]} opts.cases        - 測試案例陣列
@@ -122,7 +127,10 @@ export function runUpdatePromptTests({
             /** Step 2: 執行 */
             updatePrompt(host)
 
-            /** Step 3: 對照期望 */
+            /** Step 3: 必要性驗證 — 無條件，不允許只靠快照過關 */
+            assertUpdatePromptContract(summary, { reenter }, t)
+
+            /** Step 4: 對照期望 */
             if (tc.assert) {
                 tc.assert(summary, t)
             } else {
@@ -139,7 +147,7 @@ export function runUpdatePromptTests({
                 }
             }
 
-            /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
+            /** Step 5: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
             const snap: IUpdatePromptSnap = {
                 input: tc.tags,
                 args: {

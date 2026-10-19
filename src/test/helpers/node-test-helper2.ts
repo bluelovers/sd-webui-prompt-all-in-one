@@ -1,6 +1,9 @@
 import type { TestContext } from 'node:test'
 import type { ITagSegment } from '../../src/utils/splitTags'
-import type { ISplitTagsPipelineCase } from './types/node-test-case-types'
+import type {
+	IUpdatePromptSummary,
+	ISplitTagsPipelineCase,
+} from './types/node-test-case-types'
 
 /**
  * 斷言：不得出現孤兒逗號 tag。
@@ -104,4 +107,102 @@ export function assertHashCountPreserved(
 	t.assert.equal(actual, expected,
 		`管線輸出的 '#' 數量應與輸入相同：input=${expected}, output=${actual}`,
 	)
+}
+
+/**
+ * 必要性驗證：切割輸出的形狀不變式（由 runner 無條件呼叫）。
+ *
+ * 為何不能只靠案例級斷言：assertResult / assertPipeline / expectChanged /
+ * expectOriginalChanged 四個欄位全是 optional，缺齊的案例原本只剩快照一個驗證點；
+ * 而 --test-update-snapshots 會直接覆寫快照，等於該案例永遠通過。
+ * 把「任何切割結果都必須成立」的條件收在這裡，每個案例（含未宣告任何斷言的案例）
+ * 都會先被驗證，快照才降級為回歸紀錄、而非唯一的檢查。
+ *
+ * 各條的實作依據：
+ *   - splitTags.pushSegment 以 temp.trim() 推送、text==='' 直接 return
+ *   - splitTags lora 後處理的 before/after 皆 .trim()，空值 continue（不產生空段）
+ *   - splitTags 入口 trimPromptText 清除 \x00 與 \u200b
+ *   - splitTags 分行於 \n 即切割，故段內不會殘留 \n、段邊不會殘留水平空白
+ *   - splitByPeriod 僅在分割符後接空白時切割，且分割符後的空白會被跳過；
+ *     其輸入是已修剪的 splitTags 段落，故「句號後只剩空白」的情況不會發生，
+ *     不會產生空段（對照 splitByPeriod 單獨測試可合法回傳 ['abc.', '']）。
+ *
+ * @param result - splitTags 或 splitTags → splitByPeriod 的輸出
+ * @param stage  - 失敗訊息的階段標示（"splitTags" / "pipeline"）
+ * @param t      - node:test 的 TestContext（提供 assert）
+ */
+export function assertSplitShape(result: ITagSegment[], stage: string, t: TestContext): void {
+	t.assert.equal(Array.isArray(result), true, `${stage} 應回傳陣列`)
+	for (let i = 0; i < result.length; i++) {
+		const segment = result[i]
+		t.assert.equal(typeof segment, 'string',
+			`${stage} 第 ${i} 段應為字串: ${JSON.stringify(segment)}`)
+		t.assert.notEqual(segment, '',
+			`${stage} 不得產生空段（第 ${i} 段）`)
+	}
+	assertNoInvisibleChars(result, t)
+	assertNoEdgeWhitespace(result, t)
+}
+
+/**
+ * 必要性驗證：updatePrompt 的編排契約（由 runner 無條件呼叫）。
+ *
+ * updatePrompt 只做編排，行為契約寫在函式自身（見 utils/promptTags/updatePrompt）：
+ *   1. 有插入 → 依序 appendTag → refresh() → return（不 commit）
+ *   2. 無插入 → commit(genPrompt())
+ * 這幾條是「與案例期望無關」的必要條件，故對所有案例成立；
+ * 案例級的 expectedWrapCount / expectedPrompt / assert 才負責驗證具體數值。
+ *
+ * @param summary - 宿主替身收集的執行摘要
+ * @param opts    - reenter：refresh 是否重入 updatePrompt（決定有插入時是否最終提交）
+ * @param t       - node:test 的 TestContext（提供 assert）
+ */
+export function assertUpdatePromptContract(
+	summary: IUpdatePromptSummary,
+	{ reenter }: { reenter: boolean },
+	t: TestContext,
+): void {
+	/** appendTag 唯一用途是插入換行，參數形狀固定（見 updatePrompt 呼叫端） */
+	for (let i = 0; i < summary.appended.length; i++) {
+		const record = summary.appended[i]
+		t.assert.equal(record.type, 'wrap', `第 ${i} 筆插入的 type 應為 'wrap'`)
+		t.assert.equal(record.value, '\n', `第 ${i} 筆插入的 value 應為 "\\n"`)
+		t.assert.equal(record.localValue, '\n', `第 ${i} 筆插入的 localValue 應為 "\\n"`)
+		t.assert.equal(record.disabled, false, `第 ${i} 筆插入的 disabled 應為 false`)
+		t.assert.equal(Number.isInteger(record.index) && record.index >= 0, true,
+			`第 ${i} 筆插入的 index 應為非負整數: ${record.index}`)
+	}
+
+	/**
+	 * 插入索引須嚴格遞增：回傳索引依遞增順序，且每次插入都要加上先前插入造成的位移
+	 * （index = insertWrapIndexes[i] + i）。位移漏加會讓索引重複或倒退。
+	 */
+	const indexes = summary.appended.map(record => record.index)
+	for (let i = 1; i < indexes.length; i++) {
+		t.assert.equal(indexes[i] > indexes[i - 1], true,
+			`插入索引須嚴格遞增（每次插入需加上先前插入的位移）: ${JSON.stringify(indexes)}`)
+	}
+
+	/** commit 至多一次；genPrompt 只在 commit 路徑被呼叫 */
+	t.assert.equal(summary.committed.length <= 1, true,
+		`commit 至多一次: ${JSON.stringify(summary.committed)}`)
+	t.assert.equal(summary.genPromptCount, summary.committed.length,
+		`genPrompt 只應在 commit 路徑呼叫：genPrompt=${summary.genPromptCount}, committed=${summary.committed.length}`)
+
+	/** 有插入才 refresh；兩者等價 */
+	t.assert.equal(summary.appended.length === 0, summary.refreshCount === 0,
+		`無插入 ⟺ 無 refresh：appended=${summary.appended.length}, refresh=${summary.refreshCount}`)
+
+	/** 無插入 → 走 commit，必有一筆提交 */
+	if (summary.appended.length === 0) {
+		t.assert.equal(summary.committed.length, 1,
+			'無插入時應直接 commit 一筆')
+		return
+	}
+
+	/** 有插入 → reenter 時 refresh 重入並最終提交；否則停在 refresh、不提交 */
+	t.assert.equal(summary.committed.length, reenter ? 1 : 0,
+		reenter
+			? '有插入且 reenter 時，refresh 重入後最終應提交一筆'
+			: '有插入時應停留在 refresh、不應提交')
 }
