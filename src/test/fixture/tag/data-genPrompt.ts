@@ -1,5 +1,5 @@
 
-import type { IGenPromptTag } from '../../../src/utils/genPrompt';
+import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt';
 import type { IGenPromptCase } from '../../helpers/types/node-test-case-types';
 
 

@@ -1,11 +1,33 @@
 
 import { describe, it } from 'node:test'
+import type { TestContext } from 'node:test'
 import crypto from 'node:crypto'
+import type { ITagSegment } from '../../src/utils/splitTags'
+import type {
+    IOriginalComparisonSnap,
+    IRunCasesSnap,
+    ISplitTagsPipelineSnap,
+    ISplitTagsSnap,
+} from './types/snap-types'
+import type {
+    IRunCase,
+    IRunCasesOptions,
+    ISplitTagsFn,
+    ISplitTagsPipelineCase,
+    ISplitTagsTestsOptions,
+} from './types/node-test-case-types'
+
+/** caseTitle / compareWithOriginal 需要的最小案例形狀（各類案例皆滿足）。 */
+interface ICaseBare {
+    input: unknown
+    args?: unknown[]
+    note?: string
+}
 
 /**
  * 截斷字串並以 "…" 結尾（共用工具）。
  */
-export function truncate(str, maxLen = 60) {
+export function truncate(str: string, maxLen = 60): string {
     if (str.length <= maxLen) return str
     return str.slice(0, maxLen) + '…'
 }
@@ -17,7 +39,7 @@ export function truncate(str, maxLen = 60) {
  *   with "Small joys." below.        → "with \"Small joys.\" below."（引號正確轉義）
  *   a<newline>b                      → "a\nb"
  */
-export function formatTitle(input, maxLen = 60) {
+export function formatTitle(input: unknown, maxLen = 60): string {
     const notString = typeof input !== 'string'
     const raw = notString ? String(input) : input
 
@@ -40,8 +62,8 @@ export function formatTitle(input, maxLen = 60) {
  *   - 有 args 時附加「 ({...})」後綴（同輸入不同參數時避免標題碰撞）
  *
  */
-export function caseTitle(tc) {
-    let title
+export function caseTitle(tc: ICaseBare): string {
+    let title: string
     if (typeof tc.input === 'string') {
         const identified = `[${promptHash(tc.input)}] ${formatTitle(tc.input)}`
         title = tc.note ? `${tc.note} — ${identified}` : identified
@@ -75,18 +97,26 @@ export function caseTitle(tc) {
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
  *   ])
  */
-export function runCases(suiteName, fn, cases, options = {}) {
+export function runCases<TInput, TArgs extends unknown[], TResult>(
+    suiteName: string,
+    fn: (input: TInput, ...args: TArgs) => TResult | Promise<TResult>,
+    cases: readonly IRunCase<TInput, TArgs, TResult>[],
+    options: IRunCasesOptions = {},
+): void {
     /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
     const { snapshot = false } = options
     describe(suiteName, async () => {
         for (const tc of cases) {
             const title = caseTitle(tc)
-            const handler = async (t) => {
-                const result = await fn(tc.input, ...(tc.args || []))
+            /** 獨立成 const，無法從 it() 取得 t 的 contextually-typed，故明確標註 TestContext */
+            const handler = async (t: TestContext) => {
+                /** args 為空時展開空陣列：等價於「不傳額外參數」 */
+                const result = await fn(tc.input, ...(tc.args ?? ([] as unknown as TArgs)))
                 if (snapshot) {
-                    const snap = { input: tc.input }
-                    if (tc.args !== undefined) snap.args = tc.args
-                    snap.result = result
+                    /** key 順序 input → args? → result 會被序列化到 .snapshot，須與既有快照一致 */
+                    const snap: IRunCasesSnap<TInput, TArgs, TResult> = tc.args !== undefined
+                        ? { input: tc.input, args: tc.args, result }
+                        : { input: tc.input, result }
                     t.assert.snapshot(snap)
                 }
                 if (tc.assert) {
@@ -119,18 +149,23 @@ export function runCases(suiteName, fn, cases, options = {}) {
  *   Step 3    與原版比較
  *   Step 4    組裝快照
  */
-export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod }) {
+export function runSplitTagsTests({
+    cases,
+    splitTags,
+    originalFn,
+    splitByPeriod,
+}: ISplitTagsTestsOptions): void {
     for (const tc of cases) {
         const title = caseTitle(tc)
         it(title, (t) => {
             /** Step 1: splitTags 切割 */
-            const tagResult = splitTags(tc.input, ...(tc.args || []))
+            const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
 
             /** Step 1.5: 可選 — 自訂斷言（issues 回歸案例的雙保險，獨立於快照之外） */
             if (tc.assertResult) tc.assertResult(tagResult, t)
 
             /** Step 2: 可選 — splitByPeriod 管線 */
-            let finalResult = tagResult
+            let finalResult: ITagSegment[] = tagResult
             let changed = false
             if (splitByPeriod) {
                 finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
@@ -157,18 +192,18 @@ export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod 
                 t.assert.equal(changedFromOriginal, tc.expectOriginalChanged)
             }
 
-            /** Step 4: 組裝快照 */
-            const snap = splitByPeriod
-                ? { input: tc.input, splitTagsResult: tagResult }
-                : { input: tc.input, result: tagResult }
-
+            /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
+            let snap: ISplitTagsPipelineSnap | ISplitTagsSnap
             if (splitByPeriod) {
-                if (changed) {
-                    snap.splitByPeriodChanged = true
-                    snap.splitByPeriodResult = finalResult
-                } else {
-                    snap.splitByPeriodChanged = false
+                const pipelineSnap: ISplitTagsPipelineSnap = {
+                    input: tc.input,
+                    splitTagsResult: tagResult,
+                    splitByPeriodChanged: changed,
                 }
+                if (changed) pipelineSnap.splitByPeriodResult = finalResult
+                snap = pipelineSnap
+            } else {
+                snap = { input: tc.input, result: tagResult }
             }
 
             attachOriginalComparison(snap, changedFromOriginal, originalResult)
@@ -180,9 +215,13 @@ export function runSplitTagsTests({ cases, splitTags, originalFn, splitByPeriod 
 /**
  * 將新舊版函式結果進行比較。
  */
-export function compareWithOriginal(originalFn, tc, result) {
+export function compareWithOriginal(
+    originalFn: ISplitTagsFn | null,
+    tc: ISplitTagsPipelineCase,
+    result: ITagSegment[],
+): { changedFromOriginal: boolean | null, originalResult: ITagSegment[] | null } {
     if (!originalFn) return { changedFromOriginal: null, originalResult: null }
-    const originalResult = originalFn(tc.input, ...(tc.args || []))
+    const originalResult = originalFn(tc.input, ...(tc.args ?? []))
     const changedFromOriginal = JSON.stringify(result) !== JSON.stringify(originalResult)
     return { changedFromOriginal, originalResult }
 }
@@ -195,7 +234,11 @@ export function compareWithOriginal(originalFn, tc, result) {
  * @param changedFromOriginal
  * @param originalResult
  */
-export function attachOriginalComparison(snap, changedFromOriginal, originalResult) {
+export function attachOriginalComparison(
+    snap: IOriginalComparisonSnap,
+    changedFromOriginal: boolean | null,
+    originalResult: ITagSegment[] | null,
+): void {
     if (changedFromOriginal === null) return
     snap.changedFromOriginal = changedFromOriginal
     if (changedFromOriginal) snap.originalResult = originalResult
@@ -204,7 +247,6 @@ export function attachOriginalComparison(snap, changedFromOriginal, originalResu
 /**
  * 產生輸入字串的短期雜湊（前 8 碼 hex），用於長輸入的快照標題。
  */
-export function promptHash(str) {
+export function promptHash(str: string): string {
     return crypto.createHash('sha256').update(str).digest('hex').slice(0, 8)
 }
-

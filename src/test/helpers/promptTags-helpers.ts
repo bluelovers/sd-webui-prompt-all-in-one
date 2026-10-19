@@ -1,6 +1,13 @@
 import type { IGenPromptTag } from '../../src/utils/promptTags/genPrompt'
 import { updatePrompt as updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
-import { IUpdatePromptAppendRecord, IUpdatePromptHostOptions, IUpdatePromptSummary } from './types/node-test-case-types'
+import type { IUpdatePromptHost } from '../../src/utils/promptTags/updatePrompt'
+import type {
+	IUpdatePromptAppendRecord,
+	IUpdatePromptHostOptions,
+	IUpdatePromptSummary,
+	IUpdatePromptTestsOptions,
+} from './types/node-test-case-types'
+import type { IUpdatePromptSnap } from './types/snap-types'
 import { caseTitle } from './node-test-helpers'
 import { describe, it } from 'node:test'
 
@@ -23,7 +30,7 @@ export function createUpdatePromptHost({
 	autoBreakAfterWrap,
 	genPrompt = null,
 	reenter = false,
-}: IUpdatePromptHostOptions): { host: Parameters<typeof updatePromptCore>[0], summary: IUpdatePromptSummary } {
+}: IUpdatePromptHostOptions): { host: IUpdatePromptHost, summary: IUpdatePromptSummary } {
 	const workingTags: IGenPromptTag[] = tags.map(tag => ({ ...tag }))
 	const appended: IUpdatePromptAppendRecord[] = []
 	const summary: IUpdatePromptSummary = {
@@ -78,7 +85,12 @@ export function createUpdatePromptHost({
  * @param {Function|null} [opts.genPrompt] - 注入真 genPrompt（複合測試）；不傳時以替身取代
  * @param {boolean}  [opts.reenter=false]  - refresh 時重入 updatePrompt（模擬元件遞迴）
  */
-export function runUpdatePromptTests({ cases, updatePrompt, genPrompt = null, reenter = false }) {
+export function runUpdatePromptTests({
+	cases,
+	updatePrompt,
+	genPrompt = null,
+	reenter = false,
+}: IUpdatePromptTestsOptions): void {
     for (const tc of cases) {
         /** 案例以 tags 描述輸入，這裡補上 input 供 caseTitle 產生可讀標題 */
         const title = caseTitle({ ...tc, input: tc.tags })
@@ -107,15 +119,15 @@ export function runUpdatePromptTests({ cases, updatePrompt, genPrompt = null, re
                     )
                 }
                 if (tc.expectedPrompt !== undefined) {
-                    const expectedCommitted = tc.expectedPrompt === null ? [] : [tc.expectedPrompt]
+                    const expectedCommitted = tc.expectedPrompt == null ? [] : [tc.expectedPrompt]
                     t.assert.deepEqual(summary.committed, expectedCommitted,
                         `提交的 prompt 不符：expected=${JSON.stringify(expectedCommitted)}, actual=${JSON.stringify(summary.committed)}`,
                     )
                 }
             }
 
-            /** Step 4: 組裝快照 */
-            t.assert.snapshot({
+            /** Step 4: 組裝快照（key 順序與既有 .snapshot 一致，不可隨意重排） */
+            const snap: IUpdatePromptSnap = {
                 input: tc.tags,
                 args: {
                     autoBreakBeforeWrap: tc.autoBreakBeforeWrap ?? false,
@@ -125,7 +137,8 @@ export function runUpdatePromptTests({ cases, updatePrompt, genPrompt = null, re
                 appended: summary.appended,
                 refreshCount: summary.refreshCount,
                 committed: summary.committed,
-            })
+            }
+            t.assert.snapshot(snap)
         })
     }
 }

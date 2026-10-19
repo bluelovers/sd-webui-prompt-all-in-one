@@ -14,6 +14,7 @@ import type {
 	IGenPromptOptions,
 	IGenPromptTag,
 } from '../../../src/utils/promptTags/genPrompt'
+import type { IUpdatePromptHost } from '../../../src/utils/promptTags/updatePrompt'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -32,6 +33,25 @@ export type ISplitTagsArgs = [
 export type ISplitByPeriodArgs = [
 	options?: ISplitByPeriodOptions,
 ]
+
+/**
+ * splitTags 的函式簽名（單一事實來源）。
+ * 供 helpers 注入被測／原版函式時描述型別，避免各處重複描述。
+ * 對應 src/utils/splitTags.splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options)。
+ */
+export type ISplitTagsFn = (
+	tags: ISplitTagsInput,
+	...args: ISplitTagsArgs
+) => ITagSegment[]
+
+/**
+ * splitByPeriod 的函式簽名（單一事實來源）。
+ * 第一個參數為 unknown（被測函式內建非字串防禦），回傳 IPeriodPart[]。
+ */
+export type ISplitByPeriodFn = (
+	str: unknown,
+	...args: ISplitByPeriodArgs
+) => IPeriodPart[]
 
 /**
  * data-driven 測試案例的共用泛型基底。
@@ -109,6 +129,21 @@ export type IGenPromptArgs = [
 ]
 
 /**
+ * genPrompt 的函式簽名（單一事實來源）。
+ * 供複合測試注入真 genPrompt、個別測試以替身取代時描述同一份型別。
+ */
+export type IGenPromptFn = (
+	tags: IGenPromptTag[],
+	...args: IGenPromptArgs
+) => string
+
+/**
+ * updatePrompt 的函式簽名（單一事實來源）。
+ * 被測函式無回傳值，只接收宿主（IUpdatePromptHost）並編排流程。
+ */
+export type IUpdatePromptFn = (host: IUpdatePromptHost) => void
+
+/**
  * genPrompt 測試案例。
  * 與既有案例同構：input = 標籤陣列、args = 額外參數、expected/assert 二選一。
  */
@@ -159,7 +194,7 @@ export interface IUpdatePromptCase {
 	/** 期望被 appendTag 插入的換行數量 */
 	expectedWrapCount?: number
 	/** 期望提交的 prompt；null 表示期望「不提交」（流程停留在 refresh 之後） */
-	expectedPrompt?: string | null
+	expectedPrompt?: string
 	/** 自訂斷言 fn(summary, t)，若有則取代 expectedWrapCount / expectedPrompt */
 	assert?: (summary: IUpdatePromptSummary, t: TestContext) => void
 	/** true 時跳過此案例 */
@@ -188,5 +223,43 @@ export interface IUpdatePromptHostOptions {
 	 * 用來重現元件的實際行為：updatePrompt → updateTags → updatePrompt。
 	 * 僅在「已無換行可插入」時才會收斂，fixture 資料須可收斂。
 	 */
+	reenter?: boolean
+}
+
+/** runCases 的選項。 */
+export interface IRunCasesOptions {
+	/** true 時額外寫入快照 { input, args?, result } */
+	snapshot?: boolean
+}
+
+/** runSplitTagsTests 的選項（被測函式由呼叫端注入，這裡只負責編排與斷言）。 */
+export interface ISplitTagsTestsOptions {
+	/**
+	 * 待執行案例。
+	 * ISplitTagsCase 可直接傳入：管線欄位皆為 optional，
+	 * 故 runner 內一律以 ISplitTagsPipelineCase 存取（非管線案例取到 undefined）。
+	 */
+	cases: readonly ISplitTagsPipelineCase[]
+	/** 被測的 splitTags */
+	splitTags: ISplitTagsFn
+	/** 原版 splitTags（null 表示不與原版比較） */
+	originalFn: ISplitTagsFn | null
+	/** 管線第二階段（null 表示只跑 splitTags、不接 splitByPeriod） */
+	splitByPeriod: ISplitByPeriodFn | null
+}
+
+/** runUpdatePromptTests 的選項。 */
+export interface IUpdatePromptTestsOptions {
+	/** 待執行案例 */
+	cases: readonly IUpdatePromptCase[]
+	/** 被測的 updatePrompt */
+	updatePrompt: IUpdatePromptFn
+	/**
+	 * 注入真 genPrompt（複合測試）。
+	 * 不傳（null）時以宿主替身取代，讓個別測試只驗證編排流程。
+	 * 第二、三參數對應 genPrompt(tags, ignoreDisabled, options)。
+	 */
+	genPrompt?: ((tags: IGenPromptTag[], ignoreDisabled: boolean, options?: IGenPromptOptions) => string) | null
+	/** true 時 refresh() 重入 updatePrompt（模擬元件遞迴） */
 	reenter?: boolean
 }

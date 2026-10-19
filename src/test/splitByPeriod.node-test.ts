@@ -1,5 +1,6 @@
 
 import { describe, it } from 'node:test'
+import type { TestContext } from 'node:test'
 import { runCases } from './helpers/node-test-helpers'
 import {
     basicCases,

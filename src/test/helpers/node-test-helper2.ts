@@ -1,4 +1,6 @@
-import { TestContext } from 'node:test'
+import type { TestContext } from 'node:test'
+import type { ITagSegment } from '../../src/utils/splitTags'
+import type { ISplitTagsPipelineCase } from './types/node-test-case-types'
 
 /**
  * 斷言：不得出現孤兒逗號 tag。
@@ -12,7 +14,7 @@ import { TestContext } from 'node:test'
  *   1. 不得存在值恰為 "," 的 tag（孤兒分隔逗號）。
  *   2. 不得存在以 "," 結尾的 tag（分隔符被誤留在 tag 內容尾端）。
  */
-export function assertNoOrphanCommaTags(tagResult, t: TestContext)
+export function assertNoOrphanCommaTags(tagResult: ITagSegment[], t: TestContext)
 {
 	const orphans = tagResult.filter(tag => tag === ',')
 	t.assert.deepEqual(orphans, [],
@@ -31,7 +33,7 @@ export function assertNoOrphanCommaTags(tagResult, t: TestContext)
  * 來源 issue 同上：孤兒逗號出現時，lora 前的 before 殘片會帶尾隨逗號，
  * 破壞 lora 單元的完整性。
  */
-export function assertLoraTagsIntact(tagResult, t: TestContext)
+export function assertLoraTagsIntact(tagResult: ITagSegment[], t: TestContext)
 {
 	const broken = tagResult.filter(tag => tag.startsWith('<lora:') && !/^<lora:[^>]+>$/.test(tag))
 	t.assert.deepEqual(broken, [],
@@ -42,7 +44,7 @@ export function assertLoraTagsIntact(tagResult, t: TestContext)
 /**
  * issues 回歸案例共用斷言：孤兒逗號 + lora 完整性。
  */
-export function assertNoOrphanCommaRegressions(tagResult, t: TestContext)
+export function assertNoOrphanCommaRegressions(tagResult: ITagSegment[], t: TestContext)
 {
 	assertNoOrphanCommaTags(tagResult, t)
 	assertLoraTagsIntact(tagResult, t)
@@ -52,7 +54,7 @@ export function assertNoOrphanCommaRegressions(tagResult, t: TestContext)
  * 斷言：結果中不得殘留不可見字元（\x00 NULL、\u200b 零寬空格）。
  * 來源：輸入清理（trimPromptText）應在 splitTags 入口完成清除。
  */
-export function assertNoInvisibleChars(tagResult, t: TestContext)
+export function assertNoInvisibleChars(tagResult: ITagSegment[], t: TestContext)
 {
 	const INVISIBLE_RE = /[\x00\u200b]/
 	const polluted = tagResult.filter(tag => INVISIBLE_RE.test(tag))
@@ -64,7 +66,7 @@ export function assertNoInvisibleChars(tagResult, t: TestContext)
 /**
  * 斷言：首尾 tag 不得多餘水平空白（邊界空白應已修剪；\n 標記除外）。
  */
-export function assertNoEdgeWhitespace(tagResult, t: TestContext)
+export function assertNoEdgeWhitespace(tagResult: ITagSegment[], t: TestContext)
 {
 	const segments = tagResult.filter(tag => tag !== '\n')
 	const first = segments[0] ?? ''
@@ -86,17 +88,20 @@ export function assertNoEdgeWhitespace(tagResult, t: TestContext)
  *
  * 供案例的 assertPipeline 欄位使用（見 helpers/node-test-case-types）。
  *
- * @param {string[]} finalResult - splitTags → splitByPeriod 的最終結果
- * @param {object}   t           - node:test 的 TestContext（提供 assert）
- * @param {{ input: unknown }} tc - 測試案例（以 input 計算基準數量）
+ * @param finalResult - splitTags → splitByPeriod 的最終結果
+ * @param t           - node:test 的 TestContext（提供 assert）
+ * @param tc          - 測試案例（以 input 計算基準數量）
  */
-export function assertHashCountPreserved(finalResult, t: TestContext, tc)
+export function assertHashCountPreserved(
+	finalResult: ITagSegment[],
+	t: TestContext,
+	tc: ISplitTagsPipelineCase,
+)
 {
-	const count = text => String(text).split('#').length - 1
+	const count = (text: unknown) => String(text).split('#').length - 1
 	const expected = count(tc.input)
 	const actual = count(finalResult.join(''))
 	t.assert.equal(actual, expected,
 		`管線輸出的 '#' 數量應與輸入相同：input=${expected}, output=${actual}`,
 	)
 }
-
