@@ -1170,7 +1170,11 @@ export default {
                     this.counterText = `${token_count}/${max_length}`
                 })
             }
-            if (this.tags.length) {
+            /**
+             * autoInputPromptInitializing：initAutoInputPrompt 初始化期間跳過歷史寫入，
+             * 避免自動載入「上一條歷史 / 收藏」時產生一筆重複的歷史紀錄
+             */
+            if (this.tags.length && !this.autoInputPromptInitializing) {
                 this.gradioAPI.getLatestHistory(this.historyKey).then(res => {
                     if (res && res.prompt === this.prompt) {
                         // 如果有上一条记录，并且prompt相同，则更新

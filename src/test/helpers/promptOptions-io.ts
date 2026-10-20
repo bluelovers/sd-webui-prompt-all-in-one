@@ -1,10 +1,4 @@
 
-/**
- * 測試用的 promptOptions I/O helper：以 storage/<optionKey>.json 覆寫程式預設值。
- *
- * 檔案不存在或內容為 null 時沿用程式預設值，因此可只覆寫需要差異化的選項。
- */
-
 import { _getPromptOptionValueRecord, promptOptionStorageKeys } from '#/src/utils/promptOptions';
 import { IPromptOptionKeyAndLegacyStorage, IPromptOptionValueRecordWithLegacy } from '#/src/utils/promptOptions/definitions';
 import { __PROJECT_STORAGE } from '#/test/__root';
@@ -20,6 +14,7 @@ let _loadedData: ReturnType<typeof _getPromptOptionValueRecord> = null;
 /**
  * 逐鍵比對 storage/<key>.json 與程式預設值，回傳覆寫後的完整記錄表。
  * 尚未套用 Object.freeze()，凍結由呼叫端負責。
+ * 檔案不存在或內容為 null 時沿用程式預設值，因此可只覆寫需要差異化的選項。
  */
 function _loadPromptOptionsFromStorageCore()
 {

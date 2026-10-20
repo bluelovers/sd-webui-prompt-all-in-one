@@ -42,6 +42,16 @@ export default {
             favorites: [],
             autoInputPrompt: 'disabled',
             autoInputPromptKey: '',
+            /**
+             * initAutoInputPrompt 初始化期間的歷史寫入抑制開關。
+             *
+             * 原因：自動載入「上一條歷史 / 收藏」時會經由 useHistory() → updateTags()，
+             * 而 updateTags() 會把當前 prompt 寫回歷史（setHistory / pushHistory），
+             * 造成初始化階段產生一筆不必要的重複紀錄。
+             * 因此在初始化呼叫 useHistory/useFavorite 期間將此旗標設為 true，
+             * 讓 updateTags() 跳過歷史寫入；機制結束（同步鏈完成）後立即還原。
+             */
+            autoInputPromptInitializing: false,
         }
     },
     computed: {
@@ -594,7 +604,13 @@ export default {
                 this.autoInputPrompt = res
                 if (this.autoInputPrompt === 'last') {
                     this.gradioAPI.getLatestHistory(this.historyKey).then(res => {
-                        this.useHistory(res)
+                        /** 抑制載入歷史時 updateTags() 重複寫回歷史 */
+                        this.autoInputPromptInitializing = true
+                        try {
+                            this.useHistory(res)
+                        } finally {
+                            this.autoInputPromptInitializing = false
+                        }
                     })
                 } else {
                     const getFavorites = () => {
@@ -602,7 +618,13 @@ export default {
                             for (let item of window.phystonPromptfavorites) {
                                 for (let favorite of item.list) {
                                     if (favorite.id === this.autoInputPrompt) {
-                                        this.useFavorite(favorite)
+                                        /** 抑制載入收藏時 updateTags() 重複寫回歷史 */
+                                        this.autoInputPromptInitializing = true
+                                        try {
+                                            this.useFavorite(favorite)
+                                        } finally {
+                                            this.autoInputPromptInitializing = false
+                                        }
                                         return
                                     }
                                 }
