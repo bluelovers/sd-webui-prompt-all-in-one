@@ -113,5 +113,3 @@ export function updatePrompt(host: IUpdatePromptHost): void {
 
     host.commit(host.genPrompt())
 }
-
-export default updatePrompt

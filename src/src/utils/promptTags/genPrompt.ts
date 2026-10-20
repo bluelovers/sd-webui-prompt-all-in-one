@@ -319,5 +319,3 @@ export function genPrompt(
     // console.log('update tags', prompts)
     return prompts.join('')
 }
-
-export default genPrompt

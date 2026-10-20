@@ -1,6 +1,6 @@
 
 import type { IUpdatePromptCase } from '../../helpers/types/node-test-case-types';
-import { brk, lora, text, wrap } from '../../helpers/tag-factories';
+import { _t_createTag_brk, _t_createTag_lora, _t_createTag_text, _t_createTag_wrap } from '../../helpers/tag-factories';
 
 
 export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
@@ -11,7 +11,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 	 * 期望值是插入後的標籤經 genPrompt 組出的「最終 prompt」。
 	 */
 	{
-		tags: [text('cat'), brk(), text('dog')],
+		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
 		autoBreakBeforeWrap: true,
 		autoBreakAfterWrap: true,
 		genPromptOptions: { autoRemoveBeforeLineComma: true, autoRemoveLastComma: true },
@@ -24,7 +24,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 		},
 	},
 	{
-		tags: [text('cat'), brk(), text('dog')],
+		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
 		autoBreakBeforeWrap: true,
 		autoBreakAfterWrap: true,
 		genPromptOptions: { autoRemoveLastComma: true },
@@ -32,14 +32,14 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 		expectedPrompt: 'cat, \nBREAK\ndog',
 	},
 	{
-		tags: [text('cat'), brk(), text('dog')],
+		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
 		autoBreakAfterWrap: true,
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: '只在 BREAK 後補換行 — 前段以空白分隔',
 		expectedPrompt: 'cat BREAK\ndog',
 	},
 	{
-		tags: [text('a'), brk(), text('b'), brk(), text('c')],
+		tags: [_t_createTag_text('a'), _t_createTag_brk(), _t_createTag_text('b'), _t_createTag_brk(), _t_createTag_text('c')],
 		autoBreakBeforeWrap: true,
 		autoBreakAfterWrap: true,
 		genPromptOptions: { autoRemoveBeforeLineComma: true, autoRemoveLastComma: true },
@@ -54,7 +54,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 	 * ── 第二組：不需插入 — 首輪即組字 ──
 	 */
 	{
-		tags: [text('cat'), text('dog')],
+		tags: [_t_createTag_text('cat'), _t_createTag_text('dog')],
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: '沒有 BREAK — 首輪直接以 genPrompt 組字',
 		assert: (summary, t) => {
@@ -64,7 +64,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 		},
 	},
 	{
-		tags: [text('cat'), wrap(), brk(), text('dog')],
+		tags: [_t_createTag_text('cat'), _t_createTag_wrap(), _t_createTag_brk(), _t_createTag_text('dog')],
 		autoBreakBeforeWrap: true,
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: 'BREAK 前已是換行 — 不重複插入，直接組字',
@@ -72,7 +72,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 		expectedPrompt: 'cat, \nBREAK dog',
 	},
 	{
-		tags: [lora('foo'), lora('bar')],
+		tags: [_t_createTag_lora('foo'), _t_createTag_lora('bar')],
 		genPromptOptions: { autoOptimizeSplitSymbol: true, autoRemoveLoraAfterComma: true },
 		note: '連續 Lora — 與 BREAK 無關，首輪直接組字且逗號被換成空白',
 		expectedWrapCount: 0,

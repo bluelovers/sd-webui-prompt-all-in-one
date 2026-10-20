@@ -8,6 +8,8 @@ export const enum EnumPromptTagType
 
 	text = 'text',
 
+	/* =============== */
+
 	/** when value is "BREAK" */
 	VALUE_BREAK = 'BREAK',
 	/** when value is "#" */
@@ -24,21 +26,30 @@ export const enum EnumIsEnglish
 	UNKNOWN = -1,
 }
 
-export type IPromptTagValueEnum = EnumPromptTagType.VALUE_BREAK | EnumPromptTagType.VALUE_SHARP;
+export type IPromptTagType = EnumPromptTagType.lora | EnumPromptTagType.lyco | EnumPromptTagType.wrap | EnumPromptTagType.text;
+
+export type IPromptTagValueEnum = Exclude<EnumPromptTagType, IPromptTagType>;
 export type IPromptTagValue = ITSTypeAndStringLiteral<IPromptTagValueEnum> | (string & {});
 
 /**
  * src/src/mixins/phystonPrompt/tagMixin.js
  * RESTOREABLE_PROPERTIES
  */
-export interface IPromptTagExtraProps
+export interface IPromptTagRuntimeExtraProps
 {
 	splitNoComma?: boolean;
 }
 
-export interface IPromptTag extends IPromptTagExtraProps
+export interface IPromptTagRuntimeProps
 {
-	type: string;
+	weightNum?: number;
+	incWeight?: number;
+	decWeight?: number;
+}
+
+export interface IPromptTag extends IPromptTagRuntimeExtraProps, IPromptTagRuntimeProps
+{
+	type: IPromptTagType;
 	value: IPromptTagValue;
 	originalValue?: string;
 

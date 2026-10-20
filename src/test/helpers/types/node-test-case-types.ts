@@ -234,6 +234,11 @@ export interface IUpdatePromptHostOptions extends IWrapInsertOptions {
 	reenter?: boolean
 }
 
+export interface ICreateUpdatePromptHostResult {
+	host: IUpdatePromptHost;
+	summary: IUpdatePromptSummary;
+}
+
 /** runCases 的選項。 */
 export interface IRunCasesOptions {
 	/** true 時額外寫入快照 { input, args?, result } */

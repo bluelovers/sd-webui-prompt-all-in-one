@@ -6,7 +6,7 @@ exports[`genPrompt > genPrompt cases > BREAK 標籤 — 前段以空白分隔，
       "value": "cat"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {

@@ -10,7 +10,7 @@ exports[`genPrompt + updatePrompt composite > BREAK 前已是換行 — 不重�
       "value": "\\n"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {
@@ -39,7 +39,7 @@ exports[`genPrompt + updatePrompt composite > 兩個 BREAK 四處插入 — 第�
       "value": "a"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {
@@ -47,7 +47,7 @@ exports[`genPrompt + updatePrompt composite > 兩個 BREAK 四處插入 — 第�
       "value": "b"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {
@@ -105,7 +105,7 @@ exports[`genPrompt + updatePrompt composite > 前後都補換行 + 移除換行�
       "value": "cat"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {
@@ -149,7 +149,7 @@ exports[`genPrompt + updatePrompt composite > 只在 BREAK 後補換行 — 前�
       "value": "cat"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {
@@ -186,7 +186,7 @@ exports[`genPrompt + updatePrompt composite > 未開 autoRemoveBeforeLineComma �
       "value": "cat"
     },
     {
-      "type": "BREAK",
+      "type": "text",
       "value": "BREAK"
     },
     {

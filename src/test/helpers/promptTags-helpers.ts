@@ -2,6 +2,7 @@ import type { IGenPromptTag } from '../../src/utils/promptTags/genPrompt'
 import { updatePrompt as updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
 import type { IUpdatePromptHost } from '../../src/utils/promptTags/updatePrompt'
 import type {
+	ICreateUpdatePromptHostResult,
 	IUpdatePromptAppendRecord,
 	IUpdatePromptHostOptions,
 	IUpdatePromptSummary,
@@ -10,6 +11,7 @@ import type {
 import { EnumPromptPlaceholder, type IUpdatePromptSnap } from './types/snap-types'
 import { caseTitle, forEachCase } from './node-test-helpers'
 import { assertUpdatePromptContract } from './node-test-helper2'
+import { IPromptTagType, IPromptTagValue } from '#/src/utils/promptTags/tag-types'
 
 /**
  * 建立 updatePrompt 的宿主替身。
@@ -29,7 +31,7 @@ export function createUpdatePromptHost({
 	autoBreakAfterWrap,
 	genPrompt,
 	reenter = false,
-}: IUpdatePromptHostOptions): { host: IUpdatePromptHost, summary: IUpdatePromptSummary } {
+}: IUpdatePromptHostOptions): ICreateUpdatePromptHostResult {
 	const workingTags: IGenPromptTag[] = tags.map(tag => ({ ...tag }))
 	const appended: IUpdatePromptAppendRecord[] = []
 	const summary: IUpdatePromptSummary = {
@@ -44,7 +46,7 @@ export function createUpdatePromptHost({
 		tags: workingTags,
 		autoBreakBeforeWrap,
 		autoBreakAfterWrap,
-		appendTag(value: string, localValue: string, disabled: boolean, index: number, type: string) {
+		appendTag(value: IPromptTagValue, localValue: string, disabled: boolean, index: number, type: IPromptTagType) {
 			appended.push({ value, localValue, disabled, index, type })
 			/** 與 _appendTag 一致：空值不建立標籤 */
 			if (value === '') return
