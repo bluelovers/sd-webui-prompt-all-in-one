@@ -1,0 +1,39 @@
+exports[`promptOptions:snapshot 1`] = `
+{
+  "default": {
+    "autoRemoveSpace": false,
+    "autoRemoveLastComma": false,
+    "autoKeepWeightZero": false,
+    "autoKeepWeightOne": false,
+    "autoBreakBeforeWrap": false,
+    "autoBreakAfterWrap": false,
+    "autoRemoveLoraBeforeComma": false,
+    "autoRemoveLoraAfterComma": false,
+    "useNovelAiWeightSymbol": false,
+    "autoRemoveBeforeLineComma": false,
+    "autoSplitByPeriod": false,
+    "autoSplitByPeriodIncludeParen": false,
+    "autoSplitByPeriodSemicolon": false,
+    "autoOptimizeSplitSymbol": false,
+    "allowKeepEmptyLine": false
+  },
+  "overridden": {
+    "autoRemoveSpace": false,
+    "autoRemoveLastComma": true,
+    "autoKeepWeightZero": true,
+    "autoKeepWeightOne": false,
+    "autoBreakBeforeWrap": true,
+    "autoBreakAfterWrap": true,
+    "autoRemoveLoraBeforeComma": false,
+    "autoRemoveLoraAfterComma": false,
+    "useNovelAiWeightSymbol": false,
+    "autoRemoveBeforeLineComma": false,
+    "autoSplitByPeriod": true,
+    "autoSplitByPeriodIncludeParen": true,
+    "autoSplitByPeriodSemicolon": true,
+    "autoOptimizeSplitSymbol": false,
+    "allowKeepEmptyLine": true,
+    "autoSplitByPeriodRemoveWrapComma": true
+  }
+}
+`;

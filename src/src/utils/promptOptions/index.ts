@@ -1,5 +1,5 @@
 /**
- * promptOptions 模組入口：由 definitions.ts 生成各元件所需的樣板資料。
+ * promptOptions 模組入口：由 definitions.ts 的選項定義生成各元件所需的樣板資料。
  *
  * 生成目標:
  *   - App.vue data() 預設值            → getPromptOptionData()
@@ -10,7 +10,7 @@
  *   - promptFormat.vue props / emits  → getPromptOptionProps() / getPromptOptionEmits('promptFormat')
  */
 
-import { IPromptOptionKey, IPromptOptionKeyAndLegacyStorage, IPromptOptionKeyLegacyStorage, IPromptOptionValue, promptOptions } from './definitions'
+import { IPromptOptionKey, IPromptOptionKeyAndLegacyStorage, IPromptOptionKeyLegacyStorage, IPromptOptionValue, IPromptOptionValueDefaultKey, IPromptOptionValueRecord, IPromptOptionValueRecordWithLegacy, promptOptions } from './definitions'
 import { EnumPromptOptionAfterSave, type IPromptOptionComponent, type IPromptOptionPropBoolean, type IPromptOptionWatcher } from './types'
 
 export { promptOptions } from './definitions'
@@ -18,25 +18,47 @@ export type { IPromptOptionAfterSave, IPromptOptionComponent, IPromptOptionPropB
 
 /**
  * watcher handler 內部所需的 App 實例最小結構。
+ *
+ * 只宣告 handler 實際存取的成員，避免與 App.vue 全域型別耦合。
  */
 interface I_PromptOptionWatchHost {
+    /**
+     * 初始化完成前為 false，用於抑制載入期間的寫入。
+     */
     startWatchSave: boolean
+    /** 後端存檔 API，選項鍵即存檔鍵 / backend persistence where the option key is the storage key */
     gradioAPI: { setData: (key: string, value: unknown) => Promise<unknown> }
+    /** 需要重新產生輸出的 prompt 清單 / prompts whose refs get refreshed after save */
     prompts: ReadonlyArray<{ id: string }>
+    /** 以 prompt id 索引的子元件 ref，用於呼叫 applySplitByPeriod() / updatePrompt() */
     $refs: Record<string, Array<{ applySplitByPeriod: () => void; updatePrompt: () => void }>>
+}
+
+/**
+ * 以所有選項鍵建立「鍵 → 預設值」的完整記錄表。
+ * 作為 App.vue data() 預設值與測試 helper 的共用產生點，確保兩者不會各自漂移。
+ *
+ * @param defaultKey - 取用的預設值欄位 ('dataDefault' | 'propDefault')
+ * @returns 以所有 IPromptOptionKey 為索引的預設值記錄表
+ */
+export function _getPromptOptionValueRecord(defaultKey?: IPromptOptionValueDefaultKey) {
+    defaultKey = defaultKey || 'propDefault'
+    const data: Record<IPromptOptionKey, IPromptOptionValue> = {} as IPromptOptionValueRecord
+    for (const option of promptOptions) {
+        data[option.key] = option[defaultKey]
+    }
+    return data
 }
 
 /**
  * 生成 App.vue data() 使用的預設值表。
  *
- * 預設值來自定義的 dataDefault（可能與子元件 propDefault 不同，如 autoRemoveSpace）。
+ * 預設值取自 dataDefault（可能與子元件 propDefault 不同，如 autoRemoveSpace）。
+ *
+ * @deprecated
  */
-export function getPromptOptionData(): Record<IPromptOptionKey, boolean> {
-    const data = {} as Record<IPromptOptionKey, boolean>
-    for (const option of promptOptions) {
-        data[option.key] = option.dataDefault
-    }
-    return data
+export function getPromptOptionData() {
+    return _getPromptOptionValueRecord('dataDefault')
 }
 
 /**
@@ -52,13 +74,28 @@ export function getPromptOptionWatchers(): Record<IPromptOptionKey, IPromptOptio
     for (const option of promptOptions) {
         watchers[option.key] = {
             handler: function (this: I_PromptOptionWatchHost, value: boolean) {
+                /**
+                 * 初始化期間 startWatchSave 為 false，期間的 watch 觸發源自 init() 回填，
+                 * 若照常儲存會以尚未就緒的狀態覆蓋後端存檔，因此直接略過。
+                 */
                 if (!this.startWatchSave) return
                 console.log(`on${option.key}Change`, value)
+                /**
+                 * 先完成持久化再重整 UI，確保重新產生的輸出反映的是已存檔的值；
+                 * 存檔失敗時靜默忽略，避免未處理的 Promise rejection 中斷介面操作。
+                 */
                 this.gradioAPI.setData(option.key, value).then(() => {
                     if (option.afterSave === EnumPromptOptionAfterSave.saveOnly) return
+                    /**
+                     * 各 prompt 的 ref 可能尚未掛載（例如面板尚未渲染），
+                     * 缺少 ref 時略過該筆，不將邊界檢查外洩至 mixin。
+                     */
                     this.prompts.forEach(item => {
                         const promptRef = this.$refs[item.id] && this.$refs[item.id][0]
                         if (!promptRef) return
+                        /**
+                         * resplitAndPrompt 需先在 tags 陣列層重新分割，updatePrompt() 才有正確的輸入。
+                         */
                         if (option.afterSave === EnumPromptOptionAfterSave.resplitAndPrompt) promptRef.applySplitByPeriod()
                         promptRef.updatePrompt()
                     })
@@ -84,18 +121,27 @@ export const promptOptionStorageKeys = promptOptions.flatMap(option =>
  * 任一選項主鍵為空時，依序嘗試其 legacyStorageKeys（舊鍵遷移）；
  * 主鍵與舊鍵皆為空則保留預設值。語義等同原本逐鍵的 if (data.x !== null) 區塊。
  */
-export function loadPromptOptions(target: Record<IPromptOptionKey, IPromptOptionValue>, data: Record<IPromptOptionKeyAndLegacyStorage, IPromptOptionValue>): void {
+export function loadPromptOptions(target: IPromptOptionValueRecord, data: IPromptOptionValueRecordWithLegacy): void {
     for (const option of promptOptions) {
         let value = data[option.key]
+        /**
+         * 主鍵尚未儲存過時嘗試舊鍵：更名前的使用者設定仍可沿用，避免升級後設定被重置。
+         */
         if (value === null || value === undefined) {
             for (const legacyKey of option.legacyStorageKeys ?? []) {
                 const legacyValue = data[legacyKey]
+                /**
+                 * 命中第一個有值的舊鍵即停止：舊鍵之間不存在可合併的語意，先列者優先。
+                 */
                 if (legacyValue !== null && legacyValue !== undefined) {
                     value = legacyValue
                     break
                 }
             }
         }
+        /**
+         * 主鍵與舊鍵皆未儲存時保留呼叫端傳入的預設值，維持 data() 的初始狀態。
+         */
         if (value === null || value === undefined) continue
         target[option.key] = value
     }

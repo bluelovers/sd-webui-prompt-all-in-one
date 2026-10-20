@@ -1,5 +1,6 @@
 /**
- * 「prompts 系列選項」。
+ * 「prompts 系列選項」的定義表。
+ * Definition table for the prompts-family options.
  *
  * 這裡的每一筆定義會同時驅動：
  *   - src/src/App.vue              ：data() 預設值、watch、dataListsKeys、init() 載入
@@ -30,12 +31,12 @@ interface I_PromptOptionDefinition extends IPromptOptionDefinitionCore {
 const _promptOptions = [
     {
         key: 'autoRemoveSpace',
-        /** App.vue data() 預設為 true */
-        dataDefault: true, //
+        /** App.vue data() 的預設值 */
+        dataDefault: false,
         /** 子元件未傳入時的預設 */
         propDefault: false,
         afterSave: EnumPromptOptionAfterSave.updatePrompt,
-        /** phystonPrompt 頭部選單與 promptFormat checkbox 都有 emit / emitted by both components' UIs */
+        /** phystonPrompt 頭部選單與 promptFormat checkbox 皆有會 emit 此選項的 UI / emitting UIs exist in both components */
         emittedBy: [EnumPromptOptionComponent.phystonPrompt, EnumPromptOptionComponent.promptFormat],
         note: '移除 tag 前後多餘空白；變更後需重新產生輸出。',
     },
@@ -141,7 +142,7 @@ const _promptOptions = [
         dataDefault: false,
         propDefault: false,
         afterSave: EnumPromptOptionAfterSave.resplitAndPrompt,
-        /** 舊存檔鍵遷移：更名前的使用者設定；後續寫入一律走新鍵 */
+        /** 舊存檔鍵遷移：更名前的使用者設定；後續寫入一律走新鍵 / read-only legacy key, writes always use the new key */
         legacyStorageKeys: ['autoSplitByPeriodRemoveWrapComma'],
         emittedBy: [EnumPromptOptionComponent.promptFormat],
         note: '自動優化分割符號（獨立選項，不再屬於 autoSplitByPeriod 子選項）。其分行前條件（「:」結尾 / 該行含 # tag / 分行前為 Lora）在 genPrompt() 輸出層直接判定，並影響 splitNoComma 標記，因此需同時 applySplitByPeriod() 與 updatePrompt()。',
@@ -156,19 +157,40 @@ const _promptOptions = [
     },
 ] as const satisfies I_PromptOptionDefinition[]
 
+/** 由常數陣列推導的單筆選項定義型別 */
 type I_PromptOptionEntry = typeof _promptOptions[number]
 
+/** 從選項定義抽出 legacyStorageKeys 的字面聯合型別 (Literal Union)；未定義舊鍵者回傳 never */
 type I_ExtractLegacyStorageKeys<T> = T extends Pick<I_PromptOptionDefinition, 'legacyStorageKeys'> ? T['legacyStorageKeys'][number] : never
 
 /**
  * 選項鍵名：同時作為 data 鍵、後端存檔鍵與 v-model 名稱。
  */
 export type IPromptOptionKey = I_PromptOptionEntry['key']
+/** 僅供載入遷移讀取的舊存檔鍵型別 / legacy storage keys, read-only on load */
 export type IPromptOptionKeyLegacyStorage = I_ExtractLegacyStorageKeys<I_PromptOptionEntry>
+/** 主鍵與舊鍵的聯合：用於接住後端回傳的完整存檔資料 */
 export type IPromptOptionKeyAndLegacyStorage = IPromptOptionKey | IPromptOptionKeyLegacyStorage
 
-export type IPromptOptionValue = I_PromptOptionEntry['dataDefault']
+/** 可取用的預設值欄位名（'dataDefault' | 'propDefault'） */
+export type IPromptOptionValueDefaultKey = Extract<keyof I_PromptOptionEntry, 'dataDefault' | 'propDefault'>
 
+/** 選項值型別：以定義的 dataDefault 推導並放寬至 boolean */
+export type IPromptOptionValue = I_PromptOptionEntry['dataDefault'] | boolean
+
+/**
+ * 對外揭露的選項值記錄表型別：以 IPromptOptionKey 為索引的鍵值對。
+ */
+export type IPromptOptionValueRecord = Record<IPromptOptionKey, IPromptOptionValue>
+
+/**
+ * 對外揭露的選項值記錄表型別：包含主鍵與舊鍵的聯合索引。
+ */
+export type IPromptOptionValueRecordWithLegacy = Record<IPromptOptionKeyAndLegacyStorage, IPromptOptionValue>
+
+/**
+ * 對外揭露的選項定義型別：鍵名收斂為 IPromptOptionKey、舊鍵收斂為 IPromptOptionKeyLegacyStorage。
+ */
 export interface IPromptOptionDefinition extends IPromptOptionDefinitionCore {
     /**
      * 選項鍵名：同時作為 data 鍵、後端存檔鍵與 v-model 名稱。

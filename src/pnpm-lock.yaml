@@ -20,6 +20,9 @@ importers:
       papaparse:
         specifier: ^5.7.0
         version: 5.7.0
+      sort-object-keys2:
+        specifier: ^3.0.10
+        version: 3.0.10
       sortablejs:
         specifier: ^1.15.7
         version: 1.15.7
@@ -276,6 +279,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@lazy-array/util-unique@1.0.9':
+    resolution: {integrity: sha512-Wx8hBIkjIXCPKBfoLjXzlwktdlMA84qrSDE7xE0QLGRWGGbInl9+ZIWpy0Ny0tdL6S1qsT9P8ccqHuGsQ3tq2Q==}
+
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
 
@@ -471,9 +477,6 @@ packages:
 
   '@types/less@3.0.8':
     resolution: {integrity: sha512-Gjm4+H9noDJgu5EdT3rUw5MhPBag46fiOy27BefvWkNL8mlZnKnCaVVVTLKj6RYXed9b62CPKnPav9govyQDzA==}
-
-  '@types/node@22.20.2':
-    resolution: {integrity: sha512-xlvWf4Vs9n1PEVYwP1n4vvG07M6y8WgvJ2t0vbrWTmijsIHp1cS+uJ2kMIRdY3nHZK0nCYKrPeD171+SzF4/zw==}
 
   '@types/node@26.6.5':
     resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
@@ -1179,6 +1182,9 @@ packages:
   select@1.1.2:
     resolution: {integrity: sha512-OwpTSOfy6xSs1+pwcNrv0RBMOzI39Lp3qQKUTPVVPRjCdNa5JH/oPRiqsesIskK8TVgmRiHwO4KXlV2Li9dANA==}
 
+  sort-object-keys2@3.0.10:
+    resolution: {integrity: sha512-mfu38UKPFskypYrs4dnmZnlfkvO2Ztv5Vg2DC0PTCcKfGgug/5outCc1HDLhANrIgntZOI+tqDLc5qc4WCVwbw==}
+
   sortablejs@1.15.7:
     resolution: {integrity: sha512-Kk8wLQPlS+yi1ZEf48a4+fzHa4yxjC30M/Sr2AnQu+f/MPwvvX9XjZ6OWejiz8crBsLwSq8GHqaxaET7u6ux0A==}
 
@@ -1252,9 +1258,6 @@ packages:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
-
-  undici-types@6.21.0:
-    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
@@ -1498,6 +1501,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.6.0
     optional: true
 
+  '@lazy-array/util-unique@1.0.9': {}
+
   '@oxc-project/types@0.153.0': {}
 
   '@parcel/watcher-android-arm64@2.6.0':
@@ -1613,11 +1618,6 @@ snapshots:
     optional: true
 
   '@types/less@3.0.8': {}
-
-  '@types/node@22.20.2':
-    dependencies:
-      undici-types: 6.21.0
-    optional: true
 
   '@types/node@26.6.5':
     dependencies:
@@ -2144,7 +2144,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.20.2
+      '@types/node': 26.6.5
       merge-stream: 2.0.0
       supports-color: 8.1.1
     optional: true
@@ -2389,6 +2389,10 @@ snapshots:
 
   select@1.1.2: {}
 
+  sort-object-keys2@3.0.10:
+    dependencies:
+      '@lazy-array/util-unique': 1.0.9
+
   sortablejs@1.15.7: {}
 
   source-map-js@1.2.1: {}
@@ -2463,9 +2467,6 @@ snapshots:
   typedarray-dts@1.0.0: {}
 
   typescript@6.0.3: {}
-
-  undici-types@6.21.0:
-    optional: true
 
   undici-types@8.9.0: {}
 

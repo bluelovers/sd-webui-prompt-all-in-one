@@ -23,6 +23,7 @@
     "axios": "^1.20.0",
     "js-yaml": "^5.4.3",
     "papaparse": "^5.7.0",
+    "sort-object-keys2": "^3.0.10",
     "sortablejs": "^1.15.7",
     "tinycolor2": "^1.6.0",
     "tippy.js": "^6.3.7",

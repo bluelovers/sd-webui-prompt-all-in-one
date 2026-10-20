@@ -17,6 +17,12 @@ export const enum EnumPromptTagType
 
 	/** when value is "\n" */
 	VALUE_NEWLINE = '\n',
+
+	/**
+	 * when value is ""
+	 * @internal
+	 */
+	VALUE_INTERNAL_EMPTY = '',
 }
 
 export const enum EnumIsEnglish
@@ -47,13 +53,22 @@ export interface IPromptTagRuntimeProps
 	decWeight?: number;
 }
 
-export interface IPromptTag extends IPromptTagRuntimeExtraProps, IPromptTagRuntimeProps
+export interface IPromptTagBase<Type extends IPromptTagType = IPromptTagType, Value extends IPromptTagValue = IPromptTagValue>
 {
-	type: IPromptTagType;
-	value: IPromptTagValue;
-	originalValue?: string;
-
+	type: Type;
+	value: Value;
+	localValue?: IPromptTagValue;
 	disabled?: boolean;
+}
+
+export interface IPromptTagBaseWithUuid extends IPromptTagBase
+{
+	id?: string;
+}
+
+export interface IPromptTag extends IPromptTagBaseWithUuid, IPromptTagRuntimeExtraProps, IPromptTagRuntimeProps
+{
+	originalValue?: string;
 
 	isLora?: boolean;
 	loraExists?: boolean;
