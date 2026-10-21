@@ -1,4 +1,5 @@
 import common from "@/utils/common";
+import { setPromptTextareaValue } from "@/utils/promptTextarea";
 
 export default {
     data() {
@@ -200,14 +201,7 @@ export default {
                     if (!text?.trim()?.length) {
                         return pasteFailed(text)
                     }
-                    this.textarea.value = text
-                    common.hideCompleteResults(this.textarea)
-                    // 參照既有實作：此處照抄 phystonPrompt.vue updateTags() 寫入 textarea 後的通知方式
-                    if (typeof updateInput === "function") {
-                        updateInput(this.textarea)
-                    } else {
-                        this.textarea.dispatchEvent(new Event('input'))
-                    }
+                    setPromptTextareaValue(this.textarea, text)
                     this.onTextareaChange(true)
                 }).catch((e) => {
                     // 權限被拒、非 secure context、或焦點被搶走都會走到這裡
