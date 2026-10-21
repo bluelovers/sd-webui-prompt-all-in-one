@@ -9,8 +9,8 @@
  */
 
 import { describe, it } from 'node:test'
-import { genPrompt } from '@/utils/promptTags/genPrompt'
-import { updatePrompt } from '@/utils/promptTags/updatePrompt'
+import { genPromptCore } from '@/utils/promptTags/genPrompt'
+import { updatePromptCore } from '@/utils/promptTags/updatePrompt'
 import { runUpdatePromptTests } from '../helpers/promptTags-helpers'
 import { genPromptUpdatePromptCases } from '../fixture/tag/data-genPrompt-updatePrompt'
 
@@ -20,8 +20,8 @@ import { genPromptUpdatePromptCases } from '../fixture/tag/data-genPrompt-update
 
 describe('genPrompt + updatePrompt composite', () => {
     it('modules load successfully', (t) => {
-        t.assert.equal(typeof genPrompt, 'function')
-        t.assert.equal(typeof updatePrompt, 'function')
+        t.assert.equal(typeof genPromptCore, 'function')
+        t.assert.equal(typeof updatePromptCore, 'function')
     })
 
     /**
@@ -34,8 +34,8 @@ describe('genPrompt + updatePrompt composite', () => {
      */
     runUpdatePromptTests({
         cases: genPromptUpdatePromptCases,
-        updatePrompt,
-        genPrompt,
+        updatePrompt: updatePromptCore,
+        genPrompt: genPromptCore,
         reenter: true,
     })
 })

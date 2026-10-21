@@ -600,8 +600,8 @@ import { ColorPicker } from "vue3-colorpicker"
 import { splitByPeriod } from "@/utils/splitByPeriod"
 import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOptions"
 import { tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
-import { genPrompt as genPromptCore } from "@/utils/promptTags/genPrompt"
-import { updatePrompt as updatePromptCore } from "@/utils/promptTags/updatePrompt"
+import { genPromptCore } from "@/utils/promptTags/genPrompt"
+import { updatePromptCore } from "@/utils/promptTags/updatePrompt"
 import { setPromptTextareaValue } from "@/utils/promptTextarea"
 
 export default {
@@ -1002,15 +1002,7 @@ export default {
             })
         },
         genPrompt(tags = null, ignoreDisabled = false) {
-            return genPromptCore(tags || this.tags, ignoreDisabled, {
-                autoOptimizeSplitSymbol: this.autoOptimizeSplitSymbol,
-                autoRemoveSpace: this.autoRemoveSpace,
-                autoRemoveBeforeLineComma: this.autoRemoveBeforeLineComma,
-                autoRemoveLoraBeforeComma: this.autoRemoveLoraBeforeComma,
-                autoRemoveLastComma: this.autoRemoveLastComma,
-                autoRemoveLoraAfterComma: this.autoRemoveLoraAfterComma,
-                autoSplitByPeriod: this.autoSplitByPeriod,
-            }, {
+            return genPromptCore(tags || this.tags, ignoreDisabled, this, {
                 onTagChanged: tag => this._setTag(tag),
             })
         },

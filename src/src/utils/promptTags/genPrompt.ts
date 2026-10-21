@@ -19,6 +19,8 @@
 import common from '../common'
 import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsWrap } from './util'
 import type { IPromptTagWithLocal } from './tag-types'
+import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions'
+import { IHostPromptOptions } from './types'
 
 /**
  * genPrompt 遍歷的標籤型別。
@@ -26,27 +28,6 @@ import type { IPromptTagWithLocal } from './tag-types'
  */
 export type IGenPromptTag = IPromptTagWithLocal & {
     weightNum?: number | string
-}
-
-/**
- * 產生 prompt 所需的選項集合。
- * 原本散落於 `this.autoX`，集中後呼叫端需明確傳入，避免隱性耦合元件狀態。
- */
-export interface IGenPromptOptions {
-    /** 自動優化分割符號 */
-    autoOptimizeSplitSymbol?: boolean
-    /** 分割符號不含空白 */
-    autoRemoveSpace?: boolean
-    /** 移除換行前的逗號 */
-    autoRemoveBeforeLineComma?: boolean
-    /** 移除 Lora 前的逗號 */
-    autoRemoveLoraBeforeComma?: boolean
-    /** 移除最後一個逗號 */
-    autoRemoveLastComma?: boolean
-    /** 移除 Lora 後的逗號 */
-    autoRemoveLoraAfterComma?: boolean
-    /** 受 applySplitByPeriod 標記 splitNoComma 的 tag 不加逗號 */
-    autoSplitByPeriod?: boolean
 }
 
 /**
@@ -158,10 +139,10 @@ export function shouldRemoveCommaByAutoOptimize(
  * @param [hooks]      - 宿主注入的副作用
  * @returns 組裝後的 prompt 字串；無內容時回傳 ''
  */
-export function genPrompt(
+export function genPromptCore(
     tags: IGenPromptTag[],
     ignoreDisabled = false,
-    options: IGenPromptOptions = {},
+    options: IHostPromptOptions = {},
     hooks: IGenPromptHooks = {},
 ): string {
     const prompts: string[] = []

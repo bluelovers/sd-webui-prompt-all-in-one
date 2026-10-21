@@ -11,10 +11,10 @@ import type {
 } from '../../../src/utils/splitByPeriod'
 import type {
 	IGenPromptHooks,
-	IGenPromptOptions,
 	IGenPromptTag,
 } from '../../../src/utils/promptTags/genPrompt'
 import type { IUpdatePromptHost, IWrapInsertOptions } from '../../../src/utils/promptTags/updatePrompt'
+import { IHostPromptOptions } from '#/src/utils/promptTags/types'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -126,7 +126,7 @@ export interface ISplitTagsPipelineCase extends ISplitTagsCase {
  */
 export type IGenPromptArgs = [
 	ignoreDisabled?: boolean,
-	options?: IGenPromptOptions,
+	options?: IHostPromptOptions,
 	hooks?: IGenPromptHooks,
 ]
 
@@ -189,7 +189,7 @@ export interface IUpdatePromptCase extends IWrapInsertOptions {
 	 * 複合測試專用：呼叫真 genPrompt 時的選項。
 	 * 個別測試（未注入 genPrompt）會忽略此欄位。
 	 */
-	genPromptOptions?: IGenPromptOptions
+	genPromptOptions?: IHostPromptOptions
 	/** 附加說明（顯示在測試標題中） */
 	note?: string
 	/** 期望被 appendTag 插入的換行數量 */

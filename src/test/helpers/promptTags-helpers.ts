@@ -1,5 +1,5 @@
 import type { IGenPromptTag } from '../../src/utils/promptTags/genPrompt'
-import { updatePrompt as updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
+import { updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
 import type { IUpdatePromptHost } from '../../src/utils/promptTags/updatePrompt'
 import type {
 	ICreateUpdatePromptHostResult,

@@ -100,7 +100,7 @@ export interface IUpdatePromptHost extends IWrapInsertOptions {
  *
  * @param host - 宿主注入的標籤、選項與行為
  */
-export function updatePrompt(host: IUpdatePromptHost): void {
+export function updatePromptCore(host: IUpdatePromptHost): void {
     const insertWrapIndexes = collectWrapInsertIndexes(host.tags, host)
     for (let i = 0; i < insertWrapIndexes.length; i++) {
         const index = insertWrapIndexes[i] + i

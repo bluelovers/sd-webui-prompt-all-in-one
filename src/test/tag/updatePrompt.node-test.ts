@@ -10,7 +10,7 @@
 import { describe, it } from 'node:test'
 import { runUpdatePromptTests } from '../helpers/promptTags-helpers'
 import { updatePromptCases } from '../fixture/tag/data-updatePrompt'
-import { updatePrompt } from '@/utils/promptTags/updatePrompt'
+import { updatePromptCore } from '@/utils/promptTags/updatePrompt'
 
 /* ====================================================================
  *  執行測試
@@ -18,7 +18,7 @@ import { updatePrompt } from '@/utils/promptTags/updatePrompt'
 
 describe('updatePrompt', () => {
     it('modules load successfully', (t) => {
-        t.assert.equal(typeof updatePrompt, 'function')
+        t.assert.equal(typeof updatePromptCore, 'function')
     })
 
     /**
@@ -28,6 +28,6 @@ describe('updatePrompt', () => {
      */
     runUpdatePromptTests({
         cases: updatePromptCases,
-        updatePrompt,
+        updatePrompt: updatePromptCore,
     })
 })

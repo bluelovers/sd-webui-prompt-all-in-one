@@ -8,7 +8,7 @@
 
 import { describe, it } from 'node:test'
 import { runCases } from '../helpers/node-test-helpers'
-import { genPrompt } from '@/utils/promptTags/genPrompt'
+import { genPromptCore } from '@/utils/promptTags/genPrompt'
 import { genPromptCases } from 'test/fixture/tag/data-genPrompt'
 
 /* ====================================================================
@@ -17,7 +17,7 @@ import { genPromptCases } from 'test/fixture/tag/data-genPrompt'
 
 describe('genPrompt', () => {
     it('modules load successfully', (t) => {
-        t.assert.equal(typeof genPrompt, 'function')
+        t.assert.equal(typeof genPromptCore, 'function')
     })
 
     /**
@@ -25,5 +25,5 @@ describe('genPrompt', () => {
      * 案例與期望值皆定義於 fixture/data-genPrompt.ts 的 genPromptCases，
      * 共用 runCases 的案例格式與快照寫入。
      */
-    runCases('genPrompt cases', genPrompt, genPromptCases, { snapshot: true })
+    runCases('genPrompt cases', genPromptCore, genPromptCases, { snapshot: true })
 })
