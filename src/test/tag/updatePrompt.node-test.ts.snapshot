@@ -15,8 +15,7 @@ exports[`updatePrompt > BREAK 但兩個自動換行選項皆關閉 — 不插入
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": false,
+    "options": {},
     "usesRealGenPrompt": false
   },
   "appended": [],
@@ -40,8 +39,9 @@ exports[`updatePrompt > BREAK 位於開頭 — 不產生前方換行（原行為
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": false,
+    "options": {
+      "autoBreakBeforeWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [],
@@ -73,8 +73,9 @@ exports[`updatePrompt > BREAK 前已是換行 — 不重複插入，直接提交
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": false,
+    "options": {
+      "autoBreakBeforeWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [],
@@ -102,8 +103,9 @@ exports[`updatePrompt > autoBreakAfterWrap — 於 BREAK 後插入（索引 2）
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [
@@ -137,8 +139,9 @@ exports[`updatePrompt > autoBreakBeforeWrap — 於 BREAK 前插入（索引 1�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": false,
+    "options": {
+      "autoBreakBeforeWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [
@@ -180,8 +183,10 @@ exports[`updatePrompt > 兩個 BREAK — 四處插入，索引分別為 1 / 3 / 
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakBeforeWrap": true,
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [
@@ -236,8 +241,10 @@ exports[`updatePrompt > 前後都要插入 — 第二個索引需加上先前插
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakBeforeWrap": true,
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": false
   },
   "appended": [
@@ -274,8 +281,7 @@ exports[`updatePrompt > 沒有 BREAK — 不插入、不 refresh，直接提交 
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": false,
+    "options": {},
     "usesRealGenPrompt": false
   },
   "appended": [],
@@ -290,8 +296,7 @@ exports[`updatePrompt > 空標籤陣列 — 不插入、不 refresh，直接提�
 {
   "input": [],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": false,
+    "options": {},
     "usesRealGenPrompt": false
   },
   "appended": [],

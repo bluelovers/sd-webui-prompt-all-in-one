@@ -27,8 +27,7 @@ import { IPromptTagType, IPromptTagValue } from '#/src/utils/promptTags/tag-type
  */
 export function createUpdatePromptHost({
 	tags,
-	autoBreakBeforeWrap,
-	autoBreakAfterWrap,
+	options = {},
 	genPrompt,
 	reenter = false,
 }: IUpdatePromptHostOptions): ICreateUpdatePromptHostResult {
@@ -44,8 +43,7 @@ export function createUpdatePromptHost({
 
 	const host = {
 		tags: workingTags,
-		autoBreakBeforeWrap,
-		autoBreakAfterWrap,
+		options,
 		appendTag(value: IPromptTagValue, localValue: string, disabled: boolean, index: number, type: IPromptTagType) {
 			appended.push({ value, localValue, disabled, index, type })
 			/** 與 _appendTag 一致：空值不建立標籤 */
@@ -91,7 +89,7 @@ export function createUpdatePromptHost({
  *   Step 2  執行 updatePrompt
  *   Step 3  編排契約（assertUpdatePromptContract）
  *   Step 4  對照期望（expectedWrapCount / expectedPrompt，或案例自訂 assert）
- *   Step 5  組裝快照 { input, appended, refreshCount, committed }
+ *   Step 5  組裝快照 { input, args, appended, refreshCount, committed }
  *
  * 編排契約排在案例級期望與快照之前：與案例宣告與否無關，失敗即中止，
  * 該案例不會寫入快照。
@@ -116,8 +114,7 @@ export function runUpdatePromptTests({
             /** Step 1: 建立宿主替身 */
             const { host, summary } = createUpdatePromptHost({
                 tags: tc.tags,
-                autoBreakBeforeWrap: tc.autoBreakBeforeWrap,
-                autoBreakAfterWrap: tc.autoBreakAfterWrap,
+                options: tc.options,
                 genPrompt: genPrompt && ((tags) => genPrompt(tags, false, tc.genPromptOptions)),
                 reenter,
             })
@@ -148,8 +145,10 @@ export function runUpdatePromptTests({
             const snap: IUpdatePromptSnap = {
                 input: tc.tags,
                 args: {
-                    autoBreakBeforeWrap: tc.autoBreakBeforeWrap ?? false,
-                    autoBreakAfterWrap: tc.autoBreakAfterWrap ?? false,
+                    options: {
+                        autoBreakBeforeWrap: tc.options?.autoBreakBeforeWrap,
+                        autoBreakAfterWrap: tc.options?.autoBreakAfterWrap,
+                    },
                     usesRealGenPrompt: !!genPrompt,
                 },
                 appended: summary.appended,

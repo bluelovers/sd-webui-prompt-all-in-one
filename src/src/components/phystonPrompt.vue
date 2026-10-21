@@ -1134,8 +1134,7 @@ export default {
         updatePrompt() {
             updatePromptCore({
                 tags: this.tags,
-                autoBreakBeforeWrap: this.autoBreakBeforeWrap,
-                autoBreakAfterWrap: this.autoBreakAfterWrap,
+                options: this,
                 appendTag: (value, localValue, disabled, index, type) => {
                     this._appendTag(value, localValue, disabled, index, type)
                 },

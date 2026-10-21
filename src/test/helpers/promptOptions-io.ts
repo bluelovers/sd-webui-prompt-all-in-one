@@ -1,6 +1,6 @@
 
 import { _getPromptOptionValueRecord, promptOptionStorageKeys } from '#/src/utils/promptOptions';
-import { IPromptOptionKeyAndLegacyStorage, IPromptOptionValueRecordWithLegacy } from '#/src/utils/promptOptions/definitions';
+import { IPromptOptionKeyAndLegacyStorage, IPromptOptionValueRecord, IPromptOptionValueRecordWithLegacy } from '#/src/utils/promptOptions/definitions';
 import { __PROJECT_STORAGE } from '#/test/__root';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -9,7 +9,13 @@ import { join } from 'path';
  * 模組層快取：讀取涉及同步檔案 I/O，且預設值在單次測試程序內不會變動；
  * 以 Object.freeze() 凍結，避免個別測試案例意外改寫共享的預設值表。
  */
-let _loadedData: ReturnType<typeof _getPromptOptionValueRecord> = null;
+let _loadedData: IPromptOptionValueRecord = null;
+let _defaultData: IPromptOptionValueRecord = null;
+
+export function getPromptOptionValueRecordCached()
+{
+	return _defaultData ??= Object.freeze(_getPromptOptionValueRecord());
+}
 
 /**
  * 逐鍵比對 storage/<key>.json 與程式預設值，回傳覆寫後的完整記錄表。
@@ -18,7 +24,9 @@ let _loadedData: ReturnType<typeof _getPromptOptionValueRecord> = null;
  */
 function _loadPromptOptionsFromStorageCore()
 {
-	const data = _getPromptOptionValueRecord() as IPromptOptionValueRecordWithLegacy;
+	const data = {
+		...getPromptOptionValueRecordCached(),
+	} as IPromptOptionValueRecordWithLegacy;
 
 	const label = `[loadPromptOptionsFromStorage]`
 

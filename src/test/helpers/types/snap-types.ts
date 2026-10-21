@@ -2,12 +2,12 @@
 import type { IPeriodPart } from '../../../src/utils/splitByPeriod'
 import type { ITagSegment } from '../../../src/utils/splitTags'
 import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt'
-import type { IWrapInsertOptions } from '../../../src/utils/promptTags/updatePrompt'
 import type {
 	IGenPromptArgs,
 	ISplitByPeriodArgs,
 	IUpdatePromptAppendRecord,
 } from './node-test-case-types'
+import { IHostPromptOptions } from '#/src/utils/promptTags/types'
 
 /**
  * 測試中使用的佔位字串列舉。
@@ -83,14 +83,13 @@ export interface ISplitTagsPipelineSnap extends IOriginalComparisonSnap {
 }
 
 /**
- * updatePrompt 快照的 args 區塊（固定為布林三元組，便於跨案例對照）。
- *
- * 前兩個欄位以 Required<Pick<IWrapInsertOptions, ...>> 取自被測模組：
- * 快照端要求必填（呼叫端已以 ?? false 補齊），但欄位名與語意必須與 updatePrompt 一致，
- * 源頭改名時此處會於編譯期失效，而非靜默漂移。
+ * updatePrompt 快照的 args 區塊。
+ * 選項巢狀於 options（與 IUpdatePromptHost.options 同形），
+ * 未傳的旗標補 false、兩鍵固定出現，便於跨案例對照。
  */
-export interface IUpdatePromptSnapArgs
-	extends Required<Pick<IWrapInsertOptions, 'autoBreakBeforeWrap' | 'autoBreakAfterWrap'>> {
+export interface IUpdatePromptSnapArgs {
+	/** 注入宿主的換行選項（tc.options，未傳的旗標補 false） */
+	options: Required<Pick<IHostPromptOptions, 'autoBreakBeforeWrap' | 'autoBreakAfterWrap'>>
 	/** 是否注入真 genPrompt（個別測試為 false，複合測試為 true） */
 	usesRealGenPrompt: boolean
 }
@@ -102,7 +101,7 @@ export interface IUpdatePromptSnapArgs
 export interface IUpdatePromptSnap {
 	/** 案例持有的標籤陣列（tc.tags） */
 	input: readonly IGenPromptTag[]
-	/** 執行時的選項（預設值已補齊，未傳者為 false） */
+	/** 執行參數：注入宿主的選項（預設值已補齊）與是否注入真 genPrompt */
 	args: IUpdatePromptSnapArgs
 	/** 宿主 appendTag 收到的參數（依呼叫順序） */
 	appended: IUpdatePromptAppendRecord[]

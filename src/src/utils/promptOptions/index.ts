@@ -44,7 +44,7 @@ interface I_PromptOptionWatchHost {
  */
 export function _getPromptOptionValueRecord(defaultKey?: IPromptOptionValueDefaultKey) {
     defaultKey = defaultKey || 'propDefault'
-    const data: Record<IPromptOptionKey, IPromptOptionValue> = {} as IPromptOptionValueRecord
+    const data = {} as IPromptOptionValueRecord
     for (const option of promptOptions) {
         data[option.key] = option[defaultKey]
     }

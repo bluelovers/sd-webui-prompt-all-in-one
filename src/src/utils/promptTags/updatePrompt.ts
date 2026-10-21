@@ -14,17 +14,13 @@
 
 import { tagIsBreak, tagIsWrap } from './util'
 import type { IGenPromptTag } from './genPrompt'
+import type { IHostPromptOptions } from './types'
 
 /**
- * 換行插入決策所需的選項。
- * 與 genPrompt.IGenPromptOptions 分開，避免本函式被迫認識全部選項。
+ * 換行插入決策所需的選項：取宿主選項（IHostPromptOptions）中的兩個換行旗標，
+ * 讓 collectWrapInsertIndexes 只認識它需要的欄位。
  */
-export interface IWrapInsertOptions {
-    /** BREAK 前補換行（原本在「BREAK」前面加換行符） */
-    autoBreakBeforeWrap?: boolean
-    /** BREAK 後補換行（原本在「BREAK」後面加換行符） */
-    autoBreakAfterWrap?: boolean
-}
+export type IWrapInsertOptions = Pick<IHostPromptOptions, 'autoBreakBeforeWrap' | 'autoBreakAfterWrap'>
 
 /**
  * 計算應插入換行 tag 的位置（純決策，不修改輸入）。
@@ -43,7 +39,7 @@ export interface IWrapInsertOptions {
  */
 export function collectWrapInsertIndexes(
     tags: readonly IGenPromptTag[],
-    { autoBreakBeforeWrap, autoBreakAfterWrap }: IWrapInsertOptions = {},
+    { autoBreakBeforeWrap, autoBreakAfterWrap }: IHostPromptOptions = {},
 ): number[] {
     const insertWrapIndexes: number[] = []
     const length = tags.length
@@ -73,9 +69,14 @@ export function collectWrapInsertIndexes(
 /**
  * 宿主（Vue 元件）注入的介面：本函式只做編排，實際行為全由宿主提供。
  */
-export interface IUpdatePromptHost extends IWrapInsertOptions {
+export interface IUpdatePromptHost {
     /** 當前標籤陣列（collectWrapInsertIndexes 的輸入，也是插入的目標） */
     tags: IGenPromptTag[]
+    /**
+     * 宿主的選項值，形狀即 IHostPromptOptions。
+     * 元件實例 this 上即有同名選項屬性，呼叫端可直接以 options: this 傳入。
+     */
+    options: IHostPromptOptions
     /**
      * 插入換行 tag。簽名對應元件的 _appendTag(value, localValue, disabled, index, type)。
      * 宿主需依 index 做 splice，後續插入位置才會因 offset 遞增而正確。
@@ -101,7 +102,7 @@ export interface IUpdatePromptHost extends IWrapInsertOptions {
  * @param host - 宿主注入的標籤、選項與行為
  */
 export function updatePromptCore(host: IUpdatePromptHost): void {
-    const insertWrapIndexes = collectWrapInsertIndexes(host.tags, host)
+    const insertWrapIndexes = collectWrapInsertIndexes(host.tags, host.options)
     for (let i = 0; i < insertWrapIndexes.length; i++) {
         const index = insertWrapIndexes[i] + i
         host.appendTag("\n", "\n", false, index, 'wrap')

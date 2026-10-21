@@ -19,8 +19,9 @@ exports[`genPrompt + updatePrompt composite > BREAK 前已是換行 — 不重�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": false,
+    "options": {
+      "autoBreakBeforeWrap": true
+    },
     "usesRealGenPrompt": true
   },
   "appended": [],
@@ -56,8 +57,10 @@ exports[`genPrompt + updatePrompt composite > 兩個 BREAK 四處插入 — 第�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakBeforeWrap": true,
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": true
   },
   "appended": [
@@ -114,8 +117,10 @@ exports[`genPrompt + updatePrompt composite > 前後都補換行 + 移除換行�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakBeforeWrap": true,
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": true
   },
   "appended": [
@@ -158,8 +163,9 @@ exports[`genPrompt + updatePrompt composite > 只在 BREAK 後補換行 — 前�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": true
   },
   "appended": [
@@ -195,8 +201,10 @@ exports[`genPrompt + updatePrompt composite > 未開 autoRemoveBeforeLineComma �
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": true,
-    "autoBreakAfterWrap": true,
+    "options": {
+      "autoBreakBeforeWrap": true,
+      "autoBreakAfterWrap": true
+    },
     "usesRealGenPrompt": true
   },
   "appended": [
@@ -235,8 +243,7 @@ exports[`genPrompt + updatePrompt composite > 沒有 BREAK — 首輪直接以 g
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": false,
+    "options": {},
     "usesRealGenPrompt": true
   },
   "appended": [],
@@ -262,8 +269,7 @@ exports[`genPrompt + updatePrompt composite > 連續 Lora — 與 BREAK 無關�
     }
   ],
   "args": {
-    "autoBreakBeforeWrap": false,
-    "autoBreakAfterWrap": false,
+    "options": {},
     "usesRealGenPrompt": true
   },
   "appended": [],

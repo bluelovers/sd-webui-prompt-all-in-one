@@ -28,7 +28,7 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_wrap(), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
+		options: { autoBreakBeforeWrap: true },
 		note: 'BREAK 前已是換行 — 不重複插入，直接提交',
 		expectedWrapCount: 0,
 		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
@@ -40,7 +40,7 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 	 */
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
+		options: { autoBreakBeforeWrap: true },
 		note: 'autoBreakBeforeWrap — 於 BREAK 前插入（索引 1）',
 		assert: (summary, t) => {
 			t.assert.equal(summary.appended.length, 1)
@@ -54,7 +54,7 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakAfterWrap: true,
+		options: { autoBreakAfterWrap: true },
 		note: 'autoBreakAfterWrap — 於 BREAK 後插入（索引 2）',
 		assert: (summary, t) => {
 			t.assert.equal(summary.appended.length, 1)
@@ -65,8 +65,10 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
-		autoBreakAfterWrap: true,
+		options: {
+			autoBreakBeforeWrap: true,
+			autoBreakAfterWrap: true,
+		},
 		note: '前後都要插入 — 第二個索引需加上先前插入造成的位移（1 → 3）',
 		assert: (summary, t) => {
 			t.assert.deepEqual(summary.appended.map(record => record.index), [1, 3])
@@ -76,15 +78,17 @@ export const updatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_brk(), _t_createTag_text('cat')],
-		autoBreakBeforeWrap: true,
+		options: { autoBreakBeforeWrap: true },
 		note: 'BREAK 位於開頭 — 不產生前方換行（原行為保留），改走提交',
 		expectedWrapCount: 0,
 		expectedPrompt: EnumPromptPlaceholder.GenPrompt,
 	},
 	{
 		tags: [_t_createTag_text('a'), _t_createTag_brk(), _t_createTag_text('b'), _t_createTag_brk(), _t_createTag_text('c')],
-		autoBreakBeforeWrap: true,
-		autoBreakAfterWrap: true,
+		options: {
+			autoBreakBeforeWrap: true,
+			autoBreakAfterWrap: true,
+		},
 		note: '兩個 BREAK — 四處插入，索引分別為 1 / 3 / 5 / 7',
 		assert: (summary, t) => {
 			t.assert.deepEqual(summary.appended.map(record => record.index), [1, 3, 5, 7])

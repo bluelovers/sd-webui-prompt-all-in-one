@@ -12,8 +12,10 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 	 */
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
-		autoBreakAfterWrap: true,
+		options: {
+			autoBreakBeforeWrap: true,
+			autoBreakAfterWrap: true,
+		},
 		genPromptOptions: { autoRemoveBeforeLineComma: true, autoRemoveLastComma: true },
 		note: '前後都補換行 + 移除換行前逗號與末段逗號 — 三段乾淨輸出',
 		assert: (summary, t) => {
@@ -25,23 +27,27 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
-		autoBreakAfterWrap: true,
+		options: {
+			autoBreakBeforeWrap: true,
+			autoBreakAfterWrap: true,
+		},
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: '未開 autoRemoveBeforeLineComma — 換行前仍保留預設逗號（現況鎖定）',
 		expectedPrompt: 'cat, \nBREAK\ndog',
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakAfterWrap: true,
+		options: { autoBreakAfterWrap: true },
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: '只在 BREAK 後補換行 — 前段以空白分隔',
 		expectedPrompt: 'cat BREAK\ndog',
 	},
 	{
 		tags: [_t_createTag_text('a'), _t_createTag_brk(), _t_createTag_text('b'), _t_createTag_brk(), _t_createTag_text('c')],
-		autoBreakBeforeWrap: true,
-		autoBreakAfterWrap: true,
+		options: {
+			autoBreakBeforeWrap: true,
+			autoBreakAfterWrap: true,
+		},
 		genPromptOptions: { autoRemoveBeforeLineComma: true, autoRemoveLastComma: true },
 		note: '兩個 BREAK 四處插入 — 第二輪已無可插入處，流程收斂',
 		assert: (summary, t) => {
@@ -65,7 +71,7 @@ export const genPromptUpdatePromptCases: IUpdatePromptCase[] = [
 	},
 	{
 		tags: [_t_createTag_text('cat'), _t_createTag_wrap(), _t_createTag_brk(), _t_createTag_text('dog')],
-		autoBreakBeforeWrap: true,
+		options: { autoBreakBeforeWrap: true },
 		genPromptOptions: { autoRemoveLastComma: true },
 		note: 'BREAK 前已是換行 — 不重複插入，直接組字',
 		expectedWrapCount: 0,
