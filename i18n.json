@@ -859,6 +859,9 @@
                 "only_csv_on_auto": "الترجمة الآلية تستخدم فقط ترجمة CSV (لا تستخدم الترجمة عبر الشبكة) ، والنقر على زر الترجمة يدويًا لاستخدام الترجمة CSV والترجمة عبر الشبكة.",
                 "one_translate_all_keywords": "ترجم جميع الكلمات الرئيسية بنقرة واحدة",
                 "auto_translate": "ترجم تلقائيًا بعد إدخال كلمات رئيسية جديدة",
+                "is_remove_last_comma": "هل ترغب في إزالة الفاصلة الأخيرة في Prompt.<br/>عند تحديد هذا الخيار، يصبح مخرجات Prompt هكذا \"aaa,bbb,ccc\".<br/>عند إلغاء التحديد، يصبح مخرجات Prompt هكذا \"aaa,bbb,ccc,\".",
+                "is_keep_weight_zero": "هل تريد الاحتفاظ بصيغة الكلمة المفتاحية ذات الوزن 0.<br/>عند تحديد هذا الخيار، تبقى الصيغة هكذا \"(text:0)\".<br/>عند إلغاء التحديد، لا تبقى الصيغة هكذا \"test\".",
+                "is_keep_weight_one": "هل تريد الاحتفاظ بصيغة الكلمة المفتاحية ذات الوزن 1.<br/>عند تحديد هذا الخيار، تبقى الصيغة هكذا \"(text:1)\".<br/>عند إلغاء التحديد، لا تبقى الصيغة هكذا \"test\".",
                 "prompt_format": "تنسيق Prompt",
                 "tagcomplete_translate_desc2": "اختيار ملف CSV الخاطئ سيؤدي إلى ترجمة فارغة أو '0'. بعد تغيير الملف، يرجى النقر على زر الاختبار أدناه والتحقق مما إذا كانت النتيجة المترجمة تعرض بشكل صحيح بلغتك المحلية.",
                 "dblclick_to_disable": "انقر مرتين لتعطيل / تمكين الكلمة الرئيسية",
@@ -873,6 +876,7 @@
                 "today_not_show": "لا تظهر هذه النافذة اليوم",
                 "free": "مجاني",
                 "apply_for_free": "التقديم للاستخدام المجاني",
+                "chatgpt_prompts_preset": "StableDiffusion هو نموذج تعلّم عميق للنص إلى الصورة يولّد صورًا بناءً على المطالبات (prompts). يمكن لهذه المطالبات تحديد العناصر المرغوبة في الصورة، مثل مظهر الشخصيات والخلفية واللون وتأثيرات الإضاءة، بالإضافة إلى موضوع الصورة وأسلوبها. تحتوي المطالبات غالبًا على أرقام موزونة بين قوسين لتوضيح أهمية بعض التفاصيل أو التأكيد عليها. على سبيل المثال، يشير \"(masterpiece:1.5)\" إلى أن جودة العمل مهمة جدًا. كما أن الأقواس المتعددة لها تأثيرات مشابهة. علاوة على ذلك، عند استخدام الأقواس المربعة، مثل \"{blue hair:white hair:0.3}\"، يمثل ذلك اندماج الشعر الأزرق والشعر الأبيض، حيث يمثل الشعر الأزرق 0.3.\nإليكم مثالًا على استخدام المطالبات لمساعدة نموذج الذكاء الاصطناعي على إنشاء صورة: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nتبعًا للمثال، قدّم مجموعة من المطالبات التي تصف المحتوى التالي بالتفصيل. ابدأ المطالبات مباشرة دون استخدام اللغة الوصفية: ",
                 "use_chatgpt_gen_prompts": "استخدم ChatGPT لتوليد Prompts",
                 "input_image_desc": "يرجى إدخال وصف الصورة ، على سبيل المثال: قطة جالسة على سطح مبنى ، صورة عالية الدقة ومفصلة جدًا.",
                 "api_config": "تكوين API",
@@ -967,7 +971,9 @@
                 "is_auto_optimize_split_symbol": "تحسين رمز الفصل تلقائياً: يزيل الفواصل غير المناسبة تلقائياً لتتوافق المخرجات مع اصطلاحات صياغة Stable Diffusion (مثل ما قبل فاصل السطر، وبين Loras متتالية، حول BREAK، إلخ). هذا خيار مستقل ولا يتطلب خيار تقسيم الكلمات عند النقطة.",
                 "is_allow_keep_empty_line": "ما إذا كان يُسمح بالإبقاء على سطر فارغ واحد عند تحليل الموجه.<br/>عند التحقق، تُضغط فواصل الأسطر المتتالية إلى سطر فارغ واحد كحد أقصى (أي محرفَي نهاية سطر)؛ وعند الإلغاء، تُضغط جميع فواصل الأسطر المتتالية إلى واحد واحد.",
                 "auto_load_webui_prompt": "تحميل تلقائي لتغييرات تلميح واجهة المستخدم الرسومية عبر الويب.<br/>عند التحقق، سيقوم الملحق تلقائيًا بتحميل وتنسيق تحليل الكلمات الرئيسية عند تغيير محتوى مربع إدخال التلميح في واجهة المستخدم الرسومية عبر الويب.<br/>عند عدم التحقق، يتعين عليك النقر يدويًا على زر تحميل التلميح عند تغيير محتوى مربع إدخال التلميح في واجهة المستخدم الرسومية عبر الويب.",
-                "load_webui_prompt": "تحميل تلميح واجهة المستخدم الرسومية عبر الويب"
+                "load_webui_prompt": "تحميل تلميح واجهة المستخدم الرسومية عبر الويب",
+                "paste_to_default_input_box": "لصق محتوى الحافظة في مربع إدخال الكلمات المفتاحية",
+                "paste_clipboard_failed": "فشل اللصق التلقائي. انقر على مربع الإدخال ثم اضغط على لصق يدويًا."
             }
         },
         {
@@ -1162,6 +1168,7 @@
                 "today_not_show": "Ne pas afficher cette fenêtre aujourd'hui",
                 "free": "Gratuit",
                 "apply_for_free": "Demande d'utilisation gratuite",
+                "chatgpt_prompts_preset": "StableDiffusion est un modèle d'apprentissage profond de texte vers image qui génère des images à partir de prompts. Ces prompts peuvent spécifier les éléments souhaités de l'image, tels que l'apparence des personnages, l'arrière-plan, les couleurs et les effets d'éclairage, ainsi que le thème et le style de l'image. Les prompts contiennent souvent des numéros pondérés entre parenthèses pour indiquer l'importance ou l'accent mis sur certains détails. Par exemple, \"(masterpiece:1.5)\" indique que la qualité de l'œuvre est très importante. Les parenthèses multiples ont des effets similaires. De plus, si des crochets sont utilisés, comme \"{blue hair:white hair:0.3}\", cela représente la fusion des cheveux bleus et blancs, les cheveux bleus représentant 0.3.\nVoici un exemple d'utilisation de prompts pour aider un modèle d'IA à générer une image : masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nEn suivant l'exemple, fournissez un ensemble de prompts détaillant le contenu suivant. Commencez directement les prompts sans utiliser de langage naturel pour les décrire : ",
                 "use_chatgpt_gen_prompts": "Utiliser ChatGPT pour générer des prompts",
                 "input_image_desc": "Veuillez entrer la description de l'image, par exemple : un chat assis sur le toit d'un bâtiment, une photo très haute définition, très authentique.",
                 "api_config": "Configuration de l'API",
@@ -1256,7 +1263,9 @@
                 "is_auto_optimize_split_symbol": "Optimiser automatiquement le symbole de séparation : supprime automatiquement les virgules inappropriées pour que la sortie suive mieux les conventions de syntaxe de Stable Diffusion (par exemple avant un saut de ligne, entre Loras consécutifs, autour de BREAK, etc.). C'est une option indépendante et elle ne nécessite pas « Séparer les mots-clés au point+espace ».",
                 "is_allow_keep_empty_line": "Permettre de conserver une ligne vide lors de l'analyse du prompt.<br/>Si coché, les sauts de ligne consécutifs sont comprimés à une seule ligne vide au maximum (soit deux caractères de fin de ligne) ; si non coché, tous les sauts de ligne consécutifs sont comprimés en un seul.",
                 "auto_load_webui_prompt": "Chargement automatique des modifications de l'invite WebUI.<br/>Lorsqu'il est coché, le plugin chargera automatiquement et formatera l'analyse des mots clés lorsque le contenu de la zone de saisie de l'invite dans WebUI change.<br/>Lorsqu'il n'est pas coché, vous devez cliquer manuellement sur le bouton de chargement de l'invite lorsque le contenu de la zone de saisie de l'invite dans WebUI change.",
-                "load_webui_prompt": "Charger l'invite WebUI"
+                "load_webui_prompt": "Charger l'invite WebUI",
+                "paste_to_default_input_box": "Coller le presse-papiers dans la zone de saisie des mots-clés",
+                "paste_clipboard_failed": "Le collage automatique a échoué. Cliquez sur la zone de saisie, puis collez manuellement."
             }
         },
         {
@@ -1366,6 +1375,7 @@
                 "today_not_show": "Diese Fenster heute nicht anzeigen",
                 "free": "Kostenlos",
                 "apply_for_free": "Für kostenlose Nutzung bewerben",
+                "chatgpt_prompts_preset": "StableDiffusion ist ein Deep-Learning-Text-zu-Bild-Modell, das Bilder auf Basis von Prompts erzeugt. Diese Prompts können die gewünschten Elemente des Bildes festlegen, wie das Erscheinungsbild der Figuren, den Hintergrund, die Farben und die Lichteffekte sowie Thema und Stil des Bildes. Die Prompts enthalten häufig gewichtete Zahlen in Klammern, um die Bedeutung oder Betonung bestimmter Details anzugeben. Zum Beispiel bedeutet \"(masterpiece:1.5)\", dass die Qualität der Arbeit sehr wichtig ist. Mehrere Klammern haben ähnliche Wirkungen. Wenn eckige Klammern verwendet werden, wie bei \"{blue hair:white hair:0.3}\", stellt dies die Verschmelzung von blauen und weißen Haaren dar, wobei blaue Haare 0.3 ausmachen.\nHier ist ein Beispiel für die Verwendung von Prompts, um einem KI-Modell bei der Erzeugung eines Bildes zu helfen: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nFolgen Sie dem Beispiel und geben Sie eine Reihe von Prompts an, die den folgenden Inhalt detailliert beschreiben. Beginnen Sie die Prompts direkt, ohne sie in natürlicher Sprache zu beschreiben: ",
                 "use_chatgpt_gen_prompts": "Verwenden von ChatGPT zur Generierung von Prompts",
                 "input_image_desc": "Bitte geben Sie die Bildbeschreibung ein, zum Beispiel: Eine Katze sitzt auf dem Dach eines Gebäudes, ein sehr hochauflösendes, sehr authentisches Foto.",
                 "api_config": "API-Konfiguration",
@@ -1460,7 +1470,9 @@
                 "is_auto_optimize_split_symbol": "Trennzeichen automatisch optimieren: entfernt automatisch unpassende Kommas, damit die Ausgabe besser den Syntaxkonventionen von Stable Diffusion entspricht (z. B. vor einem Zeilenumbruch, zwischen aufeinanderfolgenden Loras, um BREAK usw.). Dies ist eine unabhängige Option und erfordert nicht \"Schlüsselwörter bei Punkt+Leerzeichen trennen\".",
                 "is_allow_keep_empty_line": "Beim Analysieren der Aufforderung eine Leerzeile behalten dürfen.<br/>Wenn aktiviert, werden aufeinanderfolgende Zeilenumbrüche auf maximal eine Leerzeile (d. h. zwei Zeilenumbruchzeichen) komprimiert; wenn deaktiviert, werden alle aufeinanderfolgenden Zeilenumbrüche auf einen einzigen komprimiert.",
                 "auto_load_webui_prompt": "Automatisches Laden von WebUI-Prompt-Änderungen.<br/>Wenn aktiviert, lädt das Plugin automatisch die Schlüsselwort-Analyse und -Formatierung, wenn sich der Inhalt des Eingabefelds für den Prompt in der WebUI ändert.<br/>Wenn deaktiviert, müssen Sie manuell auf die Schaltfläche zum Laden des Prompts klicken, wenn sich der Inhalt des Eingabefelds für den Prompt in der WebUI ändert.",
-                "load_webui_prompt": "WebUI-Prompt laden"
+                "load_webui_prompt": "WebUI-Prompt laden",
+                "paste_to_default_input_box": "Zwischenablage in das Eingabefeld für Schlüsselwörter einfügen",
+                "paste_clipboard_failed": "Automatisches Einfügen fehlgeschlagen. Klicken Sie auf das Eingabefeld und fügen Sie es manuell ein."
             }
         },
         {
@@ -1620,6 +1632,7 @@
                 "today_not_show": "Non mostrare questa finestra oggi",
                 "free": "Gratuito",
                 "apply_for_free": "Richiedi l'uso gratuito",
+                "chatgpt_prompts_preset": "StableDiffusion è un modello di apprendimento profondo testo-immagine che genera immagini a partire dai prompt. Questi prompt possono specificare gli elementi desiderati dell'immagine, come l'aspetto dei personaggi, lo sfondo, i colori e gli effetti di luce, oltre al tema e allo stile dell'immagine. I prompt spesso contengono numeri pesati tra parentesi per indicare l'importanza o l'enfasi di alcuni dettagli. Ad esempio, \"(masterpiece:1.5)\" indica che la qualità dell'opera è molto importante. Parentesi multiple hanno effetti simili. Inoltre, se vengono usate parentesi quadre, come \"{blue hair:white hair:0.3}\", ciò rappresenta la fusione dei capelli blu e biondi, con i capelli blu che rappresentano 0.3.\nEcco un esempio di utilizzo dei prompt per aiutare un modello IA a generare un'immagine: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nSeguendo l'esempio, fornisci un insieme di prompt che descrivono in dettaglio il seguente contenuto. Inizia i prompt direttamente senza usarli per descriverli in linguaggio naturale: ",
                 "use_chatgpt_gen_prompts": "Utilizza ChatGPT per generare prompt",
                 "input_image_desc": "Inserisci la descrizione dell'immagine, ad esempio: un gatto seduto in cima a un edificio, una foto molto ad alta definizione e molto autentica.",
                 "api_config": "Configurazione API",
@@ -1714,7 +1727,9 @@
                 "is_auto_optimize_split_symbol": "Ottimizzare automaticamente il simbolo di separazione: rimuove automaticamente le virgole inappropriate affinché l'output segua meglio le convenzioni sintattiche di Stable Diffusion (ad esempio prima di un'interruzione di riga, tra Lora consecutivi, attorno a BREAK, ecc.). Si tratta di un'opzione indipendente e non richiede \"Dividere le parole chiave al punto+spazio\".",
                 "is_allow_keep_empty_line": "Consentire di mantenere una riga vuota durante l'analisi del prompt.<br/>Se selezionato, gli a capo consecutivi vengono compressi a una sola riga vuota al massimo (cioè due caratteri di nuova riga); se deselezionato, tutti gli a capo consecutivi vengono compressi in uno solo.",
                 "auto_load_webui_prompt": "Caricamento automatico delle modifiche dell'invito WebUI.<br/>Quando selezionato, il plugin caricherà automaticamente e formatterà l'analisi delle parole chiave quando il contenuto della casella di input dell'invito in WebUI cambia.<br/>Quando deselezionato, è necessario fare clic manualmente sul pulsante di caricamento dell'invito quando il contenuto della casella di input dell'invito in WebUI cambia.",
-                "load_webui_prompt": "Carica invito WebUI"
+                "load_webui_prompt": "Carica invito WebUI",
+                "paste_to_default_input_box": "Incolla gli appunti nella casella di input delle parole chiave",
+                "paste_clipboard_failed": "Incollatura automatica non riuscita. Fai clic sulla casella di input, quindi incolla manualmente."
             }
         },
         {
@@ -1809,6 +1824,7 @@
                 "today_not_show": "今日このウィンドウを表示しない",
                 "free": "無料",
                 "apply_for_free": "無料使用を申請する",
+                "chatgpt_prompts_preset": "StableDiffusionはプロンプトに基づいて画像を生成するディープラーニングのテキストから画像へのモデルです。これらのプロンプトは、キャラクターの外見、背景、色や照明効果、そして画像のテーマやスタイルなど、画像の望ましい要素を指定できます。\nプロンプトには、ある詳細の重要性や強調を示すために、括弧内の重み付き数値が含まれることがよくあります。例えば、\"(masterpiece:1.5)\" は作品の品質が非常に重要であることを示します。複数の括弧も同様の効果を持ちます。また、\"{blue hair:white hair:0.3}\" のような角括弧を使う場合、これは青い髪と白い髪の融合を表し、青い髪が0.3を占めます。\n以下は、プロンプトを使ってAIモデルの画像生成を助ける例です：masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\n例に従って、以下の内容を詳細に記述する一連のプロンプトを提供してください。自然言語で説明せず、プロンプトを直接開始してください：",
                 "use_chatgpt_gen_prompts": "ChatGPTを使用してプロンプトを生成する",
                 "input_image_desc": "画像の説明を入力してください。たとえば、建物の屋上に座っている猫、非常に高精細で非常にリアルな写真など。",
                 "api_config": "API構成",
@@ -1903,7 +1919,9 @@
                 "is_auto_optimize_split_symbol": "区切り記号を自動最適化：出力が Stable Diffusion の構文規約に従うよう、不適切なカンマ区切りを自動的に削除します（例：改行前、連続する Lora の間、BREAK の前後など）。これは独立したオプションで、「ピリオド+スペースでキーワードを分割する」は不要です。",
                 "is_allow_keep_empty_line": "プロンプト解析時に空行を1つ保持するかどうか。<br/>チェックすると、連続した改行は最大で空行1つ（改行文字2つ）まで圧縮されます。チェックを外すと、連続した改行はすべて1つの改行に圧縮されます。",
                 "auto_load_webui_prompt": "WebUIプロンプトの変更を自動的にロードします。<br/>チェックすると、WebUIのプロンプト入力ボックスの内容が変更されたとき、プラグインはキーワードの解析とフォーマットを自動的にロードします。<br/>チェックしない場合、WebUIのプロンプト入力ボックスの内容が変更されたときに手動でプロンプトのロードボタンをクリックする必要があります。",
-                "load_webui_prompt": "WebUIプロンプトのロード"
+                "load_webui_prompt": "WebUIプロンプトのロード",
+                "paste_to_default_input_box": "クリップボードをプロンプト入力欄に貼り付け",
+                "paste_clipboard_failed": "自動貼り付けに失敗しました。入力欄をクリックしてから手動で貼り付けてください。"
             }
         },
         {
@@ -2023,6 +2041,7 @@
                 "today_not_show": "오늘 이 창을 표시하지 않음",
                 "free": "무료",
                 "apply_for_free": "무료 사용 신청",
+                "chatgpt_prompts_preset": "StableDiffusion는 프롬프트에 기반하여 이미지를 생성하는 딥러닝 텍스트-이미지 모델입니다. 이 프롬프트들은 캐릭터의 외모, 배경, 색상과 조명 효과, 그리고 이미지의 주제와 스타일과 같이 이미지에서 원하는 요소들을 지정할 수 있습니다.\n프롬프트에는 특정 세부 사항의 중요성이나 강조를 나타내는 괄호 안의 가중치 숫자가 자주 포함됩니다. 예를 들어, \"(masterpiece:1.5)\"는 작품의 품질이 매우 중요함을 나타냅니다. 여러 괄호도 비슷한 효과를 가집니다. 또한, \"{blue hair:white hair:0.3}\"와 같은 대괄호를 사용하는 경우 이는 푸른 머리와 흰 머리의 융합을 나타내며, 푸른 머리가 0.3을 차지합니다.\n다음은 프롬프트를 사용하여 AI 모델이 이미지를 생성하도록 돕는 예시입니다: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\n예시에 따라 다음 내용을 자세히 설명하는 일련의 프롬프트를 제공하세요. 자연어로 설명하지 말고 프롬프트를 바로 시작하세요: ",
                 "use_chatgpt_gen_prompts": "ChatGPT를 사용하여 프롬프트를 생성합니다",
                 "input_image_desc": "이미지 설명을 입력하세요. 예 : 건물 꼭대기에 앉아있는 고양이, 매우 고화질이며 매우 현실적인 사진 등",
                 "api_config": "API 구성",
@@ -2117,7 +2136,9 @@
                 "is_auto_optimize_split_symbol": "구분 기호 자동 최적화: 출력이 Stable Diffusion 구문 관례에 맞도록 부적절한 쉼표 구분자를 자동으로 제거합니다(예: 줄바꿈 앞, 연속된 Lora 사이, BREAK 앞뒤 등). 이는 독립적인 옵션이며 \"마침표+공백에서 키워드 분할\"이 필요 없습니다.",
                 "is_allow_keep_empty_line": "프롬프트 분석 시 빈 줄 하나를 유지할지 여부.<br/>선택하면 연속된 줄바꿈은 최대 빈 줄 하나(줄바꿈 문자 두 개)까지 압축됩니다. 선택하지 않으면 연속된 줄바꿈은 모두 하나의 줄바꿈으로 압축됩니다.",
                 "auto_load_webui_prompt": "WebUI 프롬프트 변경 사항 자동로드.<br/>확인하면, WebUI의 프롬프트 입력란의 내용이 변경될 때 플러그인이 키워드 분석 및 형식 지정을 자동으로 로드합니다.<br/>체크하지 않으면, WebUI의 프롬프트 입력란의 내용이 변경될 때 수동으로 프롬프트 로드 버튼을 클릭해야 합니다.",
-                "load_webui_prompt": "WebUI 프롬프트 로드"
+                "load_webui_prompt": "WebUI 프롬프트 로드",
+                "paste_to_default_input_box": "클립보드를 프롬프트 입력란에 붙여넣기",
+                "paste_clipboard_failed": "자동 붙여넣기에 실패했습니다. 입력란을 클릭한 다음 수동으로 붙여넣으세요."
             }
         },
         {
@@ -2417,7 +2438,9 @@
                 "is_auto_optimize_split_symbol": "Otimizar o símbolo de separação automaticamente: remove automaticamente vírgulas inapropriadas para que a saída siga melhor as convenções de sintaxe do Stable Diffusion (por exemplo, antes de uma quebra de linha, entre Loras consecutivos, em torno de BREAK, etc.). Trata-se de uma opção independente e não requer \"Dividir palavras-chave por ponto+espaço\".",
                 "is_allow_keep_empty_line": "Permitir manter uma linha vazia ao analisar o prompt.<br/>Se marcado, as quebras de linha consecutivas são comprimidas para no máximo uma linha vazia (ou seja, dois caracteres de quebra de linha); se desmarcado, todas as quebras de linha consecutivas são comprimidas em uma só.",
                 "auto_load_webui_prompt": "Carregar automaticamente mudanças de prompt do WebUI.<br/>Quando marcado, o plugin carregará automaticamente e formatará a análise de palavra-chave quando o conteúdo da caixa de entrada de prompt no WebUI mudar.<br/>Quando desmarcado, você precisa clicar manualmente no botão de carregar prompt quando o conteúdo da caixa de entrada de prompt no WebUI mudar.",
-                "load_webui_prompt": "Carregar prompt do WebUI"
+                "load_webui_prompt": "Carregar prompt do WebUI",
+                "paste_to_default_input_box": "Colar a área de transferência na caixa de entrada de palavras-chave",
+                "paste_clipboard_failed": "Falha na colagem automática. Clique na caixa de entrada e cole manualmente."
             }
         },
         {
@@ -2512,6 +2535,7 @@
                 "today_not_show": "Não mostrar esta janela hoje",
                 "free": "Grátis",
                 "apply_for_free": "Solicitar uso gratuito",
+                "chatgpt_prompts_preset": "StableDiffusion é um modelo de aprendizagem profunda de texto para imagem que gera imagens com base em prompts. Estes prompts podem especificar os elementos desejados da imagem, como a aparência dos personagens, o fundo, a cor e os efeitos de iluminação, bem como o tema e o estilo da imagem. Os prompts contêm frequentemente números com peso entre parênteses para indicar a importância ou o ênfase de certos detalhes. Por exemplo, \"(masterpiece:1.5)\" indica que a qualidade da obra é muito importante. Vários parênteses têm efeitos semelhantes. Além disso, se forem usados colchetes, como \"{blue hair:white hair:0.3}\", isto representa a fusão do cabelo azul e branco, com o cabelo azul a representar 0.3.\nAqui está um exemplo de utilização de prompts para ajudar um modelo de IA a gerar uma imagem: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nSeguindo o exemplo, forneça um conjunto de prompts que detalhem o seguinte conteúdo. Comece os prompts diretamente, sem os descrever em linguagem natural: ",
                 "use_chatgpt_gen_prompts": "Usar o ChatGPT para Gerar Prompt",
                 "input_image_desc": "Por favor, escreva a descrição da imagem, por exemplo: um gato sentado no topo de um edifício, uma foto muito realista e de alta definição.",
                 "api_config": "Configuração da API",
@@ -2606,7 +2630,9 @@
                 "is_auto_optimize_split_symbol": "Otimizar o símbolo de separação automaticamente: remove automaticamente vírgulas inapropriadas para que a saída siga melhor as convenções de sintaxe do Stable Diffusion (por exemplo, antes de uma quebra de linha, entre Loras consecutivos, em torno de BREAK, etc.). Trata-se de uma opção independente e não requer \"Dividir palavras-chave por ponto+espaço\".",
                 "is_allow_keep_empty_line": "Permitir manter uma linha vazia ao analisar o prompt.<br/>Se marcado, as quebras de linha consecutivas são comprimidas para no máximo uma linha vazia (ou seja, dois caracteres de quebra de linha); se desmarcado, todas as quebras de linha consecutivas são comprimidas em uma só.",
                 "auto_load_webui_prompt": "Carregar automaticamente alterações no prompt do WebUI.<br/>Quando marcado, o plugin carregará automaticamente e formatará a análise de palavras-chave quando o conteúdo da caixa de entrada do prompt no WebUI for alterado.<br/>Quando desmarcado, é necessário clicar manualmente no botão de carregar o prompt quando o conteúdo da caixa de entrada do prompt no WebUI for alterado.",
-                "load_webui_prompt": "Carregar prompt do WebUI"
+                "load_webui_prompt": "Carregar prompt do WebUI",
+                "paste_to_default_input_box": "Colar a área de transferência na caixa de entrada de palavras-chave",
+                "paste_clipboard_failed": "A colagem automática falhou. Clique na caixa de entrada e cole manualmente."
             }
         },
         {
@@ -2716,6 +2742,7 @@
                 "today_not_show": "Не показывать это окно сегодня",
                 "free": "Бесплатно",
                 "apply_for_free": "Подать заявку на бесплатное использование",
+                "chatgpt_prompts_preset": "StableDiffusion — это модель глубокого обучения, создающая изображения из текста на основе промптов. Эти промпты могут указывать желаемые элементы изображения, такие как внешний вид персонажей, фон, цвет и освещение, а также тему и стиль изображения. В промптах часто содержатся взвешенные числа в скобках, указывающие важность или акцент определённых деталей. Например, \"(masterpiece:1.5)\" означает, что качество работы очень важно. Несколько скобок имеют похожий эффект. Кроме того, если используются квадратные скобки, как в \"{blue hair:white hair:0.3}\", это представляет слияние голубых и белых волос, где голубые волосы составляют 0.3.\nВот пример использования промптов для помощи модели ИИ в создании изображения: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nСледуя примеру, предоставьте набор промптов, подробно описывающих следующий контент. Начните промпты сразу, не описывая их естественным языком: ",
                 "use_chatgpt_gen_prompts": "Использовать ChatGPT для генерации промптов",
                 "input_image_desc": "Введите описание изображения, например: кошка, сидящая на вершине здания, очень высокое разрешение, очень реалистичное фото.",
                 "api_config": "Конфигурация API",
@@ -2810,7 +2837,9 @@
                 "is_auto_optimize_split_symbol": "Автоматическая оптимизация символа-разделителя: автоматически удаляет неуместные запятые, чтобы вывод лучше соответствовал синтаксическим соглашениям Stable Diffusion (например, перед переносом строки, между последовательными Lora, вокруг BREAK и т. д.). Это независимый параметр и не требует \"Разделять ключевые слова по точке+пробел\".",
                 "is_allow_keep_empty_line": "Разрешать сохранять одну пустую строку при разборе промпта.<br/>Если включено, последовательные переносы строки сжимаются максимум до одной пустой строки (то есть двух символов переноса строки); если выключено, все последовательные переносы строки сжимаются в один.",
                 "auto_load_webui_prompt": "Автоматическая загрузка изменений веб-интерфейса пользовательского интерфейса.<br/>Если отмечено, плагин автоматически загружает и форматирует анализ ключевых слов при изменении содержимого поля ввода подсказки веб-интерфейса.<br/>Если снято, вам нужно вручную нажать кнопку загрузки подсказки при изменении содержимого поля ввода подсказки веб-интерфейса.",
-                "load_webui_prompt": "Загрузить подсказку веб-интерфейса"
+                "load_webui_prompt": "Загрузить подсказку веб-интерфейса",
+                "paste_to_default_input_box": "Вставить содержимое буфера обмена в поле ввода ключевых слов",
+                "paste_clipboard_failed": "Не удалось вставить автоматически. Нажмите на поле ввода и вставьте вручную."
             }
         },
         {
@@ -2935,6 +2964,7 @@
                 "today_not_show": "No mostrar esta ventana hoy",
                 "free": "Gratis",
                 "apply_for_free": "Solicitar uso gratuito",
+                "chatgpt_prompts_preset": "StableDiffusion es un modelo de aprendizaje profundo de texto a imagen que genera imágenes a partir de prompts. Estos prompts pueden especificar los elementos deseados de la imagen, como la apariencia de los personajes, el fondo, el color y los efectos de iluminación, así como el tema y el estilo de la imagen. Los prompts a menudo contienen números con peso entre paréntesis para indicar la importancia o el énfasis de ciertos detalles. Por ejemplo, \"(masterpiece:1.5)\" indica que la calidad de la obra es muy importante. Múltiples paréntesis tienen efectos similares. Además, si se usan corchetes, como \"{blue hair:white hair:0.3}\", esto representa la fusión del cabello azul y blanco, con el cabello azul representando 0.3.\nAquí hay un ejemplo de uso de prompts para ayudar a un modelo de IA a generar una imagen: masterpiece,(bestquality),highlydetailed,ultra-detailed,cold,solo,(1girl),(detailedeyes),(shinegoldeneyes),(longliverhair),expressionless,(long sleeves),(puffy sleeves),(white wings),shinehalo,(heavymetal:1.2),(metaljewelry),cross-lacedfootwear (chain),(Whitedoves:1.2)\n\nSiguiendo el ejemplo, proporciona un conjunto de prompts que detallen el siguiente contenido. Comienza los prompts directamente, sin describirlos en lenguaje natural: ",
                 "use_chatgpt_gen_prompts": "Usar ChatGPT para generar Prompts",
                 "input_image_desc": "Ingrese la descripción de la imagen, por ejemplo: un gato sentado en la parte superior de un edificio, una foto muy realista y de alta definición.",
                 "api_config": "Configuración del API",
@@ -3029,7 +3059,9 @@
                 "is_auto_optimize_split_symbol": "Optimizar el símbolo de separación automáticamente: elimina automáticamente las comas inadecuadas para que la salida siga mejor las convenciones de sintaxis de Stable Diffusion (por ejemplo, antes de un salto de línea, entre Loras consecutivos, alrededor de BREAK, etc.). Es una opción independiente y no requiere \"Dividir palabras clave por punto+espacio\".",
                 "is_allow_keep_empty_line": "Permitir mantener una línea vacía al analizar el prompt.<br/>Si está marcado, los saltos de línea consecutivos se comprimen a como máximo una línea vacía (es decir, dos caracteres de salto de línea); si no está marcado, todos los saltos de línea consecutivos se comprimen en uno solo.",
                 "auto_load_webui_prompt": "Cargar automáticamente cambios en el aviso de WebUI.<br/>Cuando está marcado, el complemento cargará automáticamente y formateará el análisis de palabras clave cuando cambie el contenido del cuadro de entrada del aviso en WebUI.<br/>Cuando no está marcado, es necesario hacer clic manualmente en el botón de carga del aviso cuando cambie el contenido del cuadro de entrada del aviso en WebUI.",
-                "load_webui_prompt": "Cargar aviso de WebUI"
+                "load_webui_prompt": "Cargar aviso de WebUI",
+                "paste_to_default_input_box": "Pegar el portapapeles en el cuadro de entrada de palabras clave",
+                "paste_clipboard_failed": "Error al pegar automáticamente. Haz clic en el cuadro de entrada y pega manualmente."
             }
         },
         {
