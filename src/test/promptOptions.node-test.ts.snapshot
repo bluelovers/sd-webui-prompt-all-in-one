@@ -11,11 +11,11 @@ exports[`promptOptions:snapshot 1`] = `
     "autoRemoveLoraAfterComma": false,
     "useNovelAiWeightSymbol": false,
     "autoRemoveBeforeLineComma": false,
+    "autoOptimizeSplitSymbol": false,
+    "allowKeepEmptyLine": false,
     "autoSplitByPeriod": false,
     "autoSplitByPeriodIncludeParen": false,
-    "autoSplitByPeriodSemicolon": false,
-    "autoOptimizeSplitSymbol": false,
-    "allowKeepEmptyLine": false
+    "autoSplitByPeriodSemicolon": false
   },
   "overridden": {
     "autoRemoveSpace": false,
@@ -28,11 +28,11 @@ exports[`promptOptions:snapshot 1`] = `
     "autoRemoveLoraAfterComma": false,
     "useNovelAiWeightSymbol": false,
     "autoRemoveBeforeLineComma": false,
+    "autoOptimizeSplitSymbol": false,
+    "allowKeepEmptyLine": true,
     "autoSplitByPeriod": true,
     "autoSplitByPeriodIncludeParen": true,
     "autoSplitByPeriodSemicolon": true,
-    "autoOptimizeSplitSymbol": false,
-    "allowKeepEmptyLine": true,
     "autoSplitByPeriodRemoveWrapComma": true
   }
 }

@@ -2,6 +2,7 @@
  * promptOptions 模組的型別定義。
  */
 import type { ITSTypeAndStringLiteral } from 'ts-type'
+import { IPromptOptionCheckUi, IPromptOptionCheckUiLabelLangKey, IPromptOptionDefinition, IPromptOptionKey, IPromptOptionValue } from './definitions'
 
 /**
  * 實際會 emit 該選項 v-model 事件（update:key）的子元件。
@@ -70,6 +71,33 @@ export interface IPromptOptionDefinitionCore {
      * 選項行為說明，僅供維護者閱讀，不影響執行。
      */
     note: string
+}
+
+/**
+ * checkbox 樣板結構的單筆項目（產生器輸出型別）。
+ *
+ * 欄位皆為靜態資料：由 getPromptOptionChecks 一次生成，
+ * 元件端以 emitEvent 直接 $emit、以 key / labelLangKey / parentKey 渲染。
+ */
+export interface IPromptOptionCheck extends IPromptOptionCheckUi, Pick<IPromptOptionDefinition, 'key'> {
+    /**
+     * v-model 事件名（'update:key'）：由 _buildPromptOptionEmit 構建，
+     * 元件模板直接以 $emit(emitEvent, ...) 呼叫。
+     */
+    emitEvent: `update:${IPromptOptionKey}`
+}
+
+/**
+ * 補上「目前值」的 checkbox 結構（withPromptOptionCheckValues 輸出型別）。
+ *
+ * value 取自呼叫端傳入的值記錄表；記錄表允許缺鍵（Partial），缺鍵時為 undefined。
+ */
+export interface IPromptOptionCheckWithValue extends IPromptOptionCheck {
+    /**
+     * 選項目前值。
+     * Current value of the option (undefined when the value record lacks the key).
+     */
+    value: IPromptOptionValue | undefined
 }
 
 /**

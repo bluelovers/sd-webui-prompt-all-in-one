@@ -8,10 +8,11 @@
  *   - App.vue init() 載入回填          → loadPromptOptions()
  *   - phystonPrompt.vue props          → getPromptOptionProps()
  *   - promptFormat.vue props / emits  → getPromptOptionProps() / getPromptOptionEmits('promptFormat')
+ *   - promptFormat.vue checkbox 樣板   → getPromptOptionChecks('promptFormat')
  */
 
 import { IPromptOptionKey, IPromptOptionKeyAndLegacyStorage, IPromptOptionKeyLegacyStorage, IPromptOptionValue, IPromptOptionValueDefaultKey, IPromptOptionValueRecord, IPromptOptionValueRecordWithLegacy, promptOptions } from './definitions'
-import { EnumPromptOptionAfterSave, type IPromptOptionComponent, type IPromptOptionPropBoolean, type IPromptOptionWatcher } from './types'
+import { EnumPromptOptionAfterSave, IPromptOptionCheck, IPromptOptionCheckWithValue, type IPromptOptionComponent, type IPromptOptionPropBoolean, type IPromptOptionWatcher } from './types'
 
 export { promptOptions } from './definitions'
 export type { IPromptOptionAfterSave, IPromptOptionComponent, IPromptOptionPropBoolean as IPromptOptionProp, IPromptOptionWatcher } from './types'
@@ -161,7 +162,14 @@ export function getPromptOptionProps() {
 }
 
 /**
- * 生成指定子元件的 emits（v-model 事件名 'update:key'）。
+ * 構建選項的 v-model 事件名（'update:key'）。
+ */
+export function _buildPromptOptionEmit(key: IPromptOptionKey) {
+    return `update:${key}` as const
+}
+
+/**
+ * 生成指定子元件的 emits（v-model 事件名 'update:key'）列表。
  *
  * 僅列入該元件實際會 emit 的選項（definitions 的 emittedBy）：
  * Vue 3 的 emits 是宣告而非開關——未宣告的 $emit 仍會觸達父層，
@@ -170,5 +178,59 @@ export function getPromptOptionProps() {
 export function getPromptOptionEmits(component: IPromptOptionComponent) {
     return promptOptions
         .filter(option => option.emittedBy.includes(component))
-        .map(option => `update:${option.key}` as const)
+        .map(option => _buildPromptOptionEmit(option.key))
+}
+
+/**
+ * 生成指定元件 checkbox 面板的樣板結構清單（順序即定義表順序 = UI 呈現順序）。
+ *
+ * 僅列入填寫了 checkUi 的選項；emitEvent 由 _buildPromptOptionEmit 統一構建。
+ * 「目前值（value）」與「子選項啟用時才顯示」屬執行期狀態，不在此處理，
+ * 分別由 withPromptOptionCheckValues / filterPromptOptionCheckVisible 封裝。
+ */
+export function getPromptOptionChecks(component: IPromptOptionComponent): IPromptOptionCheck[] {
+    const checks: IPromptOptionCheck[] = []
+    for (const option of promptOptions) {
+        if (!option.emittedBy.includes(component)) continue
+        if (!option.checkUi) continue
+        checks.push({
+            key: option.key,
+            labelLangKey: option.checkUi.labelLangKey,
+            parentKey: option.checkUi.parentKey,
+            emitEvent: _buildPromptOptionEmit(option.key),
+        })
+    }
+    return checks
+}
+
+/**
+ * 為 checkbox 結構補上目前值 value。
+ *
+ * values 允許缺失部分鍵值：缺鍵時該筆 value 為 undefined，checkbox 呈現未勾選。
+ * 傳入 Vue 元件實例（this）時，屬性讀取經過響應式 proxy，
+ * 在 computed 內呼叫可正確收集依賴——任一選項 prop 變動都會觸發重算。
+ */
+export function withPromptOptionCheckValues(
+    checks: readonly IPromptOptionCheck[],
+    values: Partial<IPromptOptionValueRecordWithLegacy>,
+): IPromptOptionCheckWithValue[] {
+    return checks.map(option => {
+        return {
+            ...option,
+            value: values[option.key],
+        }
+    })
+}
+
+/**
+ * 依父選項目前值過濾子選項。
+ *
+ * 無 parentKey 者一律保留；有 parentKey 者僅在 values[parentKey] 為真時保留
+ * （父選項啟用時子選項才顯示）。泛型回傳保留輸入的欄位結構。
+ */
+export function filterPromptOptionCheckVisible<T extends IPromptOptionCheck>(
+    checks: readonly T[],
+    values: Partial<IPromptOptionValueRecordWithLegacy>,
+): T[] {
+    return checks.filter(option => !option.parentKey || values[option.parentKey])
 }
