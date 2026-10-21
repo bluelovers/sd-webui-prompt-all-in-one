@@ -14,12 +14,15 @@ declare const updateInput: Function
  * @param textarea 宿主的 prompt 輸入框
  * @param value 要寫入的文字
  */
-export function setPromptTextareaValue(textarea: HTMLTextAreaElement, value: string) {
-    textarea.value = value
-    common.hideCompleteResults(textarea)
-    if (typeof updateInput === 'function') {
-        updateInput(textarea)
-    } else {
-        textarea.dispatchEvent(new Event('input'))
-    }
+export function setPromptTextareaValueAndDispatchEvent(textarea: HTMLTextAreaElement, value: string)
+{
+	textarea.value = value
+	common.hideCompleteResults(textarea)
+	if (typeof updateInput === 'function')
+	{
+		updateInput(textarea)
+	} else
+	{
+		textarea.dispatchEvent(new Event('input'))
+	}
 }

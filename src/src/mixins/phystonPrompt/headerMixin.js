@@ -1,5 +1,5 @@
 import common from "@/utils/common";
-import { setPromptTextareaValue } from "@/utils/promptTextarea";
+import { setPromptTextareaValueAndDispatchEvent } from "@/utils/promptTextarea";
 
 export default {
     data() {
@@ -201,7 +201,7 @@ export default {
                     if (!text?.trim()?.length) {
                         return pasteFailed(text)
                     }
-                    setPromptTextareaValue(this.textarea, text)
+                    setPromptTextareaValueAndDispatchEvent(this.textarea, text)
                     this.onTextareaChange(true)
                 }).catch((e) => {
                     // 權限被拒、非 secure context、或焦點被搶走都會走到這裡

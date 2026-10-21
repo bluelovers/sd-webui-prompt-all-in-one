@@ -1,5 +1,13 @@
 import { EnumPromptTagType, IPromptTag, IPromptTagBase, IPromptTagType, IPromptTagValue } from './tag-types';
-import type { ITSAnyOfUnion, ITSUnionToOptional, ITSNullable, ITSTypeAndStringLiteral, ITSOverwrite } from 'ts-type';
+import type {
+	ITSAnyOfUnion,
+	ITSUnionToOptional,
+	ITSNullable,
+	ITSTypeAndStringLiteral,
+	ITSOverwrite,
+	ITSLogicIsNever,
+	ITSLogicIsAny,
+} from 'ts-type';
 import { _normalizeTagValue, _sortPromptTagKeys } from './util/tag-normalize';
 
 
@@ -43,3 +51,28 @@ export function _createTagBase<T extends IPromptTagBase, P extends IPromptTagPro
 	}
 }
 
+export type I_IsEmptyObject<T> =
+	T extends object
+	? keyof T extends never
+	? true
+	: false
+	: false
+
+export type IConditionalOverwrite<T, P> =
+	ITSLogicIsAny<P> extends true ? T :
+	ITSLogicIsNever<P> extends true ? T :
+	[P] extends [undefined] ? T :
+	I_IsEmptyObject<P> extends true ? T :
+	ITSOverwrite<T, P>
+
+export function _updateTagProps<T extends IPromptTagBase, P extends IPromptTagProps | undefined>(tag: T, props?: P): IConditionalOverwrite<T, P>
+{
+	if (props)
+	{
+		for (const key of Object.keys(props))
+		{
+			tag[key] = props[key as keyof P]
+		}
+	}
+	return tag as any
+}

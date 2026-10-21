@@ -602,7 +602,7 @@ import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOption
 import { tagIsBreak, tagIsLoraLike, tagIsWrap } from "@/utils/promptTags/util"
 import { genPromptCore } from "@/utils/promptTags/genPrompt"
 import { updatePromptCore } from "@/utils/promptTags/updatePrompt"
-import { setPromptTextareaValue } from "@/utils/promptTextarea"
+import { setPromptTextareaValueAndDispatchEvent } from "@/utils/promptTextarea"
 
 export default {
     name: 'PhystonPrompt',
@@ -1135,14 +1135,14 @@ export default {
             updatePromptCore({
                 tags: this.tags,
                 options: this,
-                appendTag: (value, localValue, disabled, index, type) => {
-                    this._appendTag(value, localValue, disabled, index, type)
+                appendTag: (...args) => {
+                    this._appendTag(...args)
                 },
                 refresh: () => this.updateTags(),
                 genPrompt: () => this.genPrompt(),
                 commit: prompt => {
                     this.prompt = prompt
-                    setPromptTextareaValue(this.textarea, this.prompt)
+                    setPromptTextareaValueAndDispatchEvent(this.textarea, this.prompt)
                 },
             })
         },
