@@ -15,7 +15,7 @@ import { IPromptOptionKey, IPromptOptionKeyAndLegacyStorage, IPromptOptionKeyLeg
 import { EnumPromptOptionAfterSave, IPromptOptionCheck, IPromptOptionCheckWithValue, type IPromptOptionComponent, type IPromptOptionPropBoolean, type IPromptOptionWatcher } from './types'
 
 export { promptOptions } from './definitions'
-export type { IPromptOptionAfterSave, IPromptOptionComponent, IPromptOptionPropBoolean as IPromptOptionProp, IPromptOptionWatcher } from './types'
+export type { IPromptOptionAfterSave, IPromptOptionComponent, IPromptOptionPropBoolean, IPromptOptionWatcher } from './types'
 
 /**
  * watcher handler 內部所需的 App 實例最小結構。
