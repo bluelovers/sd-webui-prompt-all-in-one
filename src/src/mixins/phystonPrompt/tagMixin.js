@@ -1,6 +1,7 @@
 import common from "@/utils/common";
 import autoSizeInput from "autosize-input";
 import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap } from "@/utils/promptTags/util";
+import { _createTagBase, _createTagUuid } from "@/utils/promptTags/createTag";
 
 export default {
     data() {
@@ -182,19 +183,23 @@ export default {
          * @param {string}  type       - 'text' | 'wrap'
          * @param {object}  [opts]     - 可選設定
          * @param {object}  [opts.source] - 舊 tag 或儲存資料；提供時自動還原 RESTOREABLE_PROPERTIES
-         * @returns {number} 新 tag 的 index，失敗回傳 -1
+         * @returns {number} 新 tag 的 index；value 為空字串或命中黑名單時回傳 -1
          */
         _appendTag(value, localValue = '', disabled = false, index = -1, type = 'text', { source } = {}) {
             if (value === '') return -1
             // 唯一数：当前时间戳+随机数
-            const id = Date.now() + (Math.random() * 1000000).toFixed(0)
-            let tag = {
+            const id = _createTagUuid()
+            const tag = _createTagBase({
                 id,
-                value: value === null || value === undefined || value === false ? '' : value,
-                localValue: localValue === null || localValue === undefined || localValue === false ? '' : localValue,
+                type,
+                value,
+                localValue,
                 disabled,
-                type
-            }
+            })
+            /**
+             * * 順序不可調換：黑名單判定必須排在 _setTag() 之後，
+             * 因為 _isTagBlacklist() 依賴 _setTag() 才算得出的 isLora / originalValue。
+             */
             this._setTag(tag)
             // value           = common.setLayers(value, 0, '(', ')')
             // value           = common.setLayers(value, 0, '[', ']')
