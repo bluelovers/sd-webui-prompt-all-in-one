@@ -17,7 +17,7 @@
  */
 
 import common from '../common'
-import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsWrap } from './util'
+import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsSharp, tagIsWrap } from './util'
 import type { IPromptTagWithLocal } from './tag-types'
 import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions'
 import { IHostPromptOptions } from './types'
@@ -114,9 +114,14 @@ export function shouldRemoveCommaByAutoOptimize(
     if (tagIsLoraLike(tag) && tagIsLoraLike(nextTag)) return true
     /** 規則 2-1：下一個 tag 是 BREAK */
     if (tagIsBreak(nextTag)) return true
-    /** 規則 2-2：下一個 tag 是分行，且分行後第一個非分行 tag 是 BREAK */
+    /** 規則 2-2：下一個 tag 是分行，且 */
     if (tagIsWrap(nextTag)) {
-        /** 略過連續分行，停在第一個非分行 tag（邏輯抽離至 findTagUntil） */
+        /** 當前 tag 是 # 時 */
+        if (tagIsSharp(tag)) return true
+        /**
+         * 分行後第一個非分行 tag 是 BREAK
+         * 略過連續分行，停在第一個非分行 tag（邏輯抽離至 findTagUntil）
+         */
         const scan = findTagUntil(tags2, {
             startIndex: index + 1,
             ignore: tagIsWrap,
@@ -125,7 +130,7 @@ export function shouldRemoveCommaByAutoOptimize(
         if (scan.found) return true
     }
     /** 規則 3：當前 tag 以指定文字結尾，且下一個是 分行 / Lora / Lyco */
-    if (/(?:[;}:'"*—]|[-=]{2,})$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
+    if (/(?:[;}:'"*—]|[-=])$/.test((tag.value || '').trim()) && (tagIsWrap(nextTag) || tagIsLoraLike(nextTag))) return true
 
     return false
 }

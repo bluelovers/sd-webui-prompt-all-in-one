@@ -75,9 +75,6 @@ export default {
                 }
             }, 50)
         },
-        _getTagType(tag) {
-
-        },
         _setTagClass(tag) {
             tag.isLora = false
             tag.loraExists = false
