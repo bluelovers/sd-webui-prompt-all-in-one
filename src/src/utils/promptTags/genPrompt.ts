@@ -18,24 +18,16 @@
 
 import common from '../common'
 import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsSharp, tagIsWrap } from './util'
-import type { IPromptTagWithLocal } from './tag-types'
 import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions'
 import { IHostPromptOptions } from './types'
-
-/**
- * genPrompt 遍歷的標籤型別。
- * 在 IPromptTagWithLocal 之上補上 weightNum（由 tagMixin._setTag 計算，供權重改寫使用）。
- */
-export type IGenPromptTag = IPromptTagWithLocal & {
-    weightNum?: number | string
-}
+import { IPromptTag } from './tag-types'
 
 /**
  * 副作用掛鉤：宿主（Vue 元件）注入的行為。
  */
 export interface IGenPromptHooks {
     /** 原 this._setTag(tag)：tag.value / tag.localValue 被改寫時通知宿主持久化 */
-    onTagChanged?: (tag: IGenPromptTag) => void
+    onTagChanged?: (tag: IPromptTag) => void
 }
 
 /**
@@ -60,7 +52,7 @@ export interface IGenPromptHooks {
  * @returns true = 應移除換行前的逗號
  */
 export function shouldRemoveCommaBeforeWrap(
-    tag: IGenPromptTag | null | undefined,
+    tag: IPromptTag | null | undefined,
     options: { lineHasSharp?: boolean } = {},
 ): boolean {
     if (!tag) return false
@@ -101,8 +93,8 @@ export function shouldRemoveCommaBeforeWrap(
  * @returns true = 應移除當前 tag 後的逗號
  */
 export function shouldRemoveCommaByAutoOptimize(
-    tag: IGenPromptTag | null | undefined,
-    tags2: readonly IGenPromptTag[],
+    tag: IPromptTag | null | undefined,
+    tags2: readonly IPromptTag[],
     index: number,
 ): boolean {
     if (!tag) return false
@@ -145,13 +137,13 @@ export function shouldRemoveCommaByAutoOptimize(
  * @returns 組裝後的 prompt 字串；無內容時回傳 ''
  */
 export function genPromptCore(
-    tags: IGenPromptTag[],
+    tags: IPromptTag[],
     ignoreDisabled = false,
     options: IHostPromptOptions = {},
     hooks: IGenPromptHooks = {},
 ): string {
     const prompts: string[] = []
-    let tags2: IGenPromptTag[] = []
+    let tags2: IPromptTag[] = []
     if (!ignoreDisabled) {
         for (const key in tags) {
             if (!tags[key].disabled) {
@@ -215,7 +207,7 @@ export function genPromptCore(
             let splitSymbol = ',' + (options.autoRemoveSpace ? '' : ' ')
             const splitSymbolDefault = splitSymbol
 
-            let nextTag: IGenPromptTag | null = null
+            let nextTag: IPromptTag | null = null
             let nextIsWarp = false
             let nextIsBreak = false
             let nextIsLoraLike = false

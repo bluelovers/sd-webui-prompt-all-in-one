@@ -1,7 +1,7 @@
 
 import type { IPeriodPart } from '../../../src/utils/splitByPeriod'
 import type { ITagSegment } from '../../../src/utils/splitTags'
-import type { IGenPromptTag } from '../../../src/utils/promptTags/genPrompt'
+import type { IPromptTag } from '../../../src/utils/promptTags/genPrompt'
 import type {
 	IGenPromptArgs,
 	ISplitByPeriodArgs,
@@ -54,7 +54,7 @@ export interface IRunCasesSnap<
 export type ISplitByPeriodSnap = IRunCasesSnap<unknown, ISplitByPeriodArgs, IPeriodPart[]>
 
 /** genPrompt 的快照（runCases + snapshot:true）。 */
-export type IGenPromptSnap = IRunCasesSnap<IGenPromptTag[], IGenPromptArgs, string>
+export type IGenPromptSnap = IRunCasesSnap<IPromptTag[], IGenPromptArgs, string>
 
 /**
  * splitTags 單獨測試的快照（runSplitTagsTests，未接 splitByPeriod）。
@@ -100,7 +100,7 @@ export interface IUpdatePromptSnapArgs {
  */
 export interface IUpdatePromptSnap {
 	/** 案例持有的標籤陣列（tc.tags） */
-	input: readonly IGenPromptTag[]
+	input: readonly IPromptTag[]
 	/** 執行參數：注入宿主的選項（預設值已補齊）與是否注入真 genPrompt */
 	args: IUpdatePromptSnapArgs
 	/** 宿主 appendTag 收到的參數（依呼叫順序） */

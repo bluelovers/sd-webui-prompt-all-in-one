@@ -13,7 +13,7 @@
  */
 
 import { tagIsBreak, tagIsWrap } from './util'
-import type { IGenPromptTag } from './genPrompt'
+import type { IPromptTag } from './genPrompt'
 import type { IHostPromptOptions } from './types'
 
 /**
@@ -38,7 +38,7 @@ export type IWrapInsertOptions = Pick<IHostPromptOptions, 'autoBreakBeforeWrap' 
  * @returns 應插入換行的索引陣列（依遞增順序，可能重複）
  */
 export function collectWrapInsertIndexes(
-    tags: readonly IGenPromptTag[],
+    tags: readonly IPromptTag[],
     { autoBreakBeforeWrap, autoBreakAfterWrap }: IHostPromptOptions = {},
 ): number[] {
     const insertWrapIndexes: number[] = []
@@ -71,7 +71,7 @@ export function collectWrapInsertIndexes(
  */
 export interface IUpdatePromptHost {
     /** 當前標籤陣列（collectWrapInsertIndexes 的輸入，也是插入的目標） */
-    tags: IGenPromptTag[]
+    tags: IPromptTag[]
     /**
      * 宿主的選項值，形狀即 IHostPromptOptions。
      * 元件實例 this 上即有同名選項屬性，呼叫端可直接以 options: this 傳入。

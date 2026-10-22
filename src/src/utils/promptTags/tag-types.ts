@@ -80,10 +80,9 @@ export interface IPromptTag extends IPromptTagBaseWithUuid, IPromptTagRuntimeExt
 
 	isEmbedding?: boolean;
 	embeddingName?: string;
-}
 
-export interface IPromptTagWithLocal extends IPromptTag
-{
+	classes?: string[];
+
 	toLocal?: boolean;
 	localValue?: string;
 	isEnglish?: EnumIsEnglish;

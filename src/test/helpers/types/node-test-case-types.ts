@@ -11,7 +11,7 @@ import type {
 } from '../../../src/utils/splitByPeriod'
 import type {
 	IGenPromptHooks,
-	IGenPromptTag,
+	IPromptTag,
 } from '../../../src/utils/promptTags/genPrompt'
 import type { IUpdatePromptHost } from '../../../src/utils/promptTags/updatePrompt'
 import { IHostPromptOptions } from '#/src/utils/promptTags/types'
@@ -135,7 +135,7 @@ export type IGenPromptArgs = [
  * 供複合測試注入真 genPrompt、個別測試以替身取代時描述同一份型別。
  */
 export type IGenPromptFn = (
-	tags: IGenPromptTag[],
+	tags: IPromptTag[],
 	...args: IGenPromptArgs
 ) => string
 
@@ -149,7 +149,7 @@ export type IUpdatePromptFn = (host: IUpdatePromptHost) => void
  * genPrompt 測試案例。
  * 與既有案例同構：input = 標籤陣列、args = 額外參數、expected/assert 二選一。
  */
-export type IGenPromptCase = IRunCase<IGenPromptTag[], IGenPromptArgs, string>
+export type IGenPromptCase = IRunCase<IPromptTag[], IGenPromptArgs, string>
 
 /** updatePrompt 宿主回報的執行摘要（由 helpers 建立的測試替身收集）。 */
 export interface IUpdatePromptSummary {
@@ -162,7 +162,7 @@ export interface IUpdatePromptSummary {
 	/** commit 收到的 prompt（未提交時為空陣列） */
 	committed: string[]
 	/** 插入換行後的標籤陣列 */
-	tags: IGenPromptTag[]
+	tags: IPromptTag[]
 }
 
 /** appendTag 的單次呼叫記錄。 */
@@ -184,7 +184,7 @@ export interface IUpdatePromptAppendRecord {
  */
 export interface IUpdatePromptCase {
 	/** 宿主持有的標籤陣列（會被插入換行 mutate，故每案例各自獨立建立） */
-	tags: IGenPromptTag[]
+	tags: IPromptTag[]
 	/**
 	 * 換行插入選項（autoBreakBeforeWrap / autoBreakAfterWrap）。
 	 * runner 直接放入 host.options；省略時視為兩旗標皆關閉。
@@ -219,7 +219,7 @@ export interface IUpdatePromptHostOptions {
 	 * 傳入的陣列「不會」被 mutate：建立時會複製一份，
 	 * 避免 fixture 內的案例資料被上一個案例的插入動作污染。
 	 */
-	tags: readonly IGenPromptTag[]
+	tags: readonly IPromptTag[]
 	/** 宿主的選項值，建立替身時放入 host.options */
 	options: IHostPromptOptions
 	/**
@@ -232,7 +232,7 @@ export interface IUpdatePromptHostOptions {
 	 * 適配成此形狀（見 runUpdatePromptTests）。
 	 * 不傳時替身回傳 EnumPromptPlaceholder.GenPrompt，讓個別測試只驗證編排流程、不受組字邏輯影響。
 	 */
-	genPrompt?: (tags: IGenPromptTag[]) => string
+	genPrompt?: (tags: IPromptTag[]) => string
 	/**
 	 * true 時 refresh() 會重新呼叫 updatePrompt。
 	 * 用來重現元件的實際行為：updatePrompt → updateTags → updatePrompt。

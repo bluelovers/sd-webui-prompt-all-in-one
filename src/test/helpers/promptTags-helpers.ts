@@ -1,4 +1,4 @@
-import type { IGenPromptTag } from '../../src/utils/promptTags/genPrompt'
+import type { IPromptTag } from '../../src/utils/promptTags/genPrompt'
 import { updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
 import type { IUpdatePromptHost } from '../../src/utils/promptTags/updatePrompt'
 import type {
@@ -31,7 +31,7 @@ export function createUpdatePromptHost({
 	genPrompt,
 	reenter = false,
 }: IUpdatePromptHostOptions): ICreateUpdatePromptHostResult {
-	const workingTags: IGenPromptTag[] = tags.map(tag => ({ ...tag }))
+	const workingTags: IPromptTag[] = tags.map(tag => ({ ...tag }))
 	const appended: IUpdatePromptAppendRecord[] = []
 	const summary: IUpdatePromptSummary = {
 		appended,
