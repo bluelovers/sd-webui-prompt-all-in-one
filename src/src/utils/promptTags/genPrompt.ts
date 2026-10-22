@@ -17,7 +17,7 @@
  */
 
 import common from '../common'
-import { findTagUntil, tagIsBreak, tagIsLoraLike, tagIsSharp, tagIsWrap } from './util'
+import { findTagUntil, tagIsBreak, tagIsExtraNetworks, tagIsLoraLike, tagIsSharp, tagIsWrap } from './util'
 import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions'
 import { IHostPromptOptions } from './types'
 import { IPromptTag } from './tag-types'
@@ -28,6 +28,12 @@ import { IPromptTag } from './tag-types'
 export interface IGenPromptHooks {
     /** 原 this._setTag(tag)：tag.value / tag.localValue 被改寫時通知宿主持久化 */
     onTagChanged?: (tag: IPromptTag) => void
+    /**
+     * 要求宿主載入 Extra Networks（lora / lyco / embedding 清單）。
+     * 宿主（phystonPrompt.vue）接至 App 的 loadExtraNetworks()；
+     * 是否已載入由 options.requestLoadExtraNetworksCalled 標示。
+     */
+    onRequestLoadExtraNetworks?: () => void
 }
 
 /**
@@ -160,7 +166,24 @@ export function genPromptCore(
      * 避免每遇到換行就回頭掃描整行（多個換行時最壞 O(n²)）。
      */
     let lineHasSharp = false
+    /**
+     * 惰性載入 Extra Networks：輸出至第一個 lora / lyco / embedding tag 時才要求載入。
+     *
+     * 兩道條件缺一不可：宿主尚未載入（options.requestLoadExtraNetworksCalled=false），
+     * 且本次產生只發出一次請求——宿主旗標要到下輪渲染才會傳回，
+     * 同一輪連續多個 extra networks tag 不該重複要求。
+     *
+     * 已知限制：純 embedding prompt（不含 lora / lyco）永遠觸發不了載入。
+     * tag.isEmbedding 由 _setTagClass() 比對 embeddingExists() 成功才成立，
+     * 而 embeddingExists() 依賴已載入的 embeddings 清單，
+     * 因此未載入時 tagIsExtraNetworks(tag) 恆為 false，形成循環依賴。
+     * lora / lyco 不受影響：common.loraRegex / lycoRegex 為正則判定，不依賴清單。
+     */
+    let extraNetworksRequested = false
     tags2.forEach((tag, index) => {
+        if (!extraNetworksRequested && !options.requestLoadExtraNetworksCalled && tagIsExtraNetworks(tag)) {
+            extraNetworksRequested = true
+        }
         let prompt = ''
         if (tagIsWrap(tag)) {
             // 換行結束當前行 → 重置行狀態，供下一行重新累計
@@ -293,6 +316,14 @@ export function genPromptCore(
 
         if (prompt) prompts.push(prompt)
     })
+
+    if (extraNetworksRequested) {
+        console.log('extra networks requested')
+        setTimeout(() => {
+            hooks.onRequestLoadExtraNetworks?.()
+        }, 500)
+    }
+
     if (prompts.length <= 0) return ''
     // console.log('update tags', prompts)
     return prompts.join('')

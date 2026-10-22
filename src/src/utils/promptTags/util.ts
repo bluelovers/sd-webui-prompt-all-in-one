@@ -1,24 +1,34 @@
 import { ITSAnyOfUnion } from 'ts-type';
 import { EnumPromptTagType, IPromptTag } from './tag-types';
 
-export function tagIsLoraLike(item?: IPromptTag): item is IPromptTag & ITSAnyOfUnion<{ isLora: true; } | { isLyco: true }>
+export function tagIsLoraLike(tag?: IPromptTag): tag is IPromptTag & ITSAnyOfUnion<{ isLora: true; } | { isLyco: true }>
 {
-	return item?.isLora || item?.isLyco
+	return tag?.isLora || tag?.isLyco
 }
 
-export function tagIsWrap(item?: IPromptTag): item is IPromptTag & { type: EnumPromptTagType.wrap }
+export function tagIsWrap(tag?: IPromptTag): tag is IPromptTag & { type: EnumPromptTagType.wrap }
 {
-	return item?.type === EnumPromptTagType.wrap
+	return tag?.type === EnumPromptTagType.wrap
 }
 
-export function tagIsBreak(item?: IPromptTag): item is IPromptTag & { value: EnumPromptTagType.VALUE_BREAK }
+export function tagIsBreak(tag?: IPromptTag): tag is IPromptTag & { value: EnumPromptTagType.VALUE_BREAK }
 {
-	return item?.value?.trim() === EnumPromptTagType.VALUE_BREAK
+	return tag?.value?.trim() === EnumPromptTagType.VALUE_BREAK
 }
 
-export function tagIsDisabled(item?: IPromptTag): item is IPromptTag & { disabled: true }
+export function tagIsDisabled(tag?: IPromptTag): tag is IPromptTag & { disabled: true }
 {
-	return item?.disabled!
+	return tag?.disabled!
+}
+
+export function tagIsEmbedding(tag?: IPromptTag): tag is IPromptTag & { isEmbedding: true }
+{
+	return tag?.isEmbedding!
+}
+
+export function tagIsExtraNetworks(tag?: IPromptTag): tag is IPromptTag & ITSAnyOfUnion<{ isLora: true } | { isLyco: true } | { isEmbedding: true }>
+{
+	return tagIsLoraLike(tag) || tagIsEmbedding(tag)
 }
 
 /**

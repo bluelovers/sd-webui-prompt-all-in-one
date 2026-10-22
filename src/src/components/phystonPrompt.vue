@@ -688,6 +688,14 @@ export default {
             type: Array,
             default: () => [],
         },
+        /**
+         * App 端 loadExtraNetworks() 是否已呼叫過（App data 的同名鏡像）。
+         * 供 genPromptCore 判斷是否只需要求載入一次。
+         */
+        requestLoadExtraNetworksCalled: {
+            type: Boolean,
+            default: false,
+        },
         version: {
             type: String,
             default: '',
@@ -768,6 +776,7 @@ export default {
         'showExtraNetworks',
         'hideExtraNetworks',
         'refreshExtraNetworks',
+        'requestLoadExtraNetworks',
         'update:extraNetworksWidth',
         'update:extraNetworksHeight',
         'update:autoLoadWebuiPrompt',
@@ -1004,6 +1013,7 @@ export default {
         genPrompt(tags = null, ignoreDisabled = false) {
             return genPromptCore(tags || this.tags, ignoreDisabled, this, {
                 onTagChanged: tag => this._setTag(tag),
+                onRequestLoadExtraNetworks: () => this.$emit('requestLoadExtraNetworks'),
             })
         },
         /**

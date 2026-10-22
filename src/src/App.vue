@@ -73,6 +73,8 @@
                             @show-extra-networks="onShowExtraNetworks"
                             @hide-extra-networks="onHideExtraNetworks"
                             @refresh-extra-networks="onRefreshExtraNetworks"
+                            :extra-networks-load-called="requestLoadExtraNetworksCalled"
+                            @request-load-extra-networks="onRequestLoadExtraNetworks"
             ></physton-prompt>
         </template>
         <translate-setting ref="translateSetting" v-model:language-code="languageCode"
@@ -333,6 +335,12 @@ export default {
             loras: [],
             lycos: [],
             embeddings: [],
+            /**
+             * loadExtraNetworks() 是否已呼叫過。
+             * Extra Networks 只在 genPromptCore 首次輸出 extra networks tag 時載入一次，
+             * 本旗標同時供 phystonPrompt 判斷是否還需要求載入。
+             */
+            requestLoadExtraNetworksCalled: false,
 
             python: '',
             packagesState: [],
@@ -570,7 +578,7 @@ export default {
             return common.getLang(key, this.languageCode, this.languages)
         },
         init() {
-            this.loadExtraNetworks()
+            // this.loadExtraNetworks()
             let dataListsKeys = [
                 'languageCode',
                 'autoTranslate',
@@ -1101,6 +1109,17 @@ export default {
         },
         onRefreshExtraNetworks() {
             this._loadExtraNetworks()
+        },
+        /**
+         * genPromptCore 首次輸出 extra networks tag 時，要求載入 Extra Networks。
+         *
+         * 重複請求直接忽略：prop 的更新要到下輪渲染才會傳回 phystonPrompt，
+         * 同一個 tick 內可能被要求多次。
+         */
+        onRequestLoadExtraNetworks() {
+            if (this.requestLoadExtraNetworksCalled) return
+            this.requestLoadExtraNetworksCalled = true
+            this.loadExtraNetworks()
         },
     },
 }
