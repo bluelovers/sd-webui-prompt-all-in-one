@@ -124,6 +124,7 @@ export function shouldRemoveCommaByAutoOptimize(
             startIndex: index + 1,
             ignore: tagIsWrap,
             untilTarget: tagIsBreak,
+            maxLines: -1,
         })
         if (scan.found) return true
     }
