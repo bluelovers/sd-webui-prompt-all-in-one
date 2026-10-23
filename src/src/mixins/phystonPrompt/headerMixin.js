@@ -44,15 +44,16 @@ export default {
             autoInputPrompt: 'disabled',
             autoInputPromptKey: '',
             /**
-             * initAutoInputPrompt 初始化期間的歷史寫入抑制開關。
+             * initAutoInputPrompt「初始化完成」旗標：初始為 false，
+             * 待 initAutoInputPrompt 的資料取得與自動載入流程全部結束後設為 true（不再還原）。
              *
              * 原因：自動載入「上一條歷史 / 收藏」時會經由 useHistory() → updateTags()，
              * 而 updateTags() 會把當前 prompt 寫回歷史（setHistory / pushHistory），
              * 造成初始化階段產生一筆不必要的重複紀錄。
-             * 因此在初始化呼叫 useHistory/useFavorite 期間將此旗標設為 true，
-             * 讓 updateTags() 跳過歷史寫入；機制結束（同步鏈完成）後立即還原。
+             * 因此歷史寫入機制（updateTags() 內的判斷）只在本旗標為 true 時啟動，
+             * 即「初始化完成後」才開始寫入歷史。
              */
-            autoInputPromptInitializing: false,
+            autoInputPromptInitialized: false,
         }
     },
     computed: {
@@ -593,43 +594,51 @@ export default {
         },
         initAutoInputPrompt() {
             this.autoInputPromptKey = 'autoInputPrompt-' + this.name
+
+            this.autoInputPromptInitialized = false
+
+            /** 初始化結束（含無資料、無對應收藏、請求失敗）時啟動歷史寫入機制 */
+            const markInitialized = () => {
+                this.autoInputPromptInitialized = true
+            }
             this.gradioAPI.getData(this.autoInputPromptKey).then(res => {
-                if (res === null) return
+                if (res === null) {
+                    return markInitialized()
+                }
                 this.autoInputPrompt = res
                 if (this.autoInputPrompt === 'last') {
-                    this.gradioAPI.getLatestHistory(this.historyKey).then(res => {
-                        /** 抑制載入歷史時 updateTags() 重複寫回歷史 */
-                        this.autoInputPromptInitializing = true
-                        try {
-                            this.useHistory(res)
-                        } finally {
-                            this.autoInputPromptInitializing = false
-                        }
-                    })
+                    return this.gradioAPI.getLatestHistory(this.historyKey).then(res => this.useHistory(res))
                 } else {
-                    const getFavorites = () => {
-                        if (typeof window.phystonPromptfavorites === 'object' && window.phystonPromptfavorites.length > 0) {
-                            for (let item of window.phystonPromptfavorites) {
-                                for (let favorite of item.list) {
-                                    if (favorite.id === this.autoInputPrompt) {
-                                        /** 抑制載入收藏時 updateTags() 重複寫回歷史 */
-                                        this.autoInputPromptInitializing = true
-                                        try {
-                                            this.useFavorite(favorite)
-                                        } finally {
-                                            this.autoInputPromptInitializing = false
-                                        }
-                                        return
-                                    }
-                                }
+                    /** 輪詢等待收藏資料準備完成後 resolve 收藏清單；逾時則 resolve([]) 放棄載入 */
+                    const favoritesReady = new Promise(resolve => {
+                        const waitTimeout = 5000
+                        const waitInterval = 250
+                        const startTime = Date.now()
+                        const getFavorites = () => {
+                            if (typeof window.phystonPromptfavorites === 'object' && window.phystonPromptfavorites.length > 0) {
+                                resolve(window.phystonPromptfavorites)
+                                return
                             }
-                            return
+                            if (Date.now() - startTime >= waitTimeout) {
+                                /** 收藏資料遲未就緒（如 API 失敗），放棄等待，交由外層標記初始化完成 */
+                                resolve([])
+                                return
+                            }
+                            setTimeout(getFavorites, waitInterval)
                         }
-                        setTimeout(getFavorites, 100)
-                    }
-                    setTimeout(getFavorites, 100)
+                        setTimeout(getFavorites, waitInterval)
+                    })
+                    /** 回傳 promise 讓外層鏈在載入完成後才 markInitialized */
+                    return favoritesReady.then(favorites => {
+                        let target = null
+                        for (let item of favorites) {
+                            target = item.list.find(favorite => favorite.id === this.autoInputPrompt)
+                            if (target) break
+                        }
+                        if (target) this.useFavorite(target)
+                    })
                 }
-            })
+            }).catch(markInitialized).finally(markInitialized)
         },
     }
 }
