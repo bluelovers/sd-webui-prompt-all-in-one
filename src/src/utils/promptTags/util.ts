@@ -196,3 +196,8 @@ export function findTagUntil<T extends IPromptTag>(
 		startIndex,
 	}
 }
+
+export function findTagByID<T extends IPromptTag>(tags: readonly T[], id: string): T
+{
+	return tags.find(tag => tag.id === id)!
+}

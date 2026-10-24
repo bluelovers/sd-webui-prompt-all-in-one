@@ -1,6 +1,7 @@
 import common from "@/utils/common";
 import autoSizeInput from "autosize-input";
-import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap } from "@/utils/promptTags/util";
+import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap, findTagByID } from "@/utils/promptTags/util";
+import { renderTagCore } from "@/utils/promptTagRender/renderTag";
 import { _createTagBase, _createTagUuid } from "@/utils/promptTags/createTag";
 
 export default {
@@ -256,38 +257,7 @@ export default {
             })
         },
         renderTag(id) {
-            let tag = this.tags.find(tag => tag.id === id)
-            if (!tag) return ''
-            let value = tag.value
-            if (value === 'BREAK' && (this.autoBreakBeforeWrap || this.autoBreakAfterWrap)) {
-                value = '<div class="break-character">---------------------</div> <div class="character">BREAK</div> <div class="break-character">---------------------</div>'
-            } else {
-                value = common.escapeHtml(value)
-                if (tag.incWeight > 0) {
-                    if (this.useNovelAiWeightSymbol) {
-                        value = common.setLayers(value, 0, '{', '}')
-                        value = '<div class="character">' + value + '</div>'
-                        let start = '<div class="weight-character">' + '{'.repeat(tag.incWeight) + '</div>'
-                        let end = '<div class="weight-character">' + '}'.repeat(tag.incWeight) + '</div>'
-                        value = start + value + end
-                    } else {
-                        value = common.setLayers(value, 0, '(', ')')
-                        value = '<div class="character">' + value + '</div>'
-                        let start = '<div class="weight-character">' + '('.repeat(tag.incWeight) + '</div>'
-                        let end = '<div class="weight-character">' + ')'.repeat(tag.incWeight) + '</div>'
-                        value = start + value + end
-                    }
-                } else if (tag.decWeight > 0) {
-                    value = common.setLayers(value, 0, '[', ']')
-                    value = '<div class="character">' + value + '</div>'
-                    let start = '<div class="weight-character">' + '['.repeat(tag.decWeight) + '</div>'
-                    let end = '<div class="weight-character">' + ']'.repeat(tag.decWeight) + '</div>'
-                    value = start + value + end
-                } else {
-                    value = '<div class="character">' + value + '</div>'
-                }
-            }
-            return value
+            return renderTagCore(findTagByID(this.tags, id), this)
         },
         isFavorite(id) {
             let tag = this.tags.find(tag => tag.id === id)

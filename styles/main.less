@@ -14,6 +14,7 @@
     // common
     --physton-common-red: #d81e06;
     --physton-common-blue: #4a54ff;
+    --physton-common-green: #008000;
 
     // icon-svg
     --iconSvg-padding: 1px;
@@ -691,6 +692,9 @@
 
     // .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .weight-character
     --pp-pt-dsb-ptl-pt-ptm-pte-ptv-weightCharacter-color: @common-red;
+
+    // .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .dec-weight-character
+    --pp-pt-dsb-ptl-pt-ptm-pte-ptv-decWeightCharacter-color: @common-green;
 
     // .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .break-character
     --pp-pt-dsb-ptl-pt-ptm-pte-ptv-breakCharacter-color: #c6c6c6;
@@ -2295,6 +2299,7 @@
 
 @common-red: var(--physton-common-red);
 @common-blue: var(--physton-common-blue);
+@common-green: var(--physton-common-green);
 
 .set-icon-svg(@width: 20px, @height: 20px, @fill: none, @className: icon-svg) when (@fill=none) {
     /*.@{className} {
@@ -3213,6 +3218,10 @@
 
                             .weight-character {
                                 color: var(--pp-pt-dsb-ptl-pt-ptm-pte-ptv-weightCharacter-color);
+                            }
+
+                            .dec-weight-character {
+                                color: var(--pp-pt-dsb-ptl-pt-ptm-pte-ptv-decWeightCharacter-color);
                             }
 
                             .break-character {

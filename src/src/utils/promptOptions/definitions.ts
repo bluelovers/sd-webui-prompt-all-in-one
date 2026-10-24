@@ -219,14 +219,17 @@ export type IPromptOptionValueDefaultKey = keyof Pick<I_PromptOptionEntry, 'data
 export type IPromptOptionValue = I_PromptOptionEntry['dataDefault'] | boolean
 
 /**
- * 對外揭露的選項值記錄表型別：以 IPromptOptionKey 為索引的鍵值對。
+ * 對外揭露的選項值記錄表：以 IPromptOptionKey 為索引的鍵值對。
  */
 export type IPromptOptionValueRecord = Record<IPromptOptionKey, IPromptOptionValue>
 
 /**
- * 對外揭露的選項值記錄表型別：包含主鍵與舊鍵的聯合索引。
+ * 對外揭露的選項值記錄表：包含主鍵與舊鍵的聯合索引。
  */
 export type IPromptOptionValueRecordWithLegacy = Record<IPromptOptionKeyAndLegacyStorage, IPromptOptionValue>
+
+/** 運行時的選項值記錄表：包含主鍵與舊鍵的聯合索引（選填） */
+export type IPromptOptionValueRecordWithLegacyRuntime = Partial<IPromptOptionValueRecordWithLegacy>
 
 export type IPromptOptionCheckUi = I_PromptOptionCheckUi<IPromptOptionCheckUiLabelLangKey, IPromptOptionKey>
 
