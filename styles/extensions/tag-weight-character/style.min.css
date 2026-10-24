@@ -1,3 +1,3 @@
-.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .weight-character{font-weight:700;padding:0 1px}
+.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .weight-character{--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family:"Arial","Helvetica Neue","Segoe UI","Noto Sans","Liberation Sans",sans-serif;font-weight:900;font-synthesis:weight;-webkit-text-stroke:2px currentColor;font-family:var(--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family);padding:0 1px}
 .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .weight-character:first-of-type{padding-right:3px}
 .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .weight-character:last-of-type{padding-left:3px}
