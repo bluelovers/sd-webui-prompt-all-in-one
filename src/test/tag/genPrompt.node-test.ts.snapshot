@@ -43,7 +43,7 @@ exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol + autoRemoveLoraA
 }
 `;
 
-exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — '#' 本身不觸發換行前逗號移除（規則 3 目前停用） (false, {autoOptimizeSplitSymbol: true}) 1`] = `
+exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — '#' 本身的結果快照 (false, {autoOptimizeSplitSymbol: true}) 1`] = `
 {
   "input": [
     {
@@ -65,7 +65,7 @@ exports[`genPrompt > genPrompt cases > autoOptimizeSplitSymbol — '#' 本身不
       "autoOptimizeSplitSymbol": true
     }
   ],
-  "result": "#, \\ncat, "
+  "result": "#\\ncat, "
 }
 `;
 

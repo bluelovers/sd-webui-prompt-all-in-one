@@ -134,8 +134,22 @@ export function caseTitle(tc: ICaseBare): string {
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
  *   ])
  *
+ *   // 部分比對與自訂 callback（callback 拿得到 t，可用 t.assert.* 續寫）
+ *   runCases('basic', myFn, [
+ *     { input: { a: 1, b: 2 }, partialExpected: { a: 1 } },
+ *     { input: 'a', assert: (result, t) => t.assert.match(result, /^a$/) },
+ *   ])
+ *
  *   // 啟用快照
- *   runCases('basic', myFn, [ ... ], { snapshot: true })
+ *   runCases('basic', myFn, [ ... ], { suiteSnapshot: true })
+ *
+ *   // 只記錄快照、不斷言的案例：一般測試組不開 suiteAllowSnapshotOnly，個別案例自行標記
+ *   runCases('basic', myFn, [
+ *     { input: 'a', caseAllowSnapshotOnly: true },
+ *   ], { suiteSnapshot: true })
+ *
+ *   // 專存快照的測試組：整組允許省略斷言，不必逐筆標記（個別案例可用 caseAllowSnapshotOnly: false 收回）
+ *   runCases('snapshots', myFn, [ ... ], { suiteSnapshot: true, suiteAllowSnapshotOnly: true })
  *
  *   // 傳入 factory function（lazy import）
  *   runCases('basic', () => import('./myModule.js').then(m => m.default), [
@@ -148,32 +162,69 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
     cases: readonly IRunCase<TInput, TArgs, TResult>[],
     options: IRunCasesOptions = {},
 ): void {
-    /** snapshot: true 時額外寫入快照 { input, args?, result }（與 splitTags 同格式） */
-    const { snapshot = false } = options
+    /**
+     * suiteSnapshot: true 時整組寫入快照 { input, args?, result }（與 splitTags 同格式）。
+     * suiteAllowSnapshotOnly: true 是「整組允許省略斷言」，只給專存快照的測試組；
+     * 一般測試組靠案例自己的 caseAllowSnapshotOnly 逐筆決定。
+     */
+    const { suiteSnapshot = false, suiteAllowSnapshotOnly = false } = options
     describe(suiteName, async () => {
-        forEachCase(cases, caseTitle, async (tc, t) => {
+        forEachCase(cases, caseTitle, async (tc, t: TestContext) => {
             /**
-             * 案例必須自帶期望（expected 或 assert 其一），快照僅為回歸紀錄、不構成驗證。
-             * 以 in 而非 !== undefined 判斷：允許案例明寫 expected: undefined 描述
-             * 「回傳 undefined」的合法結果。
+             * 快照是否落盤：case 級 true 時即使 suite 未開也寫，
+             * 其餘（省略與 false）一律跟隨 suiteSnapshot，不另建 case 級關閉邏輯。
              */
-            if (tc.assert === undefined && !('expected' in tc)) {
-                throw new Error(`案例缺少必要性驗證（需提供 expected 或 assert）：${caseTitle(tc)}`)
+            const writeSnapshot = tc.caseSnapshot === true || suiteSnapshot
+            /**
+             * 此案例是否獲准省略斷言：
+             * case 級明確 true → 允許、明確 false → 收回，省略時跟隨 suiteAllowSnapshotOnly。
+             *
+             * 以 in 而非 !== undefined 判斷期望欄位：允許案例明寫 expected: undefined
+             * 描述「回傳 undefined」的合法結果。
+             *
+             * 缺斷言的兩道把關（快照只是回歸紀錄，不構成斷言）：
+             *   1. 未獲允許 — 拋錯，避免新增案例漏寫期望卻靜默通過
+             *   2. 已獲允許但無處可記 — 拋錯，案例既無斷言也無快照等於空跑
+             */
+            const hasExpected = 'expected' in tc
+            const hasPartialExpected = 'partialExpected' in tc
+            const hasAssert = tc.assert !== undefined
+            const hasVerdict = hasExpected || hasPartialExpected || hasAssert
+            if (!hasVerdict) {
+                const allowed = tc.caseAllowSnapshotOnly ?? suiteAllowSnapshotOnly
+                if (!allowed) {
+                    /** case 級明確 false 代表收回 suite 的允許，訊息須指出是誰要求斷言 */
+                    const reason = tc.caseAllowSnapshotOnly === false
+                        ? 'caseAllowSnapshotOnly: false 已收回 suiteAllowSnapshotOnly 的允許，此案例仍缺少 expected / partialExpected / assert'
+                        : '案例缺少必要性驗證（需提供 expected、partialExpected、assert，或標記 caseAllowSnapshotOnly: true；專存快照的測試組可改用 suiteAllowSnapshotOnly）'
+                    throw new Error(`${reason}：${caseTitle(tc)}`)
+                }
+                if (!writeSnapshot) {
+                    throw new Error(`允許省略斷言的案例須搭配快照（suiteSnapshot 或 caseSnapshot: true），否則此案例既無斷言也無紀錄：${caseTitle(tc)}`)
+                }
             }
             /** args 為空時展開空陣列：等價於「不傳額外參數」 */
             const result = await fn(tc.input, ...(tc.args ?? ([] as unknown as TArgs)))
-            if (snapshot) {
+            if (writeSnapshot) {
                 /** key 順序 input → args? → result 會被序列化到 .snapshot，須與既有快照一致 */
                 const snap: IRunCasesSnap<TInput, TArgs, TResult> = tc.args !== undefined
                     ? { input: tc.input, args: tc.args, result }
                     : { input: tc.input, result }
                 t.assert.snapshot(snap)
             }
-            if (tc.assert) {
-                tc.assert(result)
-            } else {
+            /**
+             * 案例宣告的斷言全部執行，任一失敗即中止該案例：
+             * expected 走 deepEqual 完全比對、partialExpected 走 partialDeepStrictEqual 部分比對、
+             * assert 為自訂 callback（拿到 t，可用 t.assert.* 續寫）。
+             * 允許省略斷言的案例在此必定三者皆無，不需分支。
+             */
+            if (hasExpected) {
                 t.assert.deepEqual(result, tc.expected)
             }
+            if (hasPartialExpected) {
+                t.assert.partialDeepStrictEqual(result, tc.partialExpected)
+            }
+            tc.assert?.(result, t)
         })
     })
 }

@@ -53,6 +53,22 @@ export type ISplitByPeriodFn = (
 /**
  * data-driven 測試案例的共用泛型基底。
  * 供 runCases 系列的案例使用：輸入、額外參數、期望值、自訂斷言與 skip。
+ * 案例的斷言來源，可任選其一或多個併用：
+ *   - 僅 expected                — t.assert.deepEqual 完全比對回傳值
+ *   - 僅 partialExpected         — t.assert.partialDeepStrictEqual 部分比對（子結構相符即可）
+ *   - 僅 assert                  — 執行自訂斷言 callback(result, t)
+ *   - 多者併用                   — 全部執行，任一失敗即中止該案例
+ *   - 全部省略                   — 不寫任何斷言，只留下結果紀錄；
+ *                                  需 caseAllowSnapshotOnly: true 或 suiteAllowSnapshotOnly 明確允許
+ * 斷言 callback 一律接收 node:test 的 TestContext t，
+ * 可直接呼叫 t.assert.*（含 partialDeepStrictEqual）擴充驗證。
+ * 快照與允許各有 suite / case 兩級，名稱以前綴區分：
+ *   - suiteSnapshot / suiteAllowSnapshotOnly — 整組生效，給專存快照的測試組
+ *   - caseSnapshot / caseAllowSnapshotOnly   — 只作用於單一案例；
+ *     allow 表示「允許省略斷言」，不是強制此案例只能寫快照
+ * 快照是回歸紀錄，不是斷言：允許省略斷言的案例只被記錄，不被驗證。
+ * 一般測試組不開 suiteAllowSnapshotOnly，少數只記錄的案例自行標記 caseAllowSnapshotOnly: true；
+ * 新增案例漏寫 expected/assert 時仍會立即失敗。
  * 各被測函式的案例型別皆由此衍生，避免重複定義同一組欄位。
  */
 export interface IRunCase<
@@ -66,10 +82,37 @@ export interface IRunCase<
 	args?: TArgs
 	/** 附加說明（顯示在測試標題中） */
 	note?: string
-	/** 期望回傳值（與 assert 二選一） */
+	/**
+	 * 期望回傳值：以 t.assert.deepEqual 完全比對。
+	 * 與 partialExpected / assert 共存時全部執行，不是二選一；
+	 * 明寫 undefined 表示「期望回傳 undefined」的合法結果。
+	 */
 	expected?: TResult
-	/** 自訂斷言 fn(result)，若有則取代 expected */
-	assert?: (result: TResult) => void
+	/**
+	 * 部分比對期望：以 t.assert.partialDeepStrictEqual 檢查，
+	 * 只要求子結構相符，其餘欄位不受限。
+	 * 與 expected / assert 共存時全部執行。
+	 */
+	partialExpected?: TResult
+	/**
+	 * 自訂斷言 fn(result, t)：t 為 node:test 的 TestContext，
+	 * 可直接使用 t.assert.*（含 partialDeepStrictEqual）。
+	 * 與 expected / partialExpected 共存時全部執行。
+	 */
+	assert?: (result: TResult, t: TestContext) => void
+	/**
+	 * case 級：允許此案例省略 expected/assert，只留下結果快照（不做斷言）。
+	 *   - 省略 — 依 suite 的 suiteAllowSnapshotOnly 決定；未允許時必須提供 expected/assert
+	 *   - true — 此案例省略斷言仍成立，不需 suite 開啟 suiteAllowSnapshotOnly
+	 *   - false — 取消 suite 的允許：即使 suiteAllowSnapshotOnly 為 true，此案例仍須提供 expected/assert
+	 * 與 expected / assert 併存時照常執行斷言，不構成宣告矛盾。
+	 */
+	caseAllowSnapshotOnly?: boolean
+	/**
+	 * case 級：true 時此案例寫入快照；僅此一種有效值。
+	 * 省略與 false 皆不另外處理，一律跟隨 suite 的 suiteSnapshot。
+	 */
+	caseSnapshot?: boolean
 	/** true 時跳過此案例 */
 	skip?: boolean
 }
@@ -144,7 +187,9 @@ export type IUpdatePromptFn = (host: IUpdatePromptHost) => void
 
 /**
  * genPrompt 測試案例。
- * 與既有案例同構：input = 標籤陣列、args = 額外參數、expected/assert 二選一。
+ * 與既有案例同構：input = 標籤陣列、args = 額外參數；
+ * expected / partialExpected / assert 可共存（全部執行），
+ * 或由案例自行標記 caseAllowSnapshotOnly: true 只留下結果快照（suite 不開 suiteAllowSnapshotOnly）。
  */
 export type IGenPromptCase = IRunCase<IPromptTag[], IGenPromptArgs, string>
 
@@ -245,8 +290,19 @@ export interface ICreateUpdatePromptHostResult {
 
 /** runCases 的選項。 */
 export interface IRunCasesOptions {
-	/** true 時額外寫入快照 { input, args?, result } */
-	snapshot?: boolean
+	/** suite 級：true 時整組案例寫入快照 { input, args?, result } */
+	suiteSnapshot?: boolean
+	/**
+	 * suite 級：true 時整組案例允許省略 expected/assert，只留下結果快照（不做斷言）。
+	 * 案例不必逐筆標記 caseAllowSnapshotOnly，個別案例仍可以 caseAllowSnapshotOnly: false
+	 * 收回這份允許、改回必須提供斷言。
+	 * 只給「專門保存快照的測試組」使用；一般測試組請保持關閉，
+	 * 讓少數只記錄的案例自行標記 caseAllowSnapshotOnly: true，其餘案例維持斷言。
+	 * 快照是回歸紀錄而非斷言，故這類案例本身不被驗證，
+	 * 且須搭配快照（suiteSnapshot 或該案例的 caseSnapshot: true），否則案例空跑。
+	 * 預設 false：未提供 expected/assert 的案例一律拋錯。
+	 */
+	suiteAllowSnapshotOnly?: boolean
 }
 
 /** runSplitTagsTests 的選項（被測函式由呼叫端注入，這裡只負責編排與斷言）。 */

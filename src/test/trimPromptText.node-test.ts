@@ -24,6 +24,7 @@ import { trimPromptText } from '../src/utils/trimPromptText'
  *    2. 邊界水平空白修剪（空格、tab）——僅頭尾，內部保留
  *    3. 換行是結構（\n / \r）——不得修剪
  *    4. 執行順序：先清不可見字元再修剪（被零寬空格卡住的邊界空白也要清）
+ *    5. mojibake 序列（Latin-1 / Windows-1252 誤讀的零寬空格）——三字元整段清除、合法字符不誤刪
  * ==================================================================== */
 
 const cleanupCases: IRunCase<string, [], string>[] = [
@@ -72,6 +73,28 @@ const cleanupCases: IRunCase<string, [], string>[] = [
         note: 'mixed edge cleanup: invisible + spaces' },
     { input: ' \u200b a\tx\u200b ', expected: 'a\tx',
         note: 'internal tab kept while edges fully cleaned' },
+    /** ── 5. mojibake 序列（Latin-1 誤讀的零寬空格：â + C1 + C1 三字元整段）── */
+    { input: '\u00e2\u0080\u008babc, def', expected: 'abc, def',
+        note: 'leading mojibake ZWSP sequence removed' },
+    { input: 'abc\u00e2\u0080\u008b, def', expected: 'abc, def',
+        note: 'internal mojibake ZWSP sequence removed' },
+    { input: 'abc, def\u00e2\u0080\u008b', expected: 'abc, def',
+        note: 'trailing mojibake ZWSP sequence removed' },
+    { input: 'a\u00e2\u0080\u008b\u00e2\u0080\u008b\u00e2\u0080\u008bb', expected: 'ab',
+        note: 'three consecutive mojibake ZWSP sequences (the reported âââ) removed' },
+    { input: ' cr\u00e2me br\u00fbl\u00e9e', expected: 'cr\u00e2me br\u00fbl\u00e9e',
+        note: 'legitimate â kept — bare U+00E2 without C1 follow-up is not mojibake' },
+    /** ── 6. mojibake 序列（Windows-1252 變體：â + € + ‹ 三字元整段）── */
+    { input: '\u00e2\u20ac\u2039abc, def', expected: 'abc, def',
+        note: 'leading cp1252 mojibake ZWSP sequence removed' },
+    { input: 'abc\u00e2\u20ac\u2039, def', expected: 'abc, def',
+        note: 'internal cp1252 mojibake ZWSP sequence removed' },
+    { input: 'abc, def\u00e2\u20ac\u2039', expected: 'abc, def',
+        note: 'trailing cp1252 mojibake ZWSP sequence removed' },
+    { input: 'a\u00e2\u20ac\u2039\u00e2\u20ac\u2039\u00e2\u20ac\u2039b', expected: 'ab',
+        note: 'three consecutive cp1252 mojibake sequences removed' },
+    { input: ' pay â€10 or 50€ ', expected: 'pay â€10 or 50€',
+        note: 'legitimate € / truncated â€ kept — cp1252 match needs the full â + € + ‹ sequence' },
     /** --- */
 ]
 

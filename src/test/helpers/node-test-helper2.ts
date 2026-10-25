@@ -55,12 +55,13 @@ export function assertNoOrphanCommaRegressions(tagResult: IPromptTagValue[], t: 
 }
 
 /**
- * 斷言：結果中不得殘留不可見字元（\x00 NULL、\u200b 零寬空格）。
+ * 斷言：結果中不得殘留不可見字元（\x00 NULL、\u200b 零寬空格）
+ * 或其 mojibake 序列（Latin-1：â + C1 + C1；Windows-1252：â + € + ‹）。
  * 來源：輸入清理（trimPromptText）應在 splitTags 入口完成清除。
  */
 export function assertNoInvisibleChars(tagResult: IPromptTagValue[], t: TestContext)
 {
-	const INVISIBLE_RE = /[\x00\u200b]/
+	const INVISIBLE_RE = new RegExp(`[\\x00\\u200b]|${promptInvisibleMojibakes.join('|')}`)
 	const polluted = tagResult.filter(tag => INVISIBLE_RE.test(tag))
 	t.assert.deepEqual(polluted, [],
 		`不得殘留不可見字元: ${JSON.stringify(polluted)}`,
@@ -119,7 +120,7 @@ export function assertHashCountPreserved(
  * 各條的實作依據：
  *   - splitTags.pushSegment 以 temp.trim() 推送、text==='' 直接 return
  *   - splitTags lora 後處理的 before/after 皆 .trim()，空值 continue（不產生空段）
- *   - splitTags 入口 trimPromptText 清除 \x00 與 \u200b
+ *   - splitTags 入口 trimPromptText 清除 \x00、\u200b 及其 mojibake 序列
  *   - splitTags 分行於 \n 即切割，故段內不會殘留 \n、段邊不會殘留水平空白
  *   - splitByPeriod 僅在分割符後接空白時切割，且分割符後的空白會被跳過；
  *     其輸入是已修剪的 splitTags 段落，故不會產生空段

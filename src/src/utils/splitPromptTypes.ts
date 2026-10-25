@@ -83,9 +83,22 @@ export const enum EnumPromptInvisibleChar {
 }
 
 /**
- * 不可見字元（相容於 js：接受原始字串）。
+ * 零寬空格的 mojibake 序列（依誤讀編碼分變體）。
+ *
+ * U+200B 的 UTF-8 bytes（E2 80 8B）被以 Latin-1 或 Windows-1252 誤解碼時，
+ * 各展開成不同的三字元序列：
+ *   - Latin-1：â（U+00E2）+ U+0080 + U+008B — 後兩者是不可見的 C1 控制字元，外觀僅看得見 â
+ *   - Windows-1252：â（U+00E2）+ €（U+20AC）+ ‹（U+2039）— 三者皆可見
+ *
+ * 兩者源頭都是零寬空格。清除時必須整段移除：â 本身是合法字母（如法文），
+ * €、‹ 也可獨立出現，只有完整三字元序列才能認定為殘骸，不可拆成單字元個別刪。
  */
-export type IPromptInvisibleChar = ITSTypeAndStringLiteral<EnumPromptInvisibleChar>
+export const enum EnumPromptInvisibleMojibake {
+    /** 零寬空格 U+200B 的 Latin-1 mojibake：â + U+0080 + U+008B */
+    zeroWidthSpaceLatin1 = '\u00e2\u0080\u008b',
+    /** 零寬空格 U+200B 的 Windows-1252 mojibake：â + € + ‹（U+00E2 U+20AC U+2039） */
+    zeroWidthSpaceCp1252 = '\u00e2\u20ac\u2039',
+}
 
 /* ====================================================================
  *  定義（由 enum 派生的執行期資料，對應 promptOptions/definitions.ts 的角色）
@@ -131,6 +144,13 @@ export const promptBracketPairsReversed: Readonly<Record<EnumPromptBracketClose,
     [EnumPromptBracketClose.angle]: EnumPromptBracketOpen.angle,
     [EnumPromptBracketClose.curly]: EnumPromptBracketOpen.curly,
 }
+
+/** mojibake 序列全體（清除 regex 的交替分支）。
+ *  TODO: 若未來新增其他誤讀來源，只需在 EnumPromptInvisibleMojibake 與此清單同步補上。 */
+export const promptInvisibleMojibakes: readonly EnumPromptInvisibleMojibake[] = [
+    EnumPromptInvisibleMojibake.zeroWidthSpaceLatin1,
+    EnumPromptInvisibleMojibake.zeroWidthSpaceCp1252,
+]
 
 /**
  * 型別守衛：是否為開括號。

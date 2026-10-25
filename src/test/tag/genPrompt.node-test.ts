@@ -24,6 +24,9 @@ describe('genPrompt', () => {
      * ── genPrompt 案例 ──
      * 案例與期望值皆定義於 fixture/data-genPrompt.ts 的 genPromptCases，
      * 共用 runCases 的案例格式與快照寫入。
+     * 不開 suiteAllowSnapshotOnly（整組允許只給專存快照的測試組）：
+     * 第五組的 '#' 案例自行標記 caseAllowSnapshotOnly: true，只留下結果快照、不做斷言，
+     * 其餘案例照常提供斷言。
      */
-    runCases('genPrompt cases', genPromptCore, genPromptCases, { snapshot: true })
+    runCases('genPrompt cases', genPromptCore, genPromptCases, { suiteSnapshot: true })
 })

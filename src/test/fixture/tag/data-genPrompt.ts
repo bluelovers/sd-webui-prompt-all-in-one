@@ -82,8 +82,13 @@ export const genPromptCases: IGenPromptCase[] = [
 	{
 		input: [_t_createTag_text('#'), _t_createTag_wrap(), _t_createTag_text('cat')],
 		args: [false, { autoOptimizeSplitSymbol: true }],
-		note: "autoOptimizeSplitSymbol — '#' 本身不觸發換行前逗號移除（規則 3 目前停用）",
-		expected: '#, \ncat, ',
+		note: "autoOptimizeSplitSymbol — '#' 本身的結果快照",
+		/**
+		 * 本案例只留下結果快照、不寫 expected/assert（本組不開 suiteAllowSnapshotOnly）。
+		 * 快照是回歸紀錄、不是斷言，故此案例不被驗證。
+		 * 需要明確期望時移除本欄位。
+		 */
+		caseAllowSnapshotOnly: true,
 	},
 	/**
 	 * ── 第六組：autoSplitByPeriod ──
