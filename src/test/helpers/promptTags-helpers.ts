@@ -1,6 +1,4 @@
-import type { IPromptTag } from '../../src/utils/promptTags/genPrompt'
 import { updatePromptCore } from '../../src/utils/promptTags/updatePrompt'
-import type { IUpdatePromptHost } from '../../src/utils/promptTags/updatePrompt'
 import type {
 	ICreateUpdatePromptHostResult,
 	IUpdatePromptAppendRecord,
@@ -11,7 +9,7 @@ import type {
 import { EnumPromptPlaceholder, type IUpdatePromptSnap } from './types/snap-types'
 import { caseTitle, forEachCase } from './node-test-helpers'
 import { assertUpdatePromptContract } from './node-test-helper2'
-import { IPromptTagType, IPromptTagValue } from '#/src/utils/promptTags/tag-types'
+import { IPromptTag, IPromptTagType, IPromptTagValue } from '#/src/utils/promptTags/tag-types'
 
 /**
  * 建立 updatePrompt 的宿主替身。

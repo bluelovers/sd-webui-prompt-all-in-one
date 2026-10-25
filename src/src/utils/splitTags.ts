@@ -10,6 +10,8 @@ import {
     type IPromptBracketClose,
     type IPromptBracketOpen,
 } from './splitPromptTypes'
+import { _isNotAllowedValueOrEmpty, _normalizeTagValueAndTrim } from './promptTags/util/tag-normalize'
+import { IPromptTagValue, IPromptTagValueRuntimeInput } from './promptTags/tag-types'
 
 /**
  * 分割選項。
@@ -21,20 +23,6 @@ export interface ISplitTagsOptions {
      *  true：連續換行最多保留一個空行（\n{3,} → \n\n），兩個以上的空行仍會被壓縮。 */
     allowKeepEmptyLine?: boolean
 }
-
-/**
- * 分割入口的輸入型別。
- * 傳入 false / null / undefined 與空白字串時回傳空陣列（沿用既有防禦行為）。
- * TODO: 目前為寬鬆型別——js 呼叫端可能傳入非預期值，日後收斂為 string 並在呼叫端修正。
- */
-export type ISplitTagsInput = string | false | null | undefined
-
-/**
- * 單一分割結果片段。
- * TODO: 目前為寬鬆型別（純 string），日後收斂為區辨聯集
- *       （文字片段 | 分行標記 | BREAK 關鍵字），以型別取代散布的字串比對。
- */
-export type ITagSegment = string
 
 /**
  * 行級 runtime 狀態介面。
@@ -90,16 +78,17 @@ const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
  * 分割标签（对外入口）。
  *
  * 處理前先以 trimPromptText() 清理輸入：清除不可見字元（\x00、\u200b）
- * 並修剪邊界水平空白（保留換行結構）。
+ * 及其 mojibake 序列（Latin-1 / Windows-1252 兩種誤讀變體），並修剪
+ * 邊界水平空白（保留換行結構）。
  *
- * @param {ISplitTagsInput} tags
+ * @param {IPromptTagValueRuntimeInput} tags
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
  * @param {ISplitTagsOptions} [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
- * @returns {ITagSegment[]}
+ * @returns {IPromptTagValue[]}
  */
-export function splitTags(tags: ISplitTagsInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): ITagSegment[] {
-    if (tags === null || tags === undefined || tags === false || tags === "" || tags.trim() === "") return []
+export function splitTags(tags: IPromptTagValueRuntimeInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): IPromptTagValue[] {
+    if (_isNotAllowedValueOrEmpty(tags)) return []
     return splitRaw(trimPromptText(tags), true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
 }
 
@@ -146,9 +135,9 @@ function createLineState(): IPromptLineState {
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
  * @param {ISplitTagsOptions} [options]
- * @returns {ITagSegment[]}
+ * @returns {IPromptTagValue[]}
  */
-function splitRaw(tags: string, allowSingleQuote: boolean, autoBreakBeforeWrap: boolean, autoBreakAfterWrap: boolean, options: ISplitTagsOptions = {}): ITagSegment[] {
+function splitRaw(tags: IPromptTagValue, allowSingleQuote: boolean, autoBreakBeforeWrap: boolean, autoBreakAfterWrap: boolean, options: ISplitTagsOptions = {}): IPromptTagValue[] {
     const { allowKeepEmptyLine = false } = options
 
     /**
@@ -197,7 +186,7 @@ function splitRaw(tags: string, allowSingleQuote: boolean, autoBreakBeforeWrap: 
      * 新增行級變數時只需加進 createLineState()，不會再發生遺漏重置。
      */
     const lineState = createLineState()
-    let result: ITagSegment[] = []
+    let result: IPromptTagValue[] = []
 
     /**
      * 推送一段文字：唯一的事實來源，分行分段、逗號分段、BREAK、收尾皆共用。
@@ -337,7 +326,7 @@ function splitRaw(tags: string, allowSingleQuote: boolean, autoBreakBeforeWrap: 
     }
     pushSegment()
 
-    let result2: ITagSegment[] = []
+    let result2: IPromptTagValue[] = []
     for (let value of result) {
         if (value === EnumPromptSplitMarker.newline) {
             result2.push(value)

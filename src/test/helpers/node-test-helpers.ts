@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test'
 import type { TestContext } from 'node:test'
 import crypto from 'node:crypto'
-import type { ITagSegment } from '../../src/utils/splitTags'
+import { IPromptTagValue } from '#/src/utils/promptTags/tag-types'
 import type {
     IOriginalComparisonSnap,
     IRunCasesSnap,
@@ -206,7 +206,7 @@ export function runSplitTagsTests({
 }: ISplitTagsTestsOptions): void {
     forEachCase(cases, caseTitle, (tc, t) => {
         /** Step 1: splitTags 切割 */
-        const tagResult: ITagSegment[] = splitTags(tc.input, ...(tc.args ?? []))
+        const tagResult: IPromptTagValue[] = splitTags(tc.input, ...(tc.args ?? []))
 
         /** Step 1.5: 形狀不變式 */
         assertSplitShape(tagResult, t)
@@ -215,7 +215,7 @@ export function runSplitTagsTests({
         if (tc.assertResult) tc.assertResult(tagResult, t)
 
         /** Step 2: splitByPeriod 管線 */
-        let finalResult: ITagSegment[] = tagResult
+        let finalResult: IPromptTagValue[] = tagResult
         let changed = false
         if (splitByPeriod) {
             finalResult = tagResult.flatMap(tag => splitByPeriod(tag, tc.splitByPeriodOptions))
@@ -272,7 +272,7 @@ export type IOriginalComparison =
         /** 與原版結果是否有差異 */
         changedFromOriginal: boolean
         /** 原版輸出；僅在 changedFromOriginal=true 時寫入快照 */
-        originalResult: ITagSegment[]
+        originalResult: IPromptTagValue[]
     }
 
 /**
@@ -289,7 +289,7 @@ export type IOriginalComparison =
 export function compareWithOriginal(
     originalFn: ISplitTagsFn | undefined,
     tc: ISplitTagsPipelineCase,
-    result: ITagSegment[],
+    result: IPromptTagValue[],
     t: TestContext,
 ): IOriginalComparison {
     if (!originalFn) return { hasOriginal: false }

@@ -1,13 +1,11 @@
 
-import type { IPeriodPart } from '../../../src/utils/splitByPeriod'
-import type { ITagSegment } from '../../../src/utils/splitTags'
-import type { IPromptTag } from '../../../src/utils/promptTags/genPrompt'
 import type {
 	IGenPromptArgs,
 	ISplitByPeriodArgs,
 	IUpdatePromptAppendRecord,
 } from './node-test-case-types'
 import { IHostPromptOptions } from '#/src/utils/promptTags/types'
+import { IPromptTag, IPromptTagValue } from '#/src/utils/promptTags/tag-types'
 
 /**
  * 測試中使用的佔位字串列舉。
@@ -30,7 +28,7 @@ export interface IOriginalComparisonSnap {
 	/** 與原版結果是否有差異（原版不存在時不寫入此欄位） */
 	changedFromOriginal?: boolean
 	/** 僅在 changedFromOriginal=true 時附加的原版結果 */
-	originalResult?: ITagSegment[]
+	originalResult?: IPromptTagValue[]
 }
 
 /**
@@ -51,7 +49,7 @@ export interface IRunCasesSnap<
 }
 
 /** splitByPeriod 的快照（runCases + snapshot:true）。 */
-export type ISplitByPeriodSnap = IRunCasesSnap<unknown, ISplitByPeriodArgs, IPeriodPart[]>
+export type ISplitByPeriodSnap = IRunCasesSnap<unknown, ISplitByPeriodArgs, IPromptTagValue[]>
 
 /** genPrompt 的快照（runCases + snapshot:true）。 */
 export type IGenPromptSnap = IRunCasesSnap<IPromptTag[], IGenPromptArgs, string>
@@ -64,7 +62,7 @@ export interface ISplitTagsSnap extends IOriginalComparisonSnap {
 	/** 傳入 splitTags 的輸入（可能是非字串防禦值） */
 	input: unknown
 	/** splitTags 的切割結果 */
-	result: ITagSegment[]
+	result: IPromptTagValue[]
 }
 
 /**
@@ -75,11 +73,11 @@ export interface ISplitTagsPipelineSnap extends IOriginalComparisonSnap {
 	/** 傳入 splitTags 的輸入 */
 	input: unknown
 	/** 第一階段（splitTags）的切割結果 */
-	splitTagsResult: ITagSegment[]
+	splitTagsResult: IPromptTagValue[]
 	/** splitByPeriod 是否改變了 splitTags 的輸出 */
 	splitByPeriodChanged: boolean
 	/** 僅在 splitByPeriodChanged=true 時寫入的管線最終結果 */
-	splitByPeriodResult?: ITagSegment[]
+	splitByPeriodResult?: IPromptTagValue[]
 }
 
 /**

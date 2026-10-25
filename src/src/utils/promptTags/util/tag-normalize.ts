@@ -1,5 +1,11 @@
 import { sortObjectKeys } from 'sort-object-keys2';
-import { EnumPromptTagType, IPromptTag, IPromptTagBase, IPromptTagValue } from '../tag-types';
+import {
+	EnumPromptTagType,
+	IPromptTag,
+	IPromptTagBase,
+	IPromptTagValue,
+	IPromptTagValueRuntimeInput,
+} from '../tag-types';
 
 /**
  * _sortPromptTagKeys() 使用的鍵名排序表：依 _setTag() 填入欄位的順序分組排列
@@ -46,8 +52,17 @@ export function _sortPromptTagKeys<T extends IPromptTagBase>(tag: T): T
 /**
  * 將 null / undefined / false 統一正規化為內部空字串 (VALUE_INTERNAL_EMPTY)。
  */
-export function _normalizeTagValue<T extends IPromptTagValue>(value?: T | null | undefined | false): T
+export function _normalizeTagValue<T extends IPromptTagValue>(value?: IPromptTagValueRuntimeInput<T>): T
 {
 	return value === null || value === undefined || value === false ? EnumPromptTagType.VALUE_INTERNAL_EMPTY as T: value
 }
 
+export function _normalizeTagValueAndTrim<T extends IPromptTagValue>(value?: IPromptTagValueRuntimeInput<T>): T
+{
+	return _normalizeTagValue(value).trim() as T
+}
+
+export function _isNotAllowedValueOrEmpty<T extends IPromptTagValue>(value: IPromptTagValueRuntimeInput<T>): value is null | undefined | false
+{
+	return _normalizeTagValueAndTrim(value) === EnumPromptTagType.VALUE_INTERNAL_EMPTY
+}

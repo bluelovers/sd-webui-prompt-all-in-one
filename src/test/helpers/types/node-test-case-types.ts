@@ -1,20 +1,17 @@
 
 import type { TestContext } from 'node:test'
 import type {
-	ISplitTagsInput,
 	ISplitTagsOptions,
-	ITagSegment,
-} from '../../../src/utils/splitTags'
+} from '#/src/utils/splitTags'
 import type {
 	ISplitByPeriodOptions,
-	IPeriodPart,
-} from '../../../src/utils/splitByPeriod'
+} from '#/src/utils/splitByPeriod'
 import type {
 	IGenPromptHooks,
-	IPromptTag,
-} from '../../../src/utils/promptTags/genPrompt'
-import type { IUpdatePromptHost } from '../../../src/utils/promptTags/updatePrompt'
+} from '#/src/utils/promptTags/genPrompt'
+import type { IUpdatePromptHost } from '#/src/utils/promptTags/updatePrompt'
 import { IHostPromptOptions } from '#/src/utils/promptTags/types'
+import { IPromptTag, IPromptTagValue, IPromptTagValueRuntimeInput } from '#/src/utils/promptTags/tag-types'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -40,18 +37,18 @@ export type ISplitByPeriodArgs = [
  * 對應 src/utils/splitTags.splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options)。
  */
 export type ISplitTagsFn = (
-	tags: ISplitTagsInput,
+	tags: IPromptTagValueRuntimeInput,
 	...args: ISplitTagsArgs
-) => ITagSegment[]
+) => IPromptTagValue[]
 
 /**
  * splitByPeriod 的函式簽名。
- * 第一個參數為 unknown（被測函式內建非字串防禦），回傳 IPeriodPart[]。
+ * 第一個參數為 unknown（被測函式內建非字串防禦），回傳 IPromptTagValue[]。
  */
 export type ISplitByPeriodFn = (
 	str: unknown,
 	...args: ISplitByPeriodArgs
-) => IPeriodPart[]
+) => IPromptTagValue[]
 
 /**
  * data-driven 測試案例的共用泛型基底。
@@ -81,7 +78,7 @@ export interface IRunCase<
  * splitByPeriod 單獨測試案例。
  * 格式與 fixture/data-splitByPeriod.ts 表頭說明一致。
  */
-export type ISplitByPeriodCase = IRunCase<unknown, ISplitByPeriodArgs, IPeriodPart[]>
+export type ISplitByPeriodCase = IRunCase<unknown, ISplitByPeriodArgs, IPromptTagValue[]>
 
 /**
  * splitTags 測試案例。
@@ -89,7 +86,7 @@ export type ISplitByPeriodCase = IRunCase<unknown, ISplitByPeriodArgs, IPeriodPa
  */
 export interface ISplitTagsCase {
 	/** 傳入 splitTags 的第一個參數（非字串防禦值亦可） */
-	input: ISplitTagsInput
+	input: IPromptTagValueRuntimeInput
 	/** 額外參數陣列 [autoBreakBeforeWrap, autoBreakAfterWrap, options] */
 	args?: ISplitTagsArgs
 	/** 附加說明（顯示在測試標題中） */
@@ -97,7 +94,7 @@ export interface ISplitTagsCase {
 	/** 期望與 splitTags_original 的結果是否有差異 */
 	expectOriginalChanged?: boolean
 	/** 自訂斷言 fn(tagResult, t)——除快照外再鎖定關鍵行為 */
-	assertResult?: (tagResult: ITagSegment[], t: TestContext) => void
+	assertResult?: (tagResult: IPromptTagValue[], t: TestContext) => void
 	/** true 時跳過此案例（由 helpers/node-test-helpers.forEachCase 統一處理） */
 	skip?: boolean
 }
@@ -116,7 +113,7 @@ export interface ISplitTagsPipelineCase extends ISplitTagsCase {
 	 * 與 assertResult 的差異：拿到的是 splitByPeriod 之後的最終陣列，
 	 * 可驗證「兩階段合計」的不變式（如分隔符數量守恆）。
 	 */
-	assertPipeline?: (finalResult: ITagSegment[], t: TestContext, tc: ISplitTagsPipelineCase) => void
+	assertPipeline?: (finalResult: IPromptTagValue[], t: TestContext, tc: ISplitTagsPipelineCase) => void
 }
 
 /**

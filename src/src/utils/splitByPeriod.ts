@@ -1,3 +1,4 @@
+import { IPromptTagValue } from './promptTags/tag-types'
 import {
     EnumPromptBracketClose,
     EnumPromptQuoteChar,
@@ -27,13 +28,6 @@ export interface ISplitByPeriodOptions {
      */
     splitSemicolon?: boolean
 }
-
-/**
- * 切割結果片段。
- * TODO: 目前為寬鬆型別（純 string），日後收斂為區辨聯集
- *       （文字片段 | 分行標記），與 splitTags.ITagSegment 統一。
- */
-export type IPeriodPart = string
 
 /**
  * 行級 runtime 狀態介面。
@@ -87,7 +81,7 @@ function createLineState(): IPeriodLineState {
  *
  * @param {unknown} str - 要切割的原始字串。非字串時以 String() 轉換為單一元素陣列回傳（防禦 js 呼叫端）。
  * @param {ISplitByPeriodOptions} [options] - 切割選項。
- * @returns {IPeriodPart[]} 切割後的片段陣列。若無可切割點則回傳包含完整字串的單元素陣列。
+ * @returns {IPromptTagValue[]} 切割後的片段陣列。若無可切割點則回傳包含完整字串的單元素陣列。
  *
  * @example
  *   splitByPeriod("xxx. (111. 222)", { includeParen: true })
@@ -117,7 +111,7 @@ function createLineState(): IPeriodLineState {
  *   splitByPeriod("a;;; b", { splitSemicolon: true })
  *   // → ["a;;;", "b"]       （連續分號全數保留，不縮減）
  */
-export function splitByPeriod(str: unknown, { includeParen, splitSemicolon }: ISplitByPeriodOptions = {}): IPeriodPart[] {
+export function splitByPeriod(str: unknown, { includeParen, splitSemicolon }: ISplitByPeriodOptions = {}): IPromptTagValue[] {
     if (typeof str !== 'string') return [String(str)]
     return walk(str, includeParen, splitSemicolon, true)
 }
@@ -132,12 +126,12 @@ export function splitByPeriod(str: unknown, { includeParen, splitSemicolon }: IS
  *   主呼叫為 true；若收尾時單引號仍未關閉（false positive，如所有格 orks'），
  *   以 false 重走——忽略該單引號，重新套用句號／分號／分行／括號規則。
  *   未關閉雙引號不觸發重走（保持保護到結尾）。
- * @returns {IPeriodPart[]}
+ * @returns {IPromptTagValue[]}
  */
-function walk(str: string, includeParen: boolean | undefined, splitSemicolon: boolean | undefined, allowSingleQuote: boolean): IPeriodPart[] {
+function walk(str: string, includeParen: boolean | undefined, splitSemicolon: boolean | undefined, allowSingleQuote: boolean): IPromptTagValue[] {
 
     const len = str.length
-    const parts: IPeriodPart[] = []
+    const parts: IPromptTagValue[] = []
     /**
      * 行級 runtime 狀態：所有「僅作用於當前行」的變數集中於此。
      * 分行時由 splitAtNewline() 呼叫 lineState.reset() 一併重置。

@@ -13,7 +13,7 @@
  */
 
 import { tagIsBreak, tagIsWrap } from './util'
-import type { IPromptTag } from './genPrompt'
+import { IPromptTag } from './tag-types'
 import type { IHostPromptOptions } from './types'
 
 /**

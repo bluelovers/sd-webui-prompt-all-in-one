@@ -1,4 +1,3 @@
-import type { IPromptTag } from '../../src/utils/promptTags/genPrompt'
 import { EnumPromptTagType, IPromptTag, IPromptTagValue } from '../../src/utils/promptTags/tag-types'
 
 export type ITestPromptTagProps = Partial<Omit<IPromptTag, 'type' | 'value'>>;

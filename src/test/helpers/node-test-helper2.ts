@@ -1,5 +1,6 @@
 import type { TestContext } from 'node:test'
-import type { ITagSegment } from '../../src/utils/splitTags'
+import { IPromptTagValue } from '#/src/utils/promptTags/tag-types'
+import { promptInvisibleMojibakes } from '../../src/utils/splitPromptTypes'
 import type {
 	IUpdatePromptSummary,
 	ISplitTagsPipelineCase,
@@ -17,7 +18,7 @@ import type {
  *   1. 不得存在值恰為 "," 的 tag（孤兒分隔逗號）。
  *   2. 不得存在以 "," 結尾的 tag（分隔符被誤留在 tag 內容尾端）。
  */
-export function assertNoOrphanCommaTags(tagResult: ITagSegment[], t: TestContext)
+export function assertNoOrphanCommaTags(tagResult: IPromptTagValue[], t: TestContext)
 {
 	const orphans = tagResult.filter(tag => tag === ',')
 	t.assert.deepEqual(orphans, [],
@@ -36,7 +37,7 @@ export function assertNoOrphanCommaTags(tagResult: ITagSegment[], t: TestContext
  * 來源 issue 同上：孤兒逗號出現時，lora 前的 before 殘片會帶尾隨逗號，
  * 破壞 lora 單元的完整性。
  */
-export function assertLoraTagsIntact(tagResult: ITagSegment[], t: TestContext)
+export function assertLoraTagsIntact(tagResult: IPromptTagValue[], t: TestContext)
 {
 	const broken = tagResult.filter(tag => tag.startsWith('<lora:') && !/^<lora:[^>]+>$/.test(tag))
 	t.assert.deepEqual(broken, [],
@@ -47,7 +48,7 @@ export function assertLoraTagsIntact(tagResult: ITagSegment[], t: TestContext)
 /**
  * issues 回歸案例共用斷言：孤兒逗號 + lora 完整性。
  */
-export function assertNoOrphanCommaRegressions(tagResult: ITagSegment[], t: TestContext)
+export function assertNoOrphanCommaRegressions(tagResult: IPromptTagValue[], t: TestContext)
 {
 	assertNoOrphanCommaTags(tagResult, t)
 	assertLoraTagsIntact(tagResult, t)
@@ -57,7 +58,7 @@ export function assertNoOrphanCommaRegressions(tagResult: ITagSegment[], t: Test
  * 斷言：結果中不得殘留不可見字元（\x00 NULL、\u200b 零寬空格）。
  * 來源：輸入清理（trimPromptText）應在 splitTags 入口完成清除。
  */
-export function assertNoInvisibleChars(tagResult: ITagSegment[], t: TestContext)
+export function assertNoInvisibleChars(tagResult: IPromptTagValue[], t: TestContext)
 {
 	const INVISIBLE_RE = /[\x00\u200b]/
 	const polluted = tagResult.filter(tag => INVISIBLE_RE.test(tag))
@@ -69,7 +70,7 @@ export function assertNoInvisibleChars(tagResult: ITagSegment[], t: TestContext)
 /**
  * 斷言：首尾 tag 不得多餘水平空白（邊界空白應已修剪；\n 標記除外）。
  */
-export function assertNoEdgeWhitespace(tagResult: ITagSegment[], t: TestContext)
+export function assertNoEdgeWhitespace(tagResult: IPromptTagValue[], t: TestContext)
 {
 	const segments = tagResult.filter(tag => tag !== '\n')
 	const first = segments[0] ?? ''
@@ -96,7 +97,7 @@ export function assertNoEdgeWhitespace(tagResult: ITagSegment[], t: TestContext)
  * @param tc          - 測試案例（以 input 計算基準數量）
  */
 export function assertHashCountPreserved(
-	finalResult: ITagSegment[],
+	finalResult: IPromptTagValue[],
 	t: TestContext,
 	tc: ISplitTagsPipelineCase,
 )
@@ -127,7 +128,7 @@ export function assertHashCountPreserved(
  * @param result - splitTags 或 splitTags → splitByPeriod 的輸出
  * @param t      - node:test 的 TestContext（提供 assert）
  */
-export function assertSplitShape(result: ITagSegment[], t: TestContext): void {
+export function assertSplitShape(result: IPromptTagValue[], t: TestContext): void {
 	t.assert.equal(Array.isArray(result), true, '切割結果應為陣列')
 	for (let i = 0; i < result.length; i++) {
 		const segment = result[i]

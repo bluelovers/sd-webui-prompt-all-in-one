@@ -37,6 +37,8 @@ export type IPromptTagType = EnumPromptTagType.lora | EnumPromptTagType.lyco | E
 export type IPromptTagValueEnum = Exclude<EnumPromptTagType, IPromptTagType>;
 export type IPromptTagValue = ITSTypeAndStringLiteral<IPromptTagValueEnum> | (string & {});
 
+export type IPromptTagValueRuntimeInput<T extends IPromptTagValue = IPromptTagValue> = T | null | undefined | false;
+
 /**
  * src/src/mixins/phystonPrompt/tagMixin.js
  * RESTOREABLE_PROPERTIES
