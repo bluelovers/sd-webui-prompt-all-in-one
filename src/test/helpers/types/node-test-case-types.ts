@@ -1,9 +1,6 @@
 
 import type { TestContext } from 'node:test'
 import type {
-	ISplitTagsOptions,
-} from '#/src/utils/splitTags'
-import type {
 	ISplitByPeriodOptions,
 } from '#/src/utils/splitByPeriod'
 import type {
@@ -12,6 +9,7 @@ import type {
 import type { IUpdatePromptHost } from '#/src/utils/promptTags/updatePrompt'
 import { IHostPromptOptions } from '#/src/utils/promptTags/types'
 import { IPromptTag, IPromptTagValue, IPromptTagValueRuntimeInput } from '#/src/utils/promptTags/tag-types'
+import { IPromptOptionValueRecordWithLegacyRuntime } from '#/src/utils/promptOptions/definitions'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -20,7 +18,7 @@ import { IPromptTag, IPromptTagValue, IPromptTagValueRuntimeInput } from '#/src/
 export type ISplitTagsArgs = [
 	autoBreakBeforeWrap?: boolean,
 	autoBreakAfterWrap?: boolean,
-	options?: ISplitTagsOptions,
+	options?: IPromptOptionValueRecordWithLegacyRuntime,
 ]
 
 /**

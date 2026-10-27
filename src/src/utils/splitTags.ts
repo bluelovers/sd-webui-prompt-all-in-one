@@ -1,4 +1,5 @@
 import { trimPromptText } from './trimPromptText'
+import { repairMojibake } from './repairMojibake'
 import {
     EnumPromptBracketClose,
     EnumPromptBracketOpen,
@@ -12,17 +13,7 @@ import {
 } from './splitPromptTypes'
 import { _isNotAllowedValueOrEmpty, _normalizeTagValueAndTrim } from './promptTags/util/tag-normalize'
 import { IPromptTagValue, IPromptTagValueRuntimeInput } from './promptTags/tag-types'
-
-/**
- * 分割選項。
- * 廢充選項集中於此物件，避免參數隨功能增加而爆炸。
- */
-export interface ISplitTagsOptions {
-    /** 是否允許保持一個空行（預設 false）。
-     *  false：連續換行一律壓縮為單一換行（\n+ → \n）。
-     *  true：連續換行最多保留一個空行（\n{3,} → \n\n），兩個以上的空行仍會被壓縮。 */
-    allowKeepEmptyLine?: boolean
-}
+import { IPromptOptionValueRecordWithLegacyRuntime } from './promptOptions/definitions'
 
 /**
  * 行級 runtime 狀態介面。
@@ -79,7 +70,8 @@ const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
  *
  * 處理前先以 trimPromptText() 清理輸入：清除不可見字元（\x00、\u200b）
  * 及其 mojibake 序列（Latin-1 / Windows-1252 兩種誤讀變體），並修剪
- * 邊界水平空白（保留換行結構）。
+ * 邊界水平空白（保留換行結構）。options.autoRepairMojibake 開啟時，
+ * 清理之前更先以 repairMojibake() 還原整段 mojibake 文字。
  *
  * @param {IPromptTagValueRuntimeInput} tags
  * @param {boolean} autoBreakBeforeWrap
@@ -87,9 +79,13 @@ const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
  * @param {ISplitTagsOptions} [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
  * @returns {IPromptTagValue[]}
  */
-export function splitTags(tags: IPromptTagValueRuntimeInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: ISplitTagsOptions = {}): IPromptTagValue[] {
+export function splitTags(tags: IPromptTagValueRuntimeInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: IPromptOptionValueRecordWithLegacyRuntime = {}): IPromptTagValue[] {
     if (_isNotAllowedValueOrEmpty(tags)) return []
-    return splitRaw(trimPromptText(tags), true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
+    let input: string = tags
+    if (options.autoRepairMojibake) {
+        input = repairMojibake(input).text
+    }
+    return splitRaw(trimPromptText(input), true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
 }
 
 export default splitTags
@@ -137,7 +133,7 @@ function createLineState(): IPromptLineState {
  * @param {ISplitTagsOptions} [options]
  * @returns {IPromptTagValue[]}
  */
-function splitRaw(tags: IPromptTagValue, allowSingleQuote: boolean, autoBreakBeforeWrap: boolean, autoBreakAfterWrap: boolean, options: ISplitTagsOptions = {}): IPromptTagValue[] {
+function splitRaw(tags: IPromptTagValue, allowSingleQuote: boolean, autoBreakBeforeWrap: boolean, autoBreakAfterWrap: boolean, options: IPromptOptionValueRecordWithLegacyRuntime = {}): IPromptTagValue[] {
     const { allowKeepEmptyLine = false } = options
 
     /**

@@ -163,6 +163,15 @@ const _promptOptions = [
         note: '僅影響 prompt 解析階段（splitTags 的連續換行壓縮上限），不影響輸出格式，因此只需儲存設定；下次解析（載入提示詞 / 輸入變動）時生效。',
     },
     {
+        key: 'autoRepairMojibake',
+        dataDefault: false,
+        propDefault: false,
+        afterSave: EnumPromptOptionAfterSave.saveOnly,
+        emittedBy: [EnumPromptOptionComponent.promptFormat],
+        checkUi: {labelLangKey: 'is_auto_repair_mojibake'},
+        note: '僅影響 prompt 解析階段：splitTags 入口先以 repairMojibake() 還原被以 Latin-1/Windows-1252 誤讀的 UTF-8 文字，再清理與切割。不影響輸出格式，因此只需儲存設定；下次解析（載入提示詞 / 輸入變動）時生效。',
+    },
+    {
         key: 'autoSplitByPeriod',
         dataDefault: false,
         propDefault: false,

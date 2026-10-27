@@ -945,9 +945,7 @@ export default {
 
             let value = this.textarea.value.trim()
             if (value === this.prompt.trim()) return
-            let tags = common.splitTags(value, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, {
-                allowKeepEmptyLine: this.allowKeepEmptyLine,
-            })
+            let tags = common.splitTags(value, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this)
 
             let disabledTags = []
             this.tags.forEach((tag, index) => {
@@ -1324,9 +1322,7 @@ export default {
             this.useHistory(favorite)
         },
         useChatgpt(prompt) {
-            let tags = common.splitTags(prompt, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, {
-                allowKeepEmptyLine: this.allowKeepEmptyLine,
-            })
+            let tags = common.splitTags(prompt, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this)
             this.tags = []
             tags.forEach(tag => {
                 this._appendTag(tag, '', false, -1, 'text')

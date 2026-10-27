@@ -13,6 +13,7 @@ exports[`promptOptions:snapshot 1`] = `
     "autoRemoveBeforeLineComma": false,
     "autoOptimizeSplitSymbol": false,
     "allowKeepEmptyLine": false,
+    "autoRepairMojibake": false,
     "autoSplitByPeriod": false,
     "autoSplitByPeriodIncludeParen": false,
     "autoSplitByPeriodSemicolon": false
@@ -30,6 +31,7 @@ exports[`promptOptions:snapshot 1`] = `
     "autoRemoveBeforeLineComma": false,
     "autoOptimizeSplitSymbol": false,
     "allowKeepEmptyLine": true,
+    "autoRepairMojibake": false,
     "autoSplitByPeriod": true,
     "autoSplitByPeriodIncludeParen": true,
     "autoSplitByPeriodSemicolon": true,

@@ -29,6 +29,7 @@
                             v-model:auto-split-by-period-semicolon="autoSplitByPeriodSemicolon"
                             v-model:auto-optimize-split-symbol="autoOptimizeSplitSymbol"
                             v-model:allow-keep-empty-line="allowKeepEmptyLine"
+                            v-model:auto-repair-mojibake="autoRepairMojibake"
                             :hide-default-input="item.hideDefaultInput"
                             @update:hide-default-input="onUpdateHideDefaultInput(item.id, $event)"
                             :auto-load-webui-prompt="item.autoLoadWebuiPrompt"
@@ -108,6 +109,7 @@
                        v-model:auto-split-by-period-semicolon="autoSplitByPeriodSemicolon"
                        v-model:auto-optimize-split-symbol="autoOptimizeSplitSymbol"
                        v-model:allow-keep-empty-line="allowKeepEmptyLine"
+                       v-model:auto-repair-mojibake="autoRepairMojibake"
         ></prompt-format>
         <blacklist ref="blacklist" v-model:language-code="languageCode"
                    :translate-apis="translateApis"
