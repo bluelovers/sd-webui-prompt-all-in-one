@@ -66,26 +66,76 @@ const EMOJI_GUARDS: readonly IEmojiGuard[] = [
 const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
 
 /**
+ * splitTags 側邊鉤子（獨立第 5 參數）。
+ *
+ * 鉤子不放進選項參數：IPromptOptionValueRecordWithLegacyRuntime 僅承載
+ * 選項值（純資料記錄），回呼類的非選項資料一律以獨立參數傳入，
+ * 不與選項記錄混用。
+ * Runtime hooks live in a dedicated parameter; the options record stays
+ * a pure option-value record.
+ */
+export interface ISplitTagsHooks {
+    /** JSON 物件防護通知：輸入為合法 {} JSON、切割被跳過（整段保留單一 tag）時呼叫。
+     *  text 為清理（與可選修復）後的完整字串，
+     *  供 UI 提示「該字串為 JSON、已忽略切割處理」。 */
+    onJsonIgnored?: (text: string) => void
+}
+
+/**
+ * 是否為「{} 包裹且 JSON.parse 成功」的物件字串。
+ *
+ * 只認完整合法的 JSON 物件；陣列、純值與殘缺 JSON 照常切割。
+ * 刻意不解析內容尋找提示詞欄位：以 ComfyUI 工作流 meta 為例，
+ * 可攜帶提示詞的節點種類過多且格式不統一，無法可靠分析，
+ * 故整段當作不透明值保留。
+ *
+ * @param {string} text - 待判定字串（以 trim 後的外觀判定）
+ * @returns {boolean}
+ */
+function isJsonObjectText(text: string): boolean {
+    const trimmed = text.trim()
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return false
+    try {
+        JSON.parse(trimmed)
+        return true
+    } catch {
+        return false
+    }
+}
+
+/**
  * 分割标签（对外入口）。
  *
  * 處理前先以 trimPromptText() 清理輸入：清除不可見字元（\x00、\u200b）
  * 及其 mojibake 序列（Latin-1 / Windows-1252 兩種誤讀變體），並修剪
  * 邊界水平空白（保留換行結構）。options.autoRepairMojibake 開啟時，
  * 清理之前更先以 repairMojibake() 還原整段 mojibake 文字。
+ * 輸入若為合法 {} JSON（如 ComfyUI 工作流 meta），修復與清理照做，
+ * 但不進入切割：整段保留為單一 tag，並呼叫 options.onJsonIgnored。
  *
  * @param {IPromptTagValueRuntimeInput} tags
  * @param {boolean} autoBreakBeforeWrap
  * @param {boolean} autoBreakAfterWrap
- * @param {ISplitTagsOptions} [options] - 扩充选项集中于此物件，避免参数随功能增加而爆炸。
+ * @param {IPromptOptionValueRecordWithLegacyRuntime} [options] - 選項值記錄（純資料），集中擴充避免參數隨功能增加而爆炸。
+ * @param {ISplitTagsHooks} [hooks] - 側邊鉤子（回呼類非選項資料），獨立傳入、不混入選項記錄。
  * @returns {IPromptTagValue[]}
  */
-export function splitTags(tags: IPromptTagValueRuntimeInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: IPromptOptionValueRecordWithLegacyRuntime = {}): IPromptTagValue[] {
+export function splitTags(tags: IPromptTagValueRuntimeInput, autoBreakBeforeWrap = false, autoBreakAfterWrap = false, options: IPromptOptionValueRecordWithLegacyRuntime = {}, hooks: ISplitTagsHooks = {}): IPromptTagValue[] {
     if (_isNotAllowedValueOrEmpty(tags)) return []
     let input: string = tags
     if (options.autoRepairMojibake) {
         input = repairMojibake(input).text
     }
-    return splitRaw(trimPromptText(input), true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
+    input = trimPromptText(input)
+    /**
+     * JSON 物件防護：修復與清理照做（上方已完成），但不進入切割——
+     * 內容無法可靠分析（見 isJsonObjectText），整段保留並通知呼叫端。
+     */
+    if (isJsonObjectText(input)) {
+        hooks.onJsonIgnored?.(input)
+        return [input]
+    }
+    return splitRaw(input, true, autoBreakBeforeWrap, autoBreakAfterWrap, options)
 }
 
 export default splitTags

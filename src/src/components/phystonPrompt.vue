@@ -945,7 +945,9 @@ export default {
 
             let value = this.textarea.value.trim()
             if (value === this.prompt.trim()) return
-            let tags = common.splitTags(value, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this)
+            let tags = common.splitTags(value, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this, {
+                onJsonIgnored: (text) => this.onJsonIgnored(text),
+            })
 
             let disabledTags = []
             this.tags.forEach((tag, index) => {
@@ -1006,6 +1008,19 @@ export default {
                 this.$toastr.success(this.getLang('success'))
             }).catch(() => {
                 this.$toastr.error(this.getLang('failed'))
+            })
+        },
+        /**
+         * splitTags JSON 防護回呼（ISplitTagsHooks.onJsonIgnored）。
+         *
+         * 輸入為合法 {} JSON（如 ComfyUI 工作流 meta，節點異質無法分析
+         * 提示詞欄位）時切割被跳過，在此提示「該字串為 JSON、已忽略
+         * 切割處理」。preventDuplicates：輸入框持續編輯時同訊息不堆疊。
+         */
+        onJsonIgnored() {
+            this.$toastr.info(this.getLang('json_input_split_skipped'), undefined, {
+                preventDuplicates: true,
+                timeOut: 8000,
             })
         },
         genPrompt(tags = null, ignoreDisabled = false) {
@@ -1322,7 +1337,9 @@ export default {
             this.useHistory(favorite)
         },
         useChatgpt(prompt) {
-            let tags = common.splitTags(prompt, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this)
+            let tags = common.splitTags(prompt, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this, {
+                onJsonIgnored: (text) => this.onJsonIgnored(text),
+            })
             this.tags = []
             tags.forEach(tag => {
                 this._appendTag(tag, '', false, -1, 'text')

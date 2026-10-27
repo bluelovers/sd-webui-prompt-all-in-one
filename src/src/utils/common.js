@@ -138,10 +138,12 @@ export default {
      * @param options {object} 扩充选项（集中传递，便于后续新增而不动签名）
      * @param options.allowKeepEmptyLine {boolean} 是否允许保持一个空行（连续换行压缩上限为一个空行）
      * @param options.autoRepairMojibake {boolean} 是否在解析前自动还原 mojibake（被以 Latin-1/Windows-1252 误读的 UTF-8 文字）
+     * @param hooks {object} 侧边钩子（回呼类非选项资料，独立参数、不混入选项记录）
+     * @param hooks.onJsonIgnored {function} 输入为合法 {} JSON、切割被跳过时的通知回呼（(text) => void，text 为清理后字串）
      * @returns {string[]}
      */
-    splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options) {
-        return splitTags(tags, autoBreakBeforeWrap, autoBreakAfterWrap, options)
+    splitTags(...args) {
+        return splitTags(...args)
     },
 
     /**
