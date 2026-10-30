@@ -1,6 +1,6 @@
 
 import type { IGenPromptCase } from '../../helpers/types/node-test-case-types';
-import { _t_createTag_brk, _t_createTag_lora, _t_createTag_text, _t_createTag_wrap } from '../../helpers/tag-factories';
+import { _t_createTag_brk, _t_createTag_lora, _t_createTag_lora_weight, _t_createTag_lyco, _t_createTag_text, _t_createTag_wrap } from '../../helpers/tag-factories';
 
 
 export const genPromptCases: IGenPromptCase[] = [
@@ -112,5 +112,108 @@ export const genPromptCases: IGenPromptCase[] = [
 		input: [{ ..._t_createTag_text('cat'), disabled: true }],
 		note: '全部為 disabled — 回傳空字串',
 		expected: '',
+	},
+	/**
+	 * ── 第八組：autoRemoveDuplicateLora ──
+	 * 以名稱為重複鍵去除重複的 Lora / Lyco，保留最後一個（filterDuplicateLoraTags）。
+	 * `#` 之後（同分行）與 disabled 的 Lora 不參與去重。
+	 */
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_lora('foo')],
+		note: 'autoRemoveDuplicateLora 關閉（預設）— 重複 Lora 一律保留',
+		expected: '<lora:foo:1>, <lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_lora('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 同名重複只保留最後一個',
+		expected: '<lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_lora('bar'), _t_createTag_lora('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 三個中移除最早的 foo，bar 不受影響',
+		expected: '<lora:bar:1>, <lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_lora_weight('foo', 1), _t_createTag_lora_weight('foo', '0.5')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 權重不視為差異，保留最後一個（權重 0.5）',
+		expected: '<lora:foo:0.5>, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_lyco('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — lora / lyco 同名視為同一個，保留最後一個',
+		expected: '<lyco:foo:1>, ',
+	},
+	{
+		input: [
+			{ ..._t_createTag_lora_weight('foo', 1), loraName: 'foo' },
+			{ ..._t_createTag_lora_weight('foo', '0.5'), loraName: 'foo' },
+		],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — loraName 存在時直接作為重複鍵，不手動解析 value',
+		expected: '<lora:foo:0.5>, ',
+	},
+	{
+		input: [
+			{ ..._t_createTag_lora('foo'), loraName: 'foo' },
+			{ ..._t_createTag_text('foo bar'), isLora: true, loraName: 'foo' },
+		],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — loraName 優先於 value：value 手動解析結果不同仍視為重複',
+		expected: 'foo bar, ',
+	},
+	{
+		input: [
+			{ ..._t_createTag_lyco('foo'), lycoName: 'foo' },
+			{ ..._t_createTag_text('foo bar'), isLyco: true, lycoName: 'foo' },
+		],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — lycoName 存在時直接作為重複鍵',
+		expected: 'foo bar, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_lora('bar')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 名稱不同不互相去重',
+		expected: '<lora:foo:1>, <lora:bar:1>, ',
+	},
+	{
+		input: [_t_createTag_text('cat'), _t_createTag_text('cat')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 一般文字 tag 的重複不受影響',
+		expected: 'cat, cat, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_text('#'), _t_createTag_lora('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: "autoRemoveDuplicateLora — '#' 之後的 Lora 不參與去重，兩個 foo 都保留",
+		expected: '<lora:foo:1>, #, <lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_text('#'), _t_createTag_lora('foo'), _t_createTag_wrap(), _t_createTag_lora('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — # 保護僅限該行，下一行的同名 Lora 參與去重後保留最後一個',
+		expected: '#, <lora:foo:1>, \n<lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), _t_createTag_wrap(), _t_createTag_lora('foo')],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — 分行不阻斷去重，跨行同名仍保留最後一個',
+		expected: '\n<lora:foo:1>, ',
+	},
+	{
+		input: [_t_createTag_lora('foo'), { ..._t_createTag_lora('foo'), disabled: true }],
+		args: [false, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora — disabled 的 Lora 不參與去重（預設已先行過濾 disabled）',
+		expected: '<lora:foo:1>, ',
+	},
+	{
+		input: [{ ..._t_createTag_lora('foo'), disabled: true }, _t_createTag_lora('foo')],
+		args: [true, { autoRemoveDuplicateLora: true }],
+		note: 'autoRemoveDuplicateLora + ignoreDisabled=true — disabled 不移除、也不使啟用者被去重',
+		expected: '<lora:foo:1>, <lora:foo:1>, ',
 	},
 ]

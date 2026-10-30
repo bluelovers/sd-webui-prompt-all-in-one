@@ -17,12 +17,6 @@ import { IPromptTag } from './tag-types'
 import type { IHostPromptOptions } from './types'
 
 /**
- * 換行插入決策所需的選項：取宿主選項（IHostPromptOptions）中的兩個換行旗標，
- * 讓 collectWrapInsertIndexes 只認識它需要的欄位。
- */
-export type IWrapInsertOptions = Pick<IHostPromptOptions, 'autoBreakBeforeWrap' | 'autoBreakAfterWrap'>
-
-/**
  * 計算應插入換行 tag 的位置（純決策，不修改輸入）。
  *
  * 規則（與原 updatePrompt 第一段迴圈等價）：

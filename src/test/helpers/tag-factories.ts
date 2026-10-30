@@ -28,3 +28,13 @@ export function _t_createTag_brk(props?: ITestPromptTagProps): IPromptTag {
 export function _t_createTag_lora(name: string, props?: ITestPromptTagProps): IPromptTag {
 	return _t_createTag_core(EnumPromptTagType.lora, `<lora:${name}:1>`, { ...props, isLora: true })
 }
+
+/** 指定權重的 Lora 標籤（權重寫入 value；供「權重不視為差異」的去重案例）。 */
+export function _t_createTag_lora_weight(name: string, weight: number | string, props?: ITestPromptTagProps): IPromptTag {
+	return _t_createTag_core(EnumPromptTagType.lora, `<lora:${name}:${weight}>`, { ...props, isLora: true })
+}
+
+/** Lyco 標籤（tagIsLoraLike 以 isLora / isLyco 判定）。 */
+export function _t_createTag_lyco(name: string, props?: ITestPromptTagProps): IPromptTag {
+	return _t_createTag_core(EnumPromptTagType.lyco, `<lyco:${name}:1>`, { ...props, isLyco: true })
+}

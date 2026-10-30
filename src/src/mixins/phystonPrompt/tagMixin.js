@@ -1,6 +1,6 @@
 import common from "@/utils/common";
 import autoSizeInput from "autosize-input";
-import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap, findTagByID } from "@/utils/promptTags/util";
+import { findTagUntil, parseLoraLikeValue, tagIsDisabled, tagIsSharp, tagIsWrap, findTagByID } from "@/utils/promptTags/util";
 import { renderTagCore } from "@/utils/promptTagRender/renderTag";
 import { _createTagBase, _createTagUuid } from "@/utils/promptTags/createTag";
 
@@ -39,7 +39,8 @@ export default {
                 // const bracket = common.hasBrackets(tag.value)
 
                 tag.originalValue = tag.value
-                if (!tag.value.match(common.loraRegex) && !tag.value.match(common.lycoRegex)) {
+                /** Lora / Lyco 語法偵測：單一事實在 parseLoraLikeValue()，不另行比對正則 */
+                if (!parseLoraLikeValue(tag.value)) {
                     // tag.weightNum = tag.weightNum <= 0 ? 1 : tag.weightNum
                     let value = tag.value
                     const bracket = common.hasBrackets(value)
@@ -85,24 +86,24 @@ export default {
 
             if (typeof tag['type'] === 'string' && tag.type === 'wrap') {
             } else {
-                // 判断是否lora
-                const match = tag.value.match(common.loraRegex)
-                if (match) {
-                    tag.isLora = true
-                    tag.loraName = match[1]
-                    const loraName = this.loraExists(match[1])
-                    if (loraName !== false) {
-                        tag.loraExists = true
-                    }
-                }
+                // 判断是否lora / lyco —— 解析單一事實在 parseLoraLikeValue()，
+                // 命中的 kind 決定 isLora / isLyco 與對應的名稱欄位
+                const parsed = parseLoraLikeValue(tag.value)
 
-                if (!tag.isLora) {
-                    // 判断是否lyco
-                    const match = tag.value.match(common.lycoRegex)
-                    if (match) {
+                if (parsed) {
+                     if (parsed.kind === 'lora') {
+                        tag.isLora = true
+                        tag.loraName = parsed.name
+                        const loraName = this.loraExists(parsed.name)
+                        if (loraName !== false) {
+                            tag.loraExists = true
+                        }
+                    }
+
+                    if (parsed.kind === 'lyco') {
                         tag.isLyco = true
-                        tag.lycoName = match[1]
-                        const lycoName = this.lycoExists(match[1])
+                        tag.lycoName = parsed.name
+                        const lycoName = this.lycoExists(parsed.name)
                         if (lycoName !== false) {
                             tag.lycoExists = true
                         }

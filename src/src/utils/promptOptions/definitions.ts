@@ -9,6 +9,9 @@
  *
  * 新增選項時只需在此加入一筆定義（並補上 i18n），checkbox 樣板會自動生成，
  * 無需再逐一修改上述四處樣板碼，避免漏改造成「重新整理後設定遺失」一類的缺陷。
+ *
+ * 需要手動更新 src/src/App.vue 中的 promptFormat 引用：
+ * <prompt-format ref="promptFormat"
  */
 
 import { EnumPromptOptionAfterSave, EnumPromptOptionComponent, type IPromptOptionDefinitionCore } from './types'
@@ -122,6 +125,15 @@ const _promptOptions = [
         emittedBy: [EnumPromptOptionComponent.promptFormat],
         checkUi: {labelLangKey: 'is_remove_lora_after_comma'},
         note: '移除 Lora 標籤後的逗號；僅需儲存設定。',
+    },
+    {
+        key: 'autoRemoveDuplicateLora',
+        dataDefault: false,
+        propDefault: false,
+        afterSave: EnumPromptOptionAfterSave.updatePrompt,
+        emittedBy: [EnumPromptOptionComponent.promptFormat],
+        checkUi: {labelLangKey: 'is_remove_duplicate_lora'},
+        note: '消除重複 Lora / Lyco：以名稱為重複鍵（權重不視為差異），重複時保留最後一個、移除較早者。# 之後與 disabled 的 Lora 不參與去重。僅在 genPrompt() 輸出層過濾，不修改 tags 陣列，因此只需重新產生輸出。',
     },
     {
         key: 'useNovelAiWeightSymbol',

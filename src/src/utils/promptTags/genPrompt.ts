@@ -17,7 +17,16 @@
  */
 
 import common from '../common'
-import { findTagUntil, tagIsBreak, tagIsExtraNetworks, tagIsLoraLike, tagIsSharp, tagIsWrap } from './util'
+import {
+    findTagUntil,
+    getLoraLikeName,
+    tagIsBreak,
+    tagIsDisabled,
+    tagIsExtraNetworks,
+    tagIsLoraLike,
+    tagIsSharp,
+    tagIsWrap,
+} from './util'
 import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions'
 import { IHostPromptOptions } from './types'
 import { IPromptTag } from './tag-types'
@@ -135,6 +144,54 @@ export function shouldRemoveCommaByAutoOptimize(
 }
 
 /**
+ * 消除重複 Lora（autoRemoveDuplicateLora）：去掉「較早出現的重複 Lora / Lyco」，保留最後一個。
+ *
+ * 僅 Lora / Lyco（tagIsLoraLike）參與去重，一般文字 tag 的重複不受影響。
+ * 以名稱為重複鍵：權重（`<lora:foo:1>` 與 `<lora:foo:0.5>`）不視為差異，
+ * lora / lyco 前綴亦不視為差異（同名模型視作同一個）。
+ *
+ * 不參與去重（既不被移除、也不計入重複）：
+ *   1. disabled 的 Lora / Lyco —— 停用狀態是使用者的明確保留意圖
+ *   2. 該行 `#` 之後的 Lora / Lyco —— `#` 起至下一個分行 tag 為止皆受保護
+ *
+ * @param tags - 標籤陣列（呼叫端通常已先過濾 disabled；本函式對 ignoreDisabled=true 的輸入亦安全）
+ * @returns 過濾後的陣列（元素為原 tag 的參照，不 mutate 輸入）
+ */
+export function filterDuplicateLoraTags(tags: readonly IPromptTag[]): IPromptTag[] {
+    /**
+     * 重複鍵：
+     *   1. 名稱由 getLoraLikeName() 提取（優先 `loraName` / `lycoName`，
+     *      否則手動解析 value；權重與 lora / lyco 前綴不參與比對）。
+     *   2. 取不到名稱時退回整筆 value（trim），維持「相同字串才算重複」的保守判定。
+     */
+    const dedupKeyOf = (tag: IPromptTag): string => getLoraLikeName(tag)
+    /** 每個重複鍵最後一次「參與去重」的索引；較早的同鍵 Lora 即移除對象 */
+    const lastIndexByKey = new Map<string, number>()
+    /** 該行 `#` 之後（受保護）的索引集合：不移除、也不計入重複 */
+    const protectedIndexes = new Set<number>()
+    /** 當前是否在 `#` 之後（自 `#` 起至下一個分行 tag） */
+    let afterSharp = false
+    tags.forEach((tag, index) => {
+        if (tagIsWrap(tag)) {
+            /** 分行結束當前行 → 重置保護區 */
+            afterSharp = false
+            return
+        }
+        if (tagIsSharp(tag)) afterSharp = true
+        if (afterSharp) protectedIndexes.add(index)
+        if (afterSharp || tagIsDisabled(tag) || !tagIsLoraLike(tag)) return
+        lastIndexByKey.set(dedupKeyOf(tag), index)
+    })
+    /** 無可移除對象時原樣回傳，避免建立多餘的新陣列 */
+    if (lastIndexByKey.size === 0) return tags.slice()
+    return tags.filter((tag, index) => {
+        if (protectedIndexes.has(index)) return true
+        if (tagIsDisabled(tag) || !tagIsLoraLike(tag)) return true
+        return lastIndexByKey.get(dedupKeyOf(tag)) === index
+    })
+}
+
+/**
  * 分割标签（產生最終 prompt 字串）。
  *
  * @param tags         - 標籤陣列（呼叫端負責先過濾 disabled）
@@ -159,6 +216,14 @@ export function genPromptCore(
         }
     } else {
         tags2 = tags
+    }
+    /**
+     * 消除重複 Lora（autoRemoveDuplicateLora）：在輸出層過濾「較早出現的重複 Lora / Lyco」，
+     * 保留最後一個；`#` 之後與 disabled 的 Lora 不參與去重（見 filterDuplicateLoraTags）。
+     * 過濾在下方遍歷之前完成，nextTag / 逗號判定皆以過濾後的陣列為準。
+     */
+    if (options.autoRemoveDuplicateLora) {
+        tags2 = filterDuplicateLoraTags(tags2)
     }
     const length = tags2.length
     /**
