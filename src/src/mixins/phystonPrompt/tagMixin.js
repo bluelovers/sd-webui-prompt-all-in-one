@@ -1,4 +1,5 @@
 import autoSizeInput from "autosize-input";
+import {FAVORITE_KIND} from "@/utils/gradioAPI";
 import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap, findTagByID } from "@/utils/promptTags/util";
 import {
     getTagDecWeight,
@@ -466,7 +467,7 @@ export default {
             let favoriteId = this.isFavorite(tag.id)
             if (!favoriteId) {
                 // 收藏
-                this.gradioAPI.pushTagFavorite(this.favoriteKey, [tag], tag.value, tag.localValue === '' ? tag.value : tag.localValue).then(res => {
+                this.gradioAPI.pushFavorite(this.favoriteKey, [tag], tag.value, tag.localValue === '' ? tag.value : tag.localValue, FAVORITE_KIND.TAG).then(res => {
                     if (res) {
                         tag.isFavorite = true
                         this.refreshTagFavorites(this.favoriteKey)
@@ -474,7 +475,7 @@ export default {
                 })
             } else {
                 // 取消收藏
-                this.gradioAPI.unFavoriteTag(this.favoriteKey, favoriteId).then(res => {
+                this.gradioAPI.unFavorite(this.favoriteKey, favoriteId, FAVORITE_KIND.TAG).then(res => {
                     if (res) {
                         tag.isFavorite = false
                         this.refreshTagFavorites(this.favoriteKey)

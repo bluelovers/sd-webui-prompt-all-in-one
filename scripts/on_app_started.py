@@ -193,8 +193,8 @@ def on_app_started(_: gr.Blocks, app: FastAPI):
         return {"histories": hi.get_histories(type)}
 
     @app.get("/physton_prompt/get_favorites")
-    async def _get_favorites(type: str):
-        return {"favorites": hi.get_favorites(type)}
+    async def _get_favorites(type: str, kind: str):
+        return {"favorites": hi.get_favorites(type, kind)}
 
     @app.post("/physton_prompt/push_history")
     async def _push_history(request: Request):
@@ -217,26 +217,23 @@ def on_app_started(_: gr.Blocks, app: FastAPI):
             return {"success": False, "message": get_lang('is_required', {'0': 'tags'})}
         if 'prompt' not in data:
             return {"success": False, "message": get_lang('is_required', {'0': 'prompt'})}
-        hi.push_favorite(data['type'], data['tags'], data['prompt'], data.get('name', ''))
+        if 'kind' not in data:
+            return {"success": False, "message": get_lang('is_required', {'0': 'kind'})}
+        hi.push_favorite(data['type'], data['tags'], data['prompt'], data.get('name', ''), data['kind'])
         return {"success": True}
 
-    @app.post("/physton_prompt/move_up_favorite")
-    async def _move_up_favorite(request: Request):
+    @app.post("/physton_prompt/move_favorite")
+    async def _move_favorite(request: Request):
         data = await request.json()
         if 'type' not in data:
             return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
         if 'id' not in data:
             return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.move_up_favorite(data['type'], data['id'])}
-
-    @app.post("/physton_prompt/move_down_favorite")
-    async def _move_down_favorite(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'id' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.move_down_favorite(data['type'], data['id'])}
+        if 'offset' not in data:
+            return {"success": False, "message": get_lang('is_required', {'0': 'offset'})}
+        if 'kind' not in data:
+            return {"success": False, "message": get_lang('is_required', {'0': 'kind'})}
+        return {"success": hi.move_favorite(data['type'], data['id'], data['offset'], data['kind'])}
 
     @app.get("/physton_prompt/get_latest_history")
     async def _get_latest_history(type: str):
@@ -277,7 +274,9 @@ def on_app_started(_: gr.Blocks, app: FastAPI):
             return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
         if 'name' not in data:
             return {"success": False, "message": get_lang('is_required', {'0': 'name'})}
-        return {"success": hi.set_favorite_name(data['type'], data['id'], data['name'])}
+        if 'kind' not in data:
+            return {"success": False, "message": get_lang('is_required', {'0': 'kind'})}
+        return {"success": hi.set_favorite_name(data['type'], data['id'], data['name'], data['kind'])}
 
     @app.post("/physton_prompt/dofavorite")
     async def _dofavorite(request: Request):
@@ -295,61 +294,9 @@ def on_app_started(_: gr.Blocks, app: FastAPI):
             return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
         if 'id' not in data:
             return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.unfavorite(data['type'], data['id'])}
-
-    @app.get("/physton_prompt/get_tag_favorites")
-    async def _get_tag_favorites(type: str):
-        return {"favorites": hi.get_tag_favorites(type)}
-
-    @app.post("/physton_prompt/push_tag_favorite")
-    async def _push_tag_favorite(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'tags' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'tags'})}
-        if 'prompt' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'prompt'})}
-        hi.push_tag_favorite(data['type'], data['tags'], data['prompt'], data.get('name', ''))
-        return {"success": True}
-
-    @app.post("/physton_prompt/unfavorite_tag")
-    async def _unfavorite_tag(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'id' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.unfavorite_tag(data['type'], data['id'])}
-
-    @app.post("/physton_prompt/move_up_tag_favorite")
-    async def _move_up_tag_favorite(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'id' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.move_up_tag_favorite(data['type'], data['id'])}
-
-    @app.post("/physton_prompt/move_down_tag_favorite")
-    async def _move_down_tag_favorite(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'id' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        return {"success": hi.move_down_tag_favorite(data['type'], data['id'])}
-
-    @app.post("/physton_prompt/set_tag_favorite_name")
-    async def _set_tag_favorite_name(request: Request):
-        data = await request.json()
-        if 'type' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'type'})}
-        if 'id' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'id'})}
-        if 'name' not in data:
-            return {"success": False, "message": get_lang('is_required', {'0': 'name'})}
-        return {"success": hi.set_tag_favorite_name(data['type'], data['id'], data['name'])}
+        if 'kind' not in data:
+            return {"success": False, "message": get_lang('is_required', {'0': 'kind'})}
+        return {"success": hi.unfavorite(data['type'], data['id'], data['kind'])}
 
     @app.post("/physton_prompt/delete_history")
     async def _delete_history(request: Request):

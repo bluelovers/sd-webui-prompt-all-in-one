@@ -75,6 +75,7 @@
 </template>
 <script>
 import common from "@/utils/common";
+import {FAVORITE_KIND} from "@/utils/gradioAPI";
 
 import LanguageMixin from "@/mixins/languageMixin";
 import IconSvg from "@/components/iconSvg.vue";
@@ -135,7 +136,7 @@ export default {
             let favoriteItem = this.favorites.find(item => item.key === favoriteKey)
             if (!favoriteItem) return
             this.loading = true
-            return this.gradioAPI.getFavorites(favoriteKey).then(res => {
+            return this.gradioAPI.getFavorites(favoriteKey, FAVORITE_KIND.HISTORY).then(res => {
                 if(res && res.length > 0){
                     // 倒序
                     res.reverse()
@@ -210,7 +211,7 @@ export default {
                     }
                 })
             } else {
-                this.gradioAPI.unFavorite(this.favoriteKey, favorite.id).then(res => {
+                this.gradioAPI.unFavorite(this.favoriteKey, favorite.id, FAVORITE_KIND.HISTORY).then(res => {
                     if (res) {
                         favorite.is_favorite = false
                         window.phystonPromptfavorites = this.favorites
@@ -239,7 +240,7 @@ export default {
             if (!group) return
             let favorite = group.list[index]
             const value = e.target.value
-            this.gradioAPI.setFavoriteName(this.favoriteKey, favorite.id, value).then(res => {
+            this.gradioAPI.setFavoriteName(this.favoriteKey, favorite.id, value, FAVORITE_KIND.HISTORY).then(res => {
                 if (res) {
                     favorite.name = value
                     window.phystonPromptfavorites = this.favorites
@@ -277,8 +278,8 @@ export default {
             if (!group) return
             let favorite = group.list[index]
             if (index === 0) return
-            this.gradioAPI.moveDownFavorite(this.favoriteKey, favorite.id).then(res => {
-            // this.gradioAPI.moveUpFavorite(this.favoriteKey, favorite.id).then(res => {
+            this.gradioAPI.moveFavorite(this.favoriteKey, favorite.id, 1, FAVORITE_KIND.HISTORY).then(res => {
+            // this.gradioAPI.moveFavorite(this.favoriteKey, favorite.id, -1, FAVORITE_KIND.HISTORY).then(res => {
                 if (res) {
                     group.list.splice(index, 1)
                     group.list.splice(index - 1, 0, favorite)
@@ -291,8 +292,8 @@ export default {
             if (!group) return
             let favorite = group.list[index]
             if (index === group.list.length - 1) return
-            this.gradioAPI.moveUpFavorite(this.favoriteKey, favorite.id).then(res => {
-            // this.gradioAPI.moveDownFavorite(this.favoriteKey, favorite.id).then(res => {
+            this.gradioAPI.moveFavorite(this.favoriteKey, favorite.id, -1, FAVORITE_KIND.HISTORY).then(res => {
+            // this.gradioAPI.moveFavorite(this.favoriteKey, favorite.id, 1, FAVORITE_KIND.HISTORY).then(res => {
                 if (res) {
                     group.list.splice(index, 1)
                     group.list.splice(index + 1, 0, favorite)

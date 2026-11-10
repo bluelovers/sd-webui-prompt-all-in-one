@@ -539,11 +539,11 @@
                                                         <icon-svg name="edit"/>
                                                     </button>
                                                     <button type="button" name="move-up" v-tooltip="getLang('move_up')"
-                                                            @click="onTagFavoriteMoveUp(group, en)">
+                                                            @click="onTagFavoriteMove(group, en, -1)">
                                                         <icon-svg name="move-up"/>
                                                     </button>
                                                     <button type="button" name="move-down" v-tooltip="getLang('move_down')"
-                                                            @click="onTagFavoriteMoveDown(group, en)">
+                                                            @click="onTagFavoriteMove(group, en, 1)">
                                                         <icon-svg name="move-down"/>
                                                     </button>
                                                     <button type="button" name="copy" v-tooltip="getLang('copy_to_clipboard')"

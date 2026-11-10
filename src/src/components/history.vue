@@ -74,6 +74,7 @@
 </template>
 <script>
 import common from "@/utils/common";
+import {FAVORITE_KIND} from "@/utils/gradioAPI";
 
 import LanguageMixin from "@/mixins/languageMixin";
 import IconSvg from "@/components/iconSvg.vue";
@@ -209,7 +210,7 @@ export default {
                     }
                 })
             } else {
-                this.gradioAPI.unFavorite(this.historyKey, history.id).then(res => {
+                this.gradioAPI.unFavorite(this.historyKey, history.id, FAVORITE_KIND.HISTORY).then(res => {
                     if (res) {
                         history.is_favorite = false
                         this.$emit('refreshFavorites', this.historyKey)

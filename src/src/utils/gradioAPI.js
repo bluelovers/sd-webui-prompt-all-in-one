@@ -1,6 +1,14 @@
 import axios from "axios"
 import common from "@/utils/common";
 
+/**
+ * 收藏來源 (Favorite Kind)：history = 歷史紀錄的愛心收藏；tag = prompt 面板的 tag 星號與拖曳收藏
+ */
+export const FAVORITE_KIND = {
+    HISTORY: 'history',
+    TAG: 'tag',
+}
+
 export default class GradioAPI {
     apiBaseURL = "";
 
@@ -87,24 +95,20 @@ export default class GradioAPI {
         return (await this.api.get("/get_histories", {params: {type}})).data.histories
     }
 
-    async getFavorites(type) {
-        return (await this.api.get("/get_favorites", {params: {type}})).data.favorites
+    async getFavorites(type, kind) {
+        return (await this.api.get("/get_favorites", {params: {type, kind}})).data.favorites
     }
 
     async pushHistory(type, tags, prompt, name = '') {
         return (await this.api.post("/push_history", {type, tags, prompt, name})).data.success
     }
 
-    async pushFavorite(type, tags, prompt, name = '') {
-        return (await this.api.post("/push_favorite", {type, tags, prompt, name})).data.success
+    async pushFavorite(type, tags, prompt, name, kind) {
+        return (await this.api.post("/push_favorite", {type, tags, prompt, name, kind})).data.success
     }
 
-    async moveUpFavorite(type, id) {
-        return (await this.api.post("/move_up_favorite", {type, id})).data.success
-    }
-
-    async moveDownFavorite(type, id) {
-        return (await this.api.post("/move_down_favorite", {type, id})).data.success
+    async moveFavorite(type, id, offset, kind) {
+        return (await this.api.post("/move_favorite", {type, id, offset, kind})).data.success
     }
 
     async getLatestHistory(type) {
@@ -119,40 +123,16 @@ export default class GradioAPI {
         return (await this.api.post("/set_history_name", {type, id, name})).data.success
     }
 
-    async setFavoriteName(type, id, name) {
-        return (await this.api.post("/set_favorite_name", {type, id, name})).data.success
+    async setFavoriteName(type, id, name, kind) {
+        return (await this.api.post("/set_favorite_name", {type, id, name, kind})).data.success
     }
 
     async doFavorite(type, id) {
         return (await this.api.post("/dofavorite", {type, id})).data.success
     }
 
-    async unFavorite(type, id) {
-        return (await this.api.post("/unfavorite", {type, id})).data.success
-    }
-
-    async getTagFavorites(type) {
-        return (await this.api.get("/get_tag_favorites", {params: {type}})).data.favorites
-    }
-
-    async pushTagFavorite(type, tags, prompt, name = '') {
-        return (await this.api.post("/push_tag_favorite", {type, tags, prompt, name})).data.success
-    }
-
-    async unFavoriteTag(type, id) {
-        return (await this.api.post("/unfavorite_tag", {type, id})).data.success
-    }
-
-    async moveUpTagFavorite(type, id) {
-        return (await this.api.post("/move_up_tag_favorite", {type, id})).data.success
-    }
-
-    async moveDownTagFavorite(type, id) {
-        return (await this.api.post("/move_down_tag_favorite", {type, id})).data.success
-    }
-
-    async setTagFavoriteName(type, id, name) {
-        return (await this.api.post("/set_tag_favorite_name", {type, id, name})).data.success
+    async unFavorite(type, id, kind) {
+        return (await this.api.post("/unfavorite", {type, id, kind})).data.success
     }
 
     async deleteHistory(type, id) {

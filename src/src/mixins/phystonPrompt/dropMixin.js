@@ -1,3 +1,5 @@
+import {FAVORITE_KIND} from "@/utils/gradioAPI";
+
 export default {
     data() {
         return {
@@ -138,7 +140,7 @@ export default {
             let tags = this._getDropTags()
             this._dropOver()
             let prompt = this.genPrompt(tags, true)
-            this.gradioAPI.pushTagFavorite(this.favoriteKey, tags, prompt, '').then(res => {
+            this.gradioAPI.pushFavorite(this.favoriteKey, tags, prompt, '', FAVORITE_KIND.TAG).then(res => {
                 if (res) {
                     this.$toastr.success(this.getLang('success'))
                     this.refreshTagFavorites(this.favoriteKey)

@@ -1,4 +1,5 @@
 import common from "@/utils/common";
+import {FAVORITE_KIND} from "@/utils/gradioAPI";
 import { hasBrackets, replaceBrackets } from "@/utils/promptTags/util/tag-weight";
 import { setPromptTextareaValueAndDispatchEvent } from "@/utils/promptTextarea";
 
@@ -617,7 +618,7 @@ export default {
             if (!key) return Promise.resolve()
             let group = this.tagFavorites.find(item => item.key === key)
             if (!group) return Promise.resolve()
-            return this.gradioAPI.getTagFavorites(key).then(res => {
+            return this.gradioAPI.getFavorites(key, FAVORITE_KIND.TAG).then(res => {
                 group.list = res || []
             }).catch(() => {
                 group.list = []

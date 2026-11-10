@@ -53,6 +53,22 @@ class History:
     def __save_tag_favorites(self, type):
         Storage.set('favorite_tag.' + type, self.tag_favorites[type])
 
+    def __favorite_store(self, kind):
+        stores = {
+            'history': (self.favorites, self.__save_favorites),
+            'tag': (self.tag_favorites, self.__save_tag_favorites),
+        }
+        return stores[kind]
+
+    def __new_item(self, tags, prompt, name):
+        return {
+            'id': str(uuid.uuid1()),
+            'time': int(time.time()),
+            'name': name,
+            'tags': tags,
+            'prompt': prompt,
+        }
+
     def get_histories(self, type):
         histories = self.histories[type]
         for history in histories:
@@ -65,104 +81,35 @@ class History:
                 return True
         return False
 
-    def get_favorites(self, type):
-        return self.favorites[type]
-
-    def get_tag_favorites(self, type):
-        return self.tag_favorites[type]
-
-    def push_tag_favorite(self, type, tags, prompt, name=''):
-        item = {
-            'id': str(uuid.uuid1()),
-            'time': int(time.time()),
-            'name': name,
-            'tags': tags,
-            'prompt': prompt,
-        }
-        self.tag_favorites[type].append(item)
-        self.__save_tag_favorites(type)
-        return item
-
-    def unfavorite_tag(self, type, id):
-        for favorite in self.tag_favorites[type]:
-            if favorite['id'] == id:
-                self.tag_favorites[type].remove(favorite)
-                self.__save_tag_favorites(type)
-                return True
-        return False
-
-    def move_up_tag_favorite(self, type, id):
-        for index, favorite in enumerate(self.tag_favorites[type]):
-            if favorite['id'] == id:
-                if index > 0:
-                    self.tag_favorites[type].insert(index - 1, self.tag_favorites[type].pop(index))
-                    self.__save_tag_favorites(type)
-                    return True
-                return False
-        return False
-
-    def move_down_tag_favorite(self, type, id):
-        for index, favorite in enumerate(self.tag_favorites[type]):
-            if favorite['id'] == id:
-                if index < len(self.tag_favorites[type]) - 1:
-                    self.tag_favorites[type].insert(index + 1, self.tag_favorites[type].pop(index))
-                    self.__save_tag_favorites(type)
-                    return True
-                return False
-        return False
-
-    def set_tag_favorite_name(self, type, id, name):
-        for favorite in self.tag_favorites[type]:
-            if favorite['id'] == id:
-                favorite['name'] = name
-                self.__save_tag_favorites(type)
-                return True
-        return False
+    def get_favorites(self, type, kind):
+        return self.__favorite_store(kind)[0][type]
 
     def push_history(self, type, tags, prompt, name=''):
         if len(self.histories[type]) >= self.max:
             self.histories[type].pop(0)
-        item = {
-            'id': str(uuid.uuid1()),
-            'time': int(time.time()),
-            'name': name,
-            'tags': tags,
-            'prompt': prompt,
-        }
+        item = self.__new_item(tags, prompt, name)
         self.histories[type].append(item)
         self.__save_histories(type)
         return item
 
-    def push_favorite(self, type, tags, prompt, name=''):
-        item = {
-            'id': str(uuid.uuid1()),
-            'time': int(time.time()),
-            'name': name,
-            'tags': tags,
-            'prompt': prompt,
-        }
-        self.favorites[type].append(item)
-        self.__save_favorites(type)
+    def push_favorite(self, type, tags, prompt, name, kind):
+        store, save = self.__favorite_store(kind)
+        item = self.__new_item(tags, prompt, name)
+        store[type].append(item)
+        save(type)
         return item
 
-    def move_up_favorite(self, type, id):
-        for index, favorite in enumerate(self.favorites[type]):
-            if favorite['id'] == id:
-                if index > 0:
-                    self.favorites[type].insert(index - 1, self.favorites[type].pop(index))
-                    self.__save_favorites(type)
-                    return True
+    def move_favorite(self, type, id, offset, kind):
+        store, save = self.__favorite_store(kind)
+        for index, favorite in enumerate(store[type]):
+            if favorite['id'] != id:
+                continue
+            target = index + offset
+            if target < 0 or target >= len(store[type]):
                 return False
-        return False
-
-    def move_down_favorite(self, type, id):
-        for index, favorite in enumerate(self.favorites[type]):
-            if favorite['id'] == id:
-                if index < len(self.favorites[type]) - 1:
-                    self.favorites[type].insert(index + 1, self.favorites[type].pop(index))
-                    self.__save_favorites(type)
-                    return True
-                return False
+            store[type].insert(target, store[type].pop(index))
+            save(type)
+            return True
         return False
 
     def get_latest_history(self, type):
@@ -204,15 +151,17 @@ class History:
                 return True
         return False
 
-    def set_favorite_name(self, type, id, name):
-        for favorite in self.favorites[type]:
+    def set_favorite_name(self, type, id, name, kind):
+        store, save = self.__favorite_store(kind)
+        for favorite in store[type]:
             if favorite['id'] == id:
                 favorite['name'] = name
-                self.__save_favorites(type)
-                for history in self.histories[type]:
-                    if history['id'] == id:
-                        history['name'] = name
-                        self.__save_histories(type)
+                save(type)
+                if kind == 'history':
+                    for history in self.histories[type]:
+                        if history['id'] == id:
+                            history['name'] = name
+                            self.__save_histories(type)
                 return True
         return False
 
@@ -226,13 +175,12 @@ class History:
                 return True
         return False
 
-    def unfavorite(self, type, id):
-        if not self.is_favorite(type, id):
-            return False
-        for favorite in self.favorites[type]:
+    def unfavorite(self, type, id, kind):
+        store, save = self.__favorite_store(kind)
+        for favorite in store[type]:
             if favorite['id'] == id:
-                self.favorites[type].remove(favorite)
-                self.__save_favorites(type)
+                store[type].remove(favorite)
+                save(type)
                 return True
         return False
 

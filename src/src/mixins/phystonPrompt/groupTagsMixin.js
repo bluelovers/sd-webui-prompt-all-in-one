@@ -1,4 +1,5 @@
 import common from "@/utils/common"
+import {FAVORITE_KIND} from "@/utils/gradioAPI"
 import {ref} from "vue"
 
 export default {
@@ -281,24 +282,17 @@ export default {
             let value = this.tagFavoriteEditValue
             this.tagFavoriteEditing = ''
             if (!favorite || value === (favorite.name || '')) return
-            this.gradioAPI.setTagFavoriteName(this.favoriteKey, favorite.id, value).then(res => {
+            this.gradioAPI.setFavoriteName(this.favoriteKey, favorite.id, value, FAVORITE_KIND.TAG).then(res => {
                 if (res) this.refreshTagFavorites(this.favoriteKey)
             })
         },
         onTagFavoriteNameCancel() {
             this.tagFavoriteEditing = ''
         },
-        onTagFavoriteMoveUp(group, en) {
+        onTagFavoriteMove(group, en, offset) {
             let favorite = group.ori[en]
             if (!favorite) return
-            this.gradioAPI.moveUpTagFavorite(this.favoriteKey, favorite.id).then(res => {
-                if (res) this.refreshTagFavorites(this.favoriteKey)
-            })
-        },
-        onTagFavoriteMoveDown(group, en) {
-            let favorite = group.ori[en]
-            if (!favorite) return
-            this.gradioAPI.moveDownTagFavorite(this.favoriteKey, favorite.id).then(res => {
+            this.gradioAPI.moveFavorite(this.favoriteKey, favorite.id, offset, FAVORITE_KIND.TAG).then(res => {
                 if (res) this.refreshTagFavorites(this.favoriteKey)
             })
         },
@@ -310,7 +304,7 @@ export default {
         onTagFavoriteRemove(group, en) {
             let favorite = group.ori[en]
             if (!favorite) return
-            this.gradioAPI.unFavoriteTag(this.favoriteKey, favorite.id).then(res => {
+            this.gradioAPI.unFavorite(this.favoriteKey, favorite.id, FAVORITE_KIND.TAG).then(res => {
                 if (!res) return
                 if (this.tagFavoriteEditing === en) this.tagFavoriteEditing = ''
                 if (this.tagFavoriteHover === en) this.tagFavoriteHover = ''
