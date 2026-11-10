@@ -39,6 +39,13 @@ export default {
             deep: true,
             immediate: true,
         },
+        tagFavorites: {
+            handler() {
+                this.genGroup()
+            },
+            deep: true,
+            immediate: true,
+        },
         extraNetworks: {
             handler() {
                 this.genGroup()
@@ -80,6 +87,30 @@ export default {
                 favoriteGroup.groups.push(subGroup)
             })
             processed.push(favoriteGroup)
+
+            /** prompt 面板的 tag 收藏，儲存與歷史紀錄的收藏分開，緊鄰既有收藏列表顯示 */
+            let tagFavoriteGroup = {
+                name: this.getLang('tag_favorite'),
+                tabKey: 'tagFavorite',
+                type: 'favorite',
+                groups: [],
+            }
+            this.getCurrentTypeTagFavorites().forEach(item => {
+                let subGroup = {
+                    color: '',
+                    name: this.getLang(item.name),
+                    tabKey: 'tagFavorite-' + item.key,
+                    type: 'favorite',
+                    tags: {},
+                    ori: {},
+                }
+                item.list.forEach(favorite => {
+                    subGroup.tags[favorite.prompt] = favorite.name == '' ? favorite.prompt : favorite.name
+                    subGroup.ori[favorite.prompt] = favorite
+                })
+                tagFavoriteGroup.groups.push(subGroup)
+            })
+            processed.push(tagFavoriteGroup)
 
             if (!this.$appMode) {
                 let extraNetworksGroup = {

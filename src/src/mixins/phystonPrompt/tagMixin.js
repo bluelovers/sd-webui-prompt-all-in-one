@@ -250,13 +250,11 @@ export default {
         isFavorite(id) {
             let tag = this.tags.find(tag => tag.id === id)
             if (!tag) return false
-            if (typeof window.phystonPromptfavorites === 'object') {
-                for (const group of window.phystonPromptfavorites) {
-                    if (group.key !== this.favoriteKey) continue
-                    for (const favorite of group.list) {
-                        if (favorite.tags.length !== 1) continue
-                        if (favorite.tags[0].value === tag.value) return favorite.id
-                    }
+            for (const group of this.tagFavorites) {
+                if (group.key !== this.favoriteKey) continue
+                for (const favorite of group.list) {
+                    if (favorite.tags.length !== 1) continue
+                    if (favorite.tags[0].value === tag.value) return favorite.id
                 }
             }
             return false
@@ -468,18 +466,18 @@ export default {
             let favoriteId = this.isFavorite(tag.id)
             if (!favoriteId) {
                 // 收藏
-                this.gradioAPI.pushFavorite(this.favoriteKey, [tag], tag.value, tag.localValue === '' ? tag.value : tag.localValue).then(res => {
+                this.gradioAPI.pushTagFavorite(this.favoriteKey, [tag], tag.value, tag.localValue === '' ? tag.value : tag.localValue).then(res => {
                     if (res) {
                         tag.isFavorite = true
-                        this.$emit('refreshFavorites', this.favoriteKey)
+                        this.refreshTagFavorites(this.favoriteKey)
                     }
                 })
             } else {
                 // 取消收藏
-                this.gradioAPI.unFavorite(this.favoriteKey, favoriteId).then(res => {
+                this.gradioAPI.unFavoriteTag(this.favoriteKey, favoriteId).then(res => {
                     if (res) {
                         tag.isFavorite = false
-                        this.$emit('refreshFavorites', this.favoriteKey)
+                        this.refreshTagFavorites(this.favoriteKey)
                     }
                 })
             }

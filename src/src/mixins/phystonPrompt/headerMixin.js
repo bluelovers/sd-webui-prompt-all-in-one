@@ -42,6 +42,13 @@ export default {
             ],
 
             favorites: [],
+            /** prompt 面板產生的收藏（tag 星號、拖曳），與歷史紀錄的收藏分開儲存 */
+            tagFavorites: [
+                {'name': 'txt2img', 'type': 'prompt', 'key': 'txt2img', 'list': []},
+                {'name': 'txt2img', 'type': 'negative_prompt', 'key': 'txt2img_neg', 'list': []},
+                {'name': 'img2img', 'type': 'prompt', 'key': 'img2img', 'list': []},
+                {'name': 'img2img', 'type': 'negative_prompt', 'key': 'img2img_neg', 'list': []},
+            ],
             autoInputPrompt: 'disabled',
             autoInputPromptKey: '',
             /**
@@ -67,6 +74,7 @@ export default {
     },
     mounted() {
         this.initAutoInputPrompt()
+        this.refreshTagFavorites(this.favoriteKey)
         let temp = [
             {
                 'name': 'txt2img',
@@ -575,16 +583,45 @@ export default {
         },
         getCurrentTypeFavorites() {
             this.favorites = typeof window.phystonPromptfavorites === 'object' ? window.phystonPromptfavorites : []
-            let favorites = []
-            this.favorites.forEach(favorite => {
+            return this._filterTypeFavorites(this.favorites)
+        },
+        /**
+         * 取得目前面板（正向 / 反向 prompt）對應的 tag 收藏分組
+         */
+        getCurrentTypeTagFavorites() {
+            return this._filterTypeFavorites(this.tagFavorites)
+        },
+        /**
+         * 只保留與目前面板極性（正向 / 反向）相符的收藏分組
+         * @param favorites {Array<Object>} 收藏分組清單
+         * @returns {Array<Object>}
+         */
+        _filterTypeFavorites(favorites) {
+            let result = []
+            favorites.forEach(favorite => {
                 if (this.neg) {
                     if (favorite.type !== 'negative_prompt') return
                 } else {
                     if (favorite.type !== 'prompt') return
                 }
-                favorites.push(favorite)
+                result.push(favorite)
             })
-            return favorites
+            return result
+        },
+        /**
+         * 重新載入指定分組的 tag 收藏，供 tag 星號狀態與 group-tags 分組使用
+         * @param key {string} 收藏分組鍵值（如 txt2img）
+         * @returns {Promise<void>}
+         */
+        refreshTagFavorites(key) {
+            if (!key) return Promise.resolve()
+            let group = this.tagFavorites.find(item => item.key === key)
+            if (!group) return Promise.resolve()
+            return this.gradioAPI.getTagFavorites(key).then(res => {
+                group.list = res || []
+            }).catch(() => {
+                group.list = []
+            })
         },
         onAutoInputPromptChange() {
             this.gradioAPI.setData(this.autoInputPromptKey, this.autoInputPrompt).then(() => {

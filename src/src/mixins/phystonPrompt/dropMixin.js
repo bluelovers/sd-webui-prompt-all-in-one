@@ -138,10 +138,10 @@ export default {
             let tags = this._getDropTags()
             this._dropOver()
             let prompt = this.genPrompt(tags, true)
-            this.gradioAPI.pushFavorite(this.favoriteKey, tags, prompt, '').then(res => {
+            this.gradioAPI.pushTagFavorite(this.favoriteKey, tags, prompt, '').then(res => {
                 if (res) {
                     this.$toastr.success(this.getLang('success'))
-                    this.$emit('refreshFavorites', this.favoriteKey)
+                    this.refreshTagFavorites(this.favoriteKey)
                 } else {
                     this.$toastr.error(this.getLang('failed'))
                 }

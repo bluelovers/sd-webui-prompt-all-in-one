@@ -16,6 +16,13 @@ class History:
         'img2img': [],
         'img2img_neg': [],
     }
+    # prompt 面板（tag 星號、拖曳）產生的收藏，與歷史紀錄的收藏分開儲存
+    tag_favorites = {
+        'txt2img': [],
+        'txt2img_neg': [],
+        'img2img': [],
+        'img2img_neg': [],
+    }
     max = 100
 
     def __init__(self):
@@ -31,11 +38,20 @@ class History:
                 self.favorites[type] = []
                 self.__save_favorites(type)
 
+        for type in self.tag_favorites:
+            self.tag_favorites[type] = Storage.get('favorite_tag.' + type)
+            if self.tag_favorites[type] is None:
+                self.tag_favorites[type] = []
+                self.__save_tag_favorites(type)
+
     def __save_histories(self, type):
         Storage.set('history.' + type, self.histories[type])
 
     def __save_favorites(self, type):
         Storage.set('favorite.' + type, self.favorites[type])
+
+    def __save_tag_favorites(self, type):
+        Storage.set('favorite_tag.' + type, self.tag_favorites[type])
 
     def get_histories(self, type):
         histories = self.histories[type]
@@ -51,6 +67,29 @@ class History:
 
     def get_favorites(self, type):
         return self.favorites[type]
+
+    def get_tag_favorites(self, type):
+        return self.tag_favorites[type]
+
+    def push_tag_favorite(self, type, tags, prompt, name=''):
+        item = {
+            'id': str(uuid.uuid1()),
+            'time': int(time.time()),
+            'name': name,
+            'tags': tags,
+            'prompt': prompt,
+        }
+        self.tag_favorites[type].append(item)
+        self.__save_tag_favorites(type)
+        return item
+
+    def unfavorite_tag(self, type, id):
+        for favorite in self.tag_favorites[type]:
+            if favorite['id'] == id:
+                self.tag_favorites[type].remove(favorite)
+                self.__save_tag_favorites(type)
+                return True
+        return False
 
     def push_history(self, type, tags, prompt, name=''):
         if len(self.histories[type]) >= self.max:

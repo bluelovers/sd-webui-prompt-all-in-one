@@ -131,6 +131,18 @@ export default class GradioAPI {
         return (await this.api.post("/unfavorite", {type, id})).data.success
     }
 
+    async getTagFavorites(type) {
+        return (await this.api.get("/get_tag_favorites", {params: {type}})).data.favorites
+    }
+
+    async pushTagFavorite(type, tags, prompt, name = '') {
+        return (await this.api.post("/push_tag_favorite", {type, tags, prompt, name})).data.success
+    }
+
+    async unFavoriteTag(type, id) {
+        return (await this.api.post("/unfavorite_tag", {type, id})).data.success
+    }
+
     async deleteHistory(type, id) {
         return (await this.api.post("/delete_history", {type, id})).data.success
     }
