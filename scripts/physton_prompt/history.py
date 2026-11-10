@@ -91,6 +91,34 @@ class History:
                 return True
         return False
 
+    def move_up_tag_favorite(self, type, id):
+        for index, favorite in enumerate(self.tag_favorites[type]):
+            if favorite['id'] == id:
+                if index > 0:
+                    self.tag_favorites[type].insert(index - 1, self.tag_favorites[type].pop(index))
+                    self.__save_tag_favorites(type)
+                    return True
+                return False
+        return False
+
+    def move_down_tag_favorite(self, type, id):
+        for index, favorite in enumerate(self.tag_favorites[type]):
+            if favorite['id'] == id:
+                if index < len(self.tag_favorites[type]) - 1:
+                    self.tag_favorites[type].insert(index + 1, self.tag_favorites[type].pop(index))
+                    self.__save_tag_favorites(type)
+                    return True
+                return False
+        return False
+
+    def set_tag_favorite_name(self, type, id, name):
+        for favorite in self.tag_favorites[type]:
+            if favorite['id'] == id:
+                favorite['name'] = name
+                self.__save_tag_favorites(type)
+                return True
+        return False
+
     def push_history(self, type, tags, prompt, name=''):
         if len(self.histories[type]) >= self.max:
             self.histories[type].pop(0)

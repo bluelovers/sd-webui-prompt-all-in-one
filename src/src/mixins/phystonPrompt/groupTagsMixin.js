@@ -8,6 +8,11 @@ export default {
             subGroupTagsActive: '',
             groupTagsProcessed: [],
             extraNetworksRefreshing: false,
+            /** 目前滑入的 tag 收藏項目（以 prompt 為鍵），用來顯示浮動工具列 */
+            tagFavoriteHover: '',
+            /** 目前正在重新命名的 tag 收藏項目（以 prompt 為鍵） */
+            tagFavoriteEditing: '',
+            tagFavoriteEditValue: '',
         }
     },
     watch: {
@@ -101,6 +106,7 @@ export default {
                     name: this.getLang(item.name),
                     tabKey: 'tagFavorite-' + item.key,
                     type: 'favorite',
+                    manageable: true,
                     tags: {},
                     ori: {},
                 }
@@ -248,6 +254,68 @@ export default {
                 this._appendTag(tag.value, tag.localValue, tag.disabled, -1, tag.type)
             })
             this.updateTags()
+        },
+        onGroupTagFavoriteEnter(group, en) {
+            if (!group.manageable) return
+            this.tagFavoriteHover = en
+        },
+        onGroupTagFavoriteLeave(group, en) {
+            if (!group.manageable) return
+            if (this.tagFavoriteEditing === en) return
+            if (this.tagFavoriteHover === en) this.tagFavoriteHover = ''
+        },
+        onTagFavoriteRename(group, en) {
+            let favorite = group.ori[en]
+            if (!favorite) return
+            this.tagFavoriteEditing = en
+            this.tagFavoriteEditValue = favorite.name || ''
+            this.$nextTick(() => {
+                let input = this.$refs.tagFavoriteNameInput
+                if (Array.isArray(input)) input = input[0]
+                if (input) input.focus()
+            })
+        },
+        onTagFavoriteNameSave(group, en) {
+            if (this.tagFavoriteEditing !== en) return
+            let favorite = group.ori[en]
+            let value = this.tagFavoriteEditValue
+            this.tagFavoriteEditing = ''
+            if (!favorite || value === (favorite.name || '')) return
+            this.gradioAPI.setTagFavoriteName(this.favoriteKey, favorite.id, value).then(res => {
+                if (res) this.refreshTagFavorites(this.favoriteKey)
+            })
+        },
+        onTagFavoriteNameCancel() {
+            this.tagFavoriteEditing = ''
+        },
+        onTagFavoriteMoveUp(group, en) {
+            let favorite = group.ori[en]
+            if (!favorite) return
+            this.gradioAPI.moveUpTagFavorite(this.favoriteKey, favorite.id).then(res => {
+                if (res) this.refreshTagFavorites(this.favoriteKey)
+            })
+        },
+        onTagFavoriteMoveDown(group, en) {
+            let favorite = group.ori[en]
+            if (!favorite) return
+            this.gradioAPI.moveDownTagFavorite(this.favoriteKey, favorite.id).then(res => {
+                if (res) this.refreshTagFavorites(this.favoriteKey)
+            })
+        },
+        onTagFavoriteCopy(group, en) {
+            let favorite = group.ori[en]
+            if (!favorite) return
+            this.copy(favorite.prompt)
+        },
+        onTagFavoriteRemove(group, en) {
+            let favorite = group.ori[en]
+            if (!favorite) return
+            this.gradioAPI.unFavoriteTag(this.favoriteKey, favorite.id).then(res => {
+                if (!res) return
+                if (this.tagFavoriteEditing === en) this.tagFavoriteEditing = ''
+                if (this.tagFavoriteHover === en) this.tagFavoriteHover = ''
+                this.refreshTagFavorites(this.favoriteKey)
+            })
         },
         onClickGroupTagExtraNetwork(data, group, subGroup) {
             if (subGroup.subType === 'checkpoints') {
