@@ -212,7 +212,7 @@ export function genPromptCore(
     let tags2: IPromptTag[] = []
     if (!ignoreDisabled) {
         for (const key in tags) {
-            if (!tags[key].disabled) {
+            if (!tagIsDisabled(tags[key])) {
                 tags2.push(tags[key])
             }
         }

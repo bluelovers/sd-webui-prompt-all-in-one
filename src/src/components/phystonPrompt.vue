@@ -602,6 +602,7 @@ import { getPromptOptionEmits, getPromptOptionProps } from "@/utils/promptOption
 import { tagIsBreak, tagIsLoraLike, tagIsWrap, tagIsKeyword } from "@/utils/promptTags/util"
 import { genPromptCore } from "@/utils/promptTags/genPrompt"
 import { updatePromptCore } from "@/utils/promptTags/updatePrompt"
+import { splitTextareaCore } from "@/utils/promptTags/splitTextarea"
 import { setPromptTextareaValueAndDispatchEvent } from "@/utils/promptTextarea"
 import { applyTagReplaceKeywordToPlain } from "@/utils/promptTags/util/tag-keyword"
 
@@ -934,6 +935,7 @@ export default {
         },
         _onTextareaChange(event) {
             console.log('onTextareaChange', event)
+            /** 自動完成面板顯示中：輸入正由插件接管，跳過本次解析 */
             const autocompleteParent = this.textarea.parentElement.getElementsByClassName('autocompleteParent')
             if (autocompleteParent.length) {
                 if (autocompleteParent[0].style.display !== 'none') return
@@ -944,51 +946,28 @@ export default {
                 }
             }
 
-            let value = this.textarea.value.trim()
-            if (value === this.prompt.trim()) return
-            let tags = common.splitTags(value, this.autoBreakBeforeWrap, this.autoBreakAfterWrap, this, {
+            const {changed, newTagIndexes} = splitTextareaCore({
+                value: this.textarea.value,
+                prompt: this.prompt,
+                options: this,
+                tags: this.tags,
                 onJsonIgnored: (text) => this.onJsonIgnored(text),
-            })
-
-            let disabledTags = []
-            this.tags.forEach((tag, index) => {
-                if (tag.disabled) {
-                    disabledTags.push({tag, index})
-                }
-            })
-            disabledTags.forEach(({tag, index}) => {
-                // 插入到 tags 中
-                tags.splice(index, 0, tag.value)
-            })
-
-            let indexes = []
-            let oldTags = this.tags
-            this.tags = []
-            for (let index in tags) {
-                let tag = tags[index]
-                if (tag === "\n") {
+                clearTags: () => {
+                    this.tags = []
+                },
+                appendWrapTag: () => {
                     this._appendTag("\n", "\n", false, -1, 'wrap')
-                } else {
-                    // if (tag.indexOf('Negative prompt:') === 0) break
-                    let find = false
-                    for (let item of oldTags) {
-                        if (item.value === tag) {
-                            find = item
-                            break
-                        }
-                    }
-                    // _restoreTag：建立 tag 並自動還原 localValue/disabled/自訂屬性
-                    const index = this._restoreTag(tag, -1, find || null)
-                    if (!find && index !== -1) indexes.push(index)
-                }
-            }
-            // autoSplitByPeriod：在 textarea 內容變動、重新解析標籤後，同步分割含 ". " 的標籤
-            this.applySplitByPeriod()
+                },
+                restoreTag: (value, source) => this._restoreTag(value, -1, source),
+                applySplitByPeriod: () => this.applySplitByPeriod(),
+            })
+            if (!changed) return
+
             if (this.autoTranslateToLocal && event) {
                 // 启动了自动翻译到本地语言，并且用户手动触发的
                 let useNetwork = !(this.tagCompleteFile && this.onlyCsvOnAuto)
                 useNetwork = false // 浪费网络请求，先关闭网络翻译。
-                this.translates(indexes, true, useNetwork).finally(() => {
+                this.translates(newTagIndexes, true, useNetwork).finally(() => {
                     this.updateTags()
                 })
             } else {
