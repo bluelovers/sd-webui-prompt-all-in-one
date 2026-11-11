@@ -619,7 +619,7 @@
     --pp-pt-dsb-ptl-promptTagLastChild-margin-right: 12px;
 
     // .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag.disabled .prompt-tag-edit
-    --pp-pt-dsb-ptl-ptd-promptTagEdit-opacity: .7;
+    --pp-pt-dsb-ptl-ptd-promptTagEdit-opacity: .6;
     --pp-pt-dsb-ptl-ptd-promptTagEdit-text-decoration: line-through;
 
     // .physton-prompt .prompt-tags .prompt-tags-list .prompt-tag.sortable-selected, .drop-selected .prompt-tag-value
@@ -1068,10 +1068,11 @@
     // .physton-prompt .prompt-tags .group-tabs .group-body .group-main .sub-group-main .group-tags .tag-item.manageable
     --pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-position: relative;
     --pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-overflow: visible;
+    --pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-padding-bottom: 30px;
 
     // .physton-prompt .prompt-tags .group-tabs .group-body .group-main .sub-group-main .group-tags .tag-item .tag-favorite-toolbar
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-position: absolute;
-    --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-bottom: 100%;
+    --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-bottom: 0;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-left: 0;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-z-index: 10;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-display: flex;
@@ -3162,6 +3163,9 @@
                     .prompt-tag-edit {
                         opacity: var(--pp-pt-dsb-ptl-ptd-promptTagEdit-opacity);
                         text-decoration: var(--pp-pt-dsb-ptl-ptd-promptTagEdit-text-decoration);
+
+                        border-style: dashed;
+                        border-width: 1px;
                     }
                 }
 
@@ -3699,6 +3703,7 @@
                             &.manageable {
                                 position: var(--pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-position);
                                 overflow: var(--pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-overflow);
+                                padding-bottom: var(--pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-padding-bottom);
 
                                 .tag-favorite-toolbar {
                                     display: none;

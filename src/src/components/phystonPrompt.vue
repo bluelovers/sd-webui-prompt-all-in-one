@@ -528,28 +528,25 @@
                                                 <div v-else class="tag-local" :style="getGroupTagStyle(item.name, group.name, en)">{{ en }}</div>
                                                 <div v-if="group.manageable && tagFavoriteEditing !== en"
                                                      class="tag-favorite-toolbar"
-                                                     @click.stop=""
-                                                     @mousedown.stop=""
-                                                     @mousemove.stop=""
-                                                     @mouseup.stop="">
+                                                     @click.stop="">
                                                     <button type="button" name="rename" v-tooltip="getLang('rename')"
-                                                            @click="onTagFavoriteRename(group, en)">
+                                                            @click.stop="onTagFavoriteRename(group, en)">
                                                         <icon-svg name="edit"/>
                                                     </button>
                                                     <button type="button" name="move-up" v-tooltip="getLang('move_up')"
-                                                            @click="onTagFavoriteMove(group, en, -1)">
+                                                            @click.stop="onTagFavoriteMove(group, en, -1)">
                                                         <icon-svg name="move-up"/>
                                                     </button>
                                                     <button type="button" name="move-down" v-tooltip="getLang('move_down')"
-                                                            @click="onTagFavoriteMove(group, en, 1)">
+                                                            @click.stop="onTagFavoriteMove(group, en, 1)">
                                                         <icon-svg name="move-down"/>
                                                     </button>
                                                     <button type="button" name="copy" v-tooltip="getLang('copy_to_clipboard')"
-                                                            @click="onTagFavoriteCopy(group, en)">
+                                                            @click.stop="onTagFavoriteCopy(group, en)">
                                                         <icon-svg name="copy"/>
                                                     </button>
                                                     <button type="button" name="remove" v-tooltip="getLang('remove_from_favorite')"
-                                                            @click="onTagFavoriteRemove(group, en)">
+                                                            @click.stop="onTagFavoriteRemove(group, en)">
                                                         <icon-svg name="close"/>
                                                     </button>
                                                 </div>
