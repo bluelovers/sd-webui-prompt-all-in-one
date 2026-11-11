@@ -1071,7 +1071,7 @@
 
     // .physton-prompt .prompt-tags .group-tabs .group-body .group-main .sub-group-main .group-tags .tag-item .tag-favorite-toolbar
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-position: absolute;
-    --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-top: -32px;
+    --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-bottom: 100%;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-left: 0;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-z-index: 10;
     --pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-display: flex;
@@ -3699,6 +3699,14 @@
                             &.manageable {
                                 position: var(--pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-position);
                                 overflow: var(--pp-pt-gt-gb-gm-sgm-gt-tagItemManageable-overflow);
+
+                                .tag-favorite-toolbar {
+                                    display: none;
+                                }
+
+                                &:hover .tag-favorite-toolbar {
+                                    display: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-display);
+                                }
                             }
 
                             &:hover {
@@ -3731,7 +3739,7 @@
 
                             .tag-favorite-toolbar {
                                 position: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-position);
-                                top: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-top);
+                                bottom: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-bottom);
                                 left: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-left);
                                 z-index: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-z-index);
                                 display: var(--pp-pt-gt-gb-gm-sgm-gt-ti-tfToolbar-display);

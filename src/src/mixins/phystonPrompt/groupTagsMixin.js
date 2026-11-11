@@ -9,8 +9,6 @@ export default {
             subGroupTagsActive: '',
             groupTagsProcessed: [],
             extraNetworksRefreshing: false,
-            /** 目前滑入的 tag 收藏項目（以 prompt 為鍵），用來顯示浮動工具列 */
-            tagFavoriteHover: '',
             /** 目前正在重新命名的 tag 收藏項目（以 prompt 為鍵） */
             tagFavoriteEditing: '',
             tagFavoriteEditValue: '',
@@ -256,15 +254,6 @@ export default {
             })
             this.updateTags()
         },
-        onGroupTagFavoriteEnter(group, en) {
-            if (!group.manageable) return
-            this.tagFavoriteHover = en
-        },
-        onGroupTagFavoriteLeave(group, en) {
-            if (!group.manageable) return
-            if (this.tagFavoriteEditing === en) return
-            if (this.tagFavoriteHover === en) this.tagFavoriteHover = ''
-        },
         onTagFavoriteRename(group, en) {
             let favorite = group.ori[en]
             if (!favorite) return
@@ -307,7 +296,6 @@ export default {
             this.gradioAPI.unFavorite(this.favoriteKey, favorite.id, FAVORITE_KIND.TAG).then(res => {
                 if (!res) return
                 if (this.tagFavoriteEditing === en) this.tagFavoriteEditing = ''
-                if (this.tagFavoriteHover === en) this.tagFavoriteHover = ''
                 this.refreshTagFavorites(this.favoriteKey)
             })
         },

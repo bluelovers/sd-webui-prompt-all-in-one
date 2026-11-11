@@ -512,9 +512,7 @@
                                             <div v-else :class="['tag-item', group.manageable ? 'manageable' : '']" ref="groupTagItem"
                                                  v-for="(local, en) in group.tags"
                                                  v-tooltip="getGroupTagTooltip(local, en)"
-                                                 @click="onClickGroupTag(local, en, item, group)"
-                                                 @mouseenter="onGroupTagFavoriteEnter(group, en)"
-                                                 @mouseleave="onGroupTagFavoriteLeave(group, en)">
+                                                 @click="onClickGroupTag(local, en, item, group)">
                                                 <input v-if="group.manageable && tagFavoriteEditing === en"
                                                        ref="tagFavoriteNameInput" class="tag-favorite-name-input"
                                                        v-model="tagFavoriteEditValue" :placeholder="getLang('unset_name')"
@@ -528,7 +526,7 @@
                                                     <div class="tag-en">{{ en }}</div>
                                                 </template>
                                                 <div v-else class="tag-local" :style="getGroupTagStyle(item.name, group.name, en)">{{ en }}</div>
-                                                <div v-if="group.manageable && tagFavoriteHover === en && tagFavoriteEditing !== en"
+                                                <div v-if="group.manageable && tagFavoriteEditing !== en"
                                                      class="tag-favorite-toolbar"
                                                      @click.stop=""
                                                      @mousedown.stop=""
