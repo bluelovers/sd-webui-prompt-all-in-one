@@ -63,24 +63,23 @@ export interface IGenPromptHooks {
  *   4. 當前 tag 以句號結尾（沿用原有的 period + wrap 移除行為）
  *
  * @param tag               - 當前標籤（換行前的最後一個 tag）
- * @param [options]         - 擴充選項（以物件傳入，便於未來新增欄位而不更動簽名）
+ * @param [runtime]         - 擴充選項（以物件傳入，便於未來新增欄位而不更動簽名）
  * @param [options.lineHasSharp=false] - 該行是否含 # 開頭/結尾的 tag
  *                                       （由 genPrompt 於遍歷期間累計，遇換行重置）
  * @returns true = 應移除換行前的逗號
  */
 export function shouldRemoveCommaBeforeWrap(
     tag: IPromptTag | null | undefined,
-    options: { lineHasSharp?: boolean } = {},
+    runtime?: IGenPromptLineStateCore,
 ): boolean {
     if (!tag) return false
-    const { lineHasSharp = false } = options
     const value = (tag.value || '').trim()
     /** 規則 1：換行前的 tag 以「:」結尾 */
     if (value.endsWith(':')) return true
     /** 規則 2：換行前的 tag 是 Lora / Lyco */
     if (tagIsLoraLike(tag)) return true
     /** 規則 3：該行任一 tag 以「#」開頭或結尾（由呼叫端遍歷期間累計傳入） */
-    // if (lineHasSharp) return true
+    // if (runtime.lineHasSharp) return true
     /** 規則 4：換行前的 tag 以句號結尾 */
     return /\.\s*$/.test(tag.value)
 }
@@ -194,6 +193,35 @@ export function filterDuplicateLoraTags(tags: readonly IPromptTag[]): IPromptTag
     })
 }
 
+interface IGenPromptLineStateCore {
+    /** 該行是否含 # 開頭或結尾的 tag（autoOptimizeSplitSymbol 換行前逗號移除判定用） */
+    lineHasSharp?: boolean
+}
+
+/**
+ * 行級 runtime 狀態介面。
+ * 僅作用於當前行的變數皆承載於此，遇分行 tag 時由 reset() 一併重置，
+ * 保證下一行不會延續上一行的行級狀態。
+ */
+interface IGenPromptLineState extends IGenPromptLineStateCore {
+    /** 行級完整重置（遇分行 tag 時使用）：下一行視為全新上下文 */
+    reset(): void
+}
+
+/**
+ * 建立行級 runtime 狀態物件。
+ *
+ * @returns {IGenPromptLineState}
+ */
+function createLineState(): IGenPromptLineState {
+    return {
+        lineHasSharp: false,
+        reset() {
+            this.lineHasSharp = false
+        },
+    }
+}
+
 /**
  * 分割标签（產生最終 prompt 字串）。
  *
@@ -230,11 +258,11 @@ export function genPromptCore(
     }
     const length = tags2.length
     /**
-     * 自動優化分割符號：於單次前向遍歷中累計「該行是否含 # 開頭/結尾 tag」。
-     * 遇換行 tag 時重置，使 # 判定均為 O(1)，
+     * 行級 runtime 狀態：lineHasSharp 於單次前向遍歷中累計「該行是否含 # 開頭/結尾 tag」，
+     * 遇分行 tag 時由 reset() 一併重置，使 # 判定均為 O(1)，
      * 避免每遇到換行就回頭掃描整行（多個換行時最壞 O(n²)）。
      */
-    let lineHasSharp = false
+    const lineState = createLineState()
     /**
      * 惰性載入 Extra Networks：輸出至第一個 lora / lyco / embedding tag 時才要求載入。
      *
@@ -256,7 +284,7 @@ export function genPromptCore(
         let prompt = ''
         if (tagIsWrap(tag)) {
             // 換行結束當前行 → 重置行狀態，供下一行重新累計
-            lineHasSharp = false
+            lineState.reset()
             prompt = "\n"
         } else {
             let value = common.replaceTag(tag.value)
@@ -279,10 +307,10 @@ export function genPromptCore(
              * 行內已確認含 # 時略過後續 tag 的重複檢查）。
              * 當前 tag 也屬於該行，必須在下方 nextIsWarp 判定之前更新。
              */
-            if (options.autoOptimizeSplitSymbol && !lineHasSharp) {
+            if (options.autoOptimizeSplitSymbol && !lineState.lineHasSharp) {
                 const sharpValue = (tag.value || '').trim()
                 if (sharpValue.startsWith('#') || sharpValue.endsWith('#')) {
-                    lineHasSharp = true
+                    lineState.lineHasSharp = true
                 }
             }
 
@@ -329,7 +357,7 @@ export function genPromptCore(
                      * 在輸出層直接判定，不依賴 autoSplitByPeriod，選項獨立啟用時即生效。
                      * 行內 # 狀態由遍歷期間累計，以物件選項傳入（預留未來擴充）。
                      */
-                    if (options.autoOptimizeSplitSymbol && shouldRemoveCommaBeforeWrap(tag, { lineHasSharp })) {
+                    if (options.autoOptimizeSplitSymbol && shouldRemoveCommaBeforeWrap(tag, { lineHasSharp: lineState.lineHasSharp })) {
                         splitSymbol = ''
                     }
                     // sd-webui-regional-prompter
