@@ -113,6 +113,7 @@ export function shouldRemoveCommaByAutoOptimize(
     tag: IPromptTag | null | undefined,
     tags2: readonly IPromptTag[],
     index: number,
+    hostOptions: IHostPromptOptions,
 ): boolean {
     if (!tag) return false
     const nextTag = index + 1 < tags2.length ? tags2[index + 1] : null
@@ -269,8 +270,8 @@ export function genPromptCore(
             }
 
             /** 權重數值改寫（正規化到小數 6 位並回寫 value） */
-            applyTagWeightNumToValue(tag)
-            applyTagTrimInnerOfBracket(tag)
+            applyTagWeightNumToValue(tag, options)
+            applyTagTrimInnerOfBracket(tag, options)
             if (tag.disabled && !ignoreDisabled) return
 
             /**
@@ -311,7 +312,7 @@ export function genPromptCore(
              * 換行情境（下一個為分行）連同空白一併移除，其餘僅移除逗號、保留空白。
              */
             if (options.autoOptimizeSplitSymbol && splitSymbol.includes(',')) {
-                if (shouldRemoveCommaByAutoOptimize(tag, tags2, index)) {
+                if (shouldRemoveCommaByAutoOptimize(tag, tags2, index, options)) {
                     splitSymbol = nextIsWarp ? '' : splitSymbol.replace(/,/g, '')
                 }
             }

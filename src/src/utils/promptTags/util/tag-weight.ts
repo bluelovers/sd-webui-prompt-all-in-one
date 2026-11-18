@@ -246,7 +246,7 @@ export function setLayers(
 	return wrapLayers(inner, num, start, end, joinStr)
 }
 
-export function trimInnerOfBracket(str: string): string
+export function trimInnerOfBracket(str: string, hostOptions: IHostPromptOptions): string
 {
 	if (!str?.length || !/[\(\[\{\<] | [\)\]\}\>]/.test(str)) return str
 
@@ -264,9 +264,9 @@ export function trimInnerOfBracket(str: string): string
 	return str
 }
 
-export function applyTagTrimInnerOfBracket(tag: IPromptTag): void
+export function applyTagTrimInnerOfBracket(tag: IPromptTag, hostOptions: IHostPromptOptions): void
 {
-	const value = trimInnerOfBracket(tag.value)
+	const value = trimInnerOfBracket(tag.value, hostOptions)
 	if (value !== tag.value)
 	{
 		tag.value = value
@@ -465,7 +465,7 @@ export function extractTagValueFromBrackets(value: IPromptTagValue, options?: IH
  *
  * @param tag - 要改寫的 tag（直接寫入 weightNum / value / localValue）
  */
-export function applyTagWeightNumToValue(tag: IPromptTag): void
+export function applyTagWeightNumToValue(tag: IPromptTag, hostOptions: IHostPromptOptions): void
 {
 	/**
 	 * 權重數值改寫：原式為 `tag.weightNum > 0 || tag.weightNum < 0`，
