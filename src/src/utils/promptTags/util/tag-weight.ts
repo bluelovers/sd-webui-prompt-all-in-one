@@ -81,6 +81,11 @@ export const bracketsCN: IBracketPairMap[] = [
 ]
 
 /**
+ * bracketsEN + bracketsCN 壓平後的括號配對表（hasBrackets 比對用）
+ */
+const bracketsAllPairs = collectBracketPairs()
+
+/**
  * 結尾的權重數字分段：`本體` + `:權重`。
  *
  * 只認字串尾端，故不會像 weightNumRegex（未錨定）那樣把 tag 中間的冒號也當成權重；
@@ -152,7 +157,7 @@ export function hasBrackets(text: string): IBracketPair<EnumTagWeightSymbol>
 	if (length === 0) return
 	const start = text[0]
 	const end = text[length - 1]
-	return collectBracketPairs().find(pair => pair[0] === start && pair[1] === end)
+	return bracketsAllPairs.find(pair => pair[0] === start && pair[1] === end)
 }
 
 /**
@@ -246,19 +251,44 @@ export function setLayers(
 	return wrapLayers(inner, num, start, end, joinStr)
 }
 
-export function trimInnerOfBracket(str: string, hostOptions: IHostPromptOptions): string
+/**
+ * 清除括號內側的空白；僅 `()` 另清除內側前後的 `,`。
+ *
+ * `,x,` 形式的前後逗號是多餘的包裹殘留，但當 x 為單一字母或數字時保留原樣，
+ * 避免把刻意的短內容（如 `,a,` / `,1,`）一併抹掉；其他括號型別不動逗號。
+ *
+ * @param str        - 要處理的文字
+ * @param hostOptions - 宿主選項（此處未使用，保留呼叫簽章）
+ * @returns 處理後的文字；無變動時原樣回傳
+ */
+export function trimInnerOfBracket(str: string, hostOptions?: IHostPromptOptions): string
 {
-	if (!str?.length || !/[\(\[\{\<] | [\)\]\}\>]/.test(str)) return str
+	if (!str?.length || !/[\(\[\{\<]|[\)\]\}\>]/.test(str)) return str
 
 	const bracket = hasBrackets(str)
 
 	if (!bracket) return str
 
-	const { inner, layers } = unwrapLayers(str, bracket[0], bracket[1])
+	let { inner, layers } = unwrapLayers(str, bracket[0], bracket[1])
 
 	if (layers > 0)
 	{
-		return wrapLayers(inner.trim(), layers, bracket[0], bracket[1])
+		let next = inner = inner.trim()
+
+		const isIncParen = bracket[0] === EnumTagWeightSymbol.IncWeightSymbolOpen
+		&& bracket[1] === EnumTagWeightSymbol.IncWeightSymbolClose
+
+		if (isIncParen && next.length)
+		{
+			next = next.replace(/^[, ]+|[, ]+$/g, '').trim()
+
+			if (next.length && !/^(?:[a-zA-Z0-9]|\d+(?:\.\d+)?|.)$/u.test(next))
+			{
+				inner = next
+			}
+		}
+
+		return wrapLayers( inner, layers, bracket[0], bracket[1])
 	}
 
 	return str

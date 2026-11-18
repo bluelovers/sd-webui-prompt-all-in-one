@@ -1,0 +1,78 @@
+exports[`splitTags JSON protection > json guard keeps object opaque and notifies via hooks > array-wrapped is not {}-wrapped: normal split, NOT notified — [3a1db008] \"[1], [2]\" (false, false, {}, {onJsonIgnored: undefined}) 1`] = `
+{
+  "input": "[1], [2]",
+  "args": [
+    false,
+    false,
+    {},
+    {}
+  ],
+  "result": [
+    "[1]",
+    "[2]"
+  ]
+}
+`;
+
+exports[`splitTags JSON protection > json guard keeps object opaque and notifies via hooks > invalid JSON (parse fails): normal comma split, NOT notified — [69b32a50] \"{a}, {b}\" (false, false, {}, {onJsonIgnored: undefined}) 1`] = `
+{
+  "input": "{a}, {b}",
+  "args": [
+    false,
+    false,
+    {},
+    {}
+  ],
+  "result": [
+    "{a}",
+    "{b}"
+  ]
+}
+`;
+
+exports[`splitTags JSON protection > json guard keeps object opaque and notifies via hooks > mojibake inside JSON: repaired BEFORE detect, single tag, notified with repaired text — [c1b67b8e] \"{\\\"k\\\": \\\"cafÃ©\\\"}\" (false, false, {autoRepairMojibake: true}, {onJsonIgnored: undefined}) 1`] = `
+{
+  "input": "{\\"k\\": \\"cafÃ©\\"}",
+  "args": [
+    false,
+    false,
+    {
+      "autoRepairMojibake": true
+    },
+    {}
+  ],
+  "result": [
+    "{\\"k\\": \\"café\\"}"
+  ]
+}
+`;
+
+exports[`splitTags JSON protection > json guard keeps object opaque and notifies via hooks > pretty-printed JSON: newlines NOT converted to wrap markers (single tag) — [9c755515] \"{\\n  \\\"x\\\": 1\\n}\" (false, false, {}, {onJsonIgnored: undefined}) 1`] = `
+{
+  "input": "{\\n  \\"x\\": 1\\n}",
+  "args": [
+    false,
+    false,
+    {},
+    {}
+  ],
+  "result": [
+    "{\\n  \\"x\\": 1\\n}"
+  ]
+}
+`;
+
+exports[`splitTags JSON protection > json guard keeps object opaque and notifies via hooks > valid JSON object: kept as single tag, onJsonIgnored notified — [d8497d9d] \"{\\\"a\\\": 1, \\\"b\\\": 2}\" (false, false, {}, {onJsonIgnored: undefined}) 1`] = `
+{
+  "input": "{\\"a\\": 1, \\"b\\": 2}",
+  "args": [
+    false,
+    false,
+    {},
+    {}
+  ],
+  "result": [
+    "{\\"a\\": 1, \\"b\\": 2}"
+  ]
+}
+`;

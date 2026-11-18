@@ -1,0 +1,202 @@
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > CR preserved like newline (converted downstream) — [e16d3c08] \"\\rabc\\r\" 1`] = `
+{
+  "input": "\\rabc\\r",
+  "result": "\\rabc\\r"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > ZWSP removed BEFORE trim — space trapped behind ZWSP still trimmed (order matters) — [d0b5138f] \"​ abc\" 1`] = `
+{
+  "input": "​ abc",
+  "result": "abc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > edge spaces trimmed while boundary newlines kept — [a8f85b71] \" \\nabc\\n \" 1`] = `
+{
+  "input": " \\nabc\\n ",
+  "result": "\\nabc\\n"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > edge spaces trimmed — [e1df0bff] \"  abc  \" 1`] = `
+{
+  "input": "  abc  ",
+  "result": "abc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > edge spaces trimmed, internal comma-space kept verbatim — [eadb0ba6] \" abc , def \" 1`] = `
+{
+  "input": " abc , def ",
+  "result": "abc , def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > edge tabs trimmed — [d93de559] \"\\tabc\\t\" 1`] = `
+{
+  "input": "\\tabc\\t",
+  "result": "abc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal NULL removed — [2b10de34] \"a\\u0000b, c\" 1`] = `
+{
+  "input": "a\\u0000b, c",
+  "result": "ab, c"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal ZWSP removed — [9570efc2] \"abc​, def\" 1`] = `
+{
+  "input": "abc​, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal cp1252 mojibake ZWSP sequence removed — [314bf17c] \"abcâ€‹, def\" 1`] = `
+{
+  "input": "abcâ€‹, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal mojibake ZWSP sequence removed — [c5d24805] \"abcâ, def\" 1`] = `
+{
+  "input": "abcâ, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal multiple spaces kept — [6e12db73] \"a  b\" 1`] = `
+{
+  "input": "a  b",
+  "result": "a  b"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > internal tab kept while edges fully cleaned — [72c4a227] \" ​ a\\tx​ \" 1`] = `
+{
+  "input": " ​ a\\tx​ ",
+  "result": "a\\tx"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > invisible-chars-only input → empty string — [82899120] \"​\\u0000\" 1`] = `
+{
+  "input": "​\\u0000",
+  "result": ""
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > leading NULL removed — [609f6e36] \"\\u0000abc\" 1`] = `
+{
+  "input": "\\u0000abc",
+  "result": "abc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > leading ZWSP removed — [cefb41ac] \"​abc, def\" 1`] = `
+{
+  "input": "​abc, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > leading cp1252 mojibake ZWSP sequence removed — [9cd4e77b] \"â€‹abc, def\" 1`] = `
+{
+  "input": "â€‹abc, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > leading mojibake ZWSP sequence removed — [3e2f0392] \"âabc, def\" 1`] = `
+{
+  "input": "âabc, def",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > leading newline preserved (wrap marker semantics) — [f39d39bf] \"\\nabc\" 1`] = `
+{
+  "input": "\\nabc",
+  "result": "\\nabc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > legitimate â kept — bare U+00E2 without C1 follow-up is not mojibake — [7e85d516] \" crâme brûlée\" 1`] = `
+{
+  "input": " crâme brûlée",
+  "result": "crâme brûlée"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > legitimate € / truncated â€ kept — cp1252 match needs the full â + € + ‹ sequence — [fce37ce0] \" pay â€10 or 50€ \" 1`] = `
+{
+  "input": " pay â€10 or 50€ ",
+  "result": "pay â€10 or 50€"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > mixed edge cleanup: invisible + spaces — [5c66de3c] \" ​abc​ \" 1`] = `
+{
+  "input": " ​abc​ ",
+  "result": "abc"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > multiple boundary newlines preserved — [d46fee38] \"\\n\\nabc\\n\\n\" 1`] = `
+{
+  "input": "\\n\\nabc\\n\\n",
+  "result": "\\n\\nabc\\n\\n"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > no edge whitespace — unchanged — [4a479db6] \"a, b\" 1`] = `
+{
+  "input": "a, b",
+  "result": "a, b"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > three consecutive cp1252 mojibake sequences removed — [e77f68a8] \"aâ€‹â€‹â€‹b\" 1`] = `
+{
+  "input": "aâ€‹â€‹â€‹b",
+  "result": "ab"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > three consecutive mojibake ZWSP sequences (the reported âââ) removed — [3eba24ae] \"aâââb\" 1`] = `
+{
+  "input": "aâââb",
+  "result": "ab"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > trailing ZWSP removed — [e3bffa5f] \"abc, def​\" 1`] = `
+{
+  "input": "abc, def​",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > trailing cp1252 mojibake ZWSP sequence removed — [f37007d3] \"abc, defâ€‹\" 1`] = `
+{
+  "input": "abc, defâ€‹",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > trailing mojibake ZWSP sequence removed — [2c63f0e5] \"abc, defâ\" 1`] = `
+{
+  "input": "abc, defâ",
+  "result": "abc, def"
+}
+`;
+
+exports[`trimPromptText > cleanup intent (direct assertions, no snapshot) > trailing newline preserved — [edeaaff3] \"abc\\n\" 1`] = `
+{
+  "input": "abc\\n",
+  "result": "abc\\n"
+}
+`;

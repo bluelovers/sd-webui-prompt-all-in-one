@@ -1,0 +1,489 @@
+exports[`trimInnerOfBracket > emoji cases > [2e13be2f] \"(^▽^)v\" 1`] = `
+{
+  "input": "(^▽^)v",
+  "result": {
+    "result": "(^▽^)v",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [302d2d4c] \"(つд⊂)\" 1`] = `
+{
+  "input": "(つд⊂)",
+  "result": {
+    "result": "(つд⊂)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [31d332d1] \"(\`･ω･´)\" 1`] = `
+{
+  "input": "(\`･ω･´)",
+  "result": {
+    "result": "(\`･ω･´)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [37c85dd6] \"( ¯ ³¯)♡\" 1`] = `
+{
+  "input": "( ¯ ³¯)♡",
+  "result": {
+    "result": "( ¯ ³¯)♡",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [3850fad5] \"(*^_^ *)\" 1`] = `
+{
+  "input": "(*^_^ *)",
+  "result": {
+    "result": "(*^_^ *)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [84afd664] \"(o´∀｀)o\" 1`] = `
+{
+  "input": "(o´∀｀)o",
+  "result": {
+    "result": "(o´∀｀)o",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [9aa4da81] \"(o゜▽゜)o☆\" 1`] = `
+{
+  "input": "(o゜▽゜)o☆",
+  "result": {
+    "result": "(o゜▽゜)o☆",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [a6dcdc5d] \"(◕‿◕)’\" 1`] = `
+{
+  "input": "(◕‿◕)’",
+  "result": {
+    "result": "(◕‿◕)’",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [c316966f] \"(,风,)\" 1`] = `
+{
+  "input": "(,风,)",
+  "result": {
+    "result": "(,风,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [e19b6199] \"(´;ω;\`)\" 1`] = `
+{
+  "input": "(´;ω;\`)",
+  "result": {
+    "result": "(´;ω;\`)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > emoji cases > [f614ed1d] \"(´∀\`*)ﾉ\" 1`] = `
+{
+  "input": "(´∀\`*)ﾉ",
+  "result": {
+    "result": "(´∀\`*)ﾉ",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > guards — empty / no bracket char / unpaired ends > bracket char present but ends unpaired — [38d5ec2d] \"a(b\" 1`] = `
+{
+  "input": "a(b",
+  "result": {
+    "result": "a(b",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > guards — empty / no bracket char / unpaired ends > empty string — [e3b0c442] \"\" 1`] = `
+{
+  "input": "",
+  "result": {
+    "result": "",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > guards — empty / no bracket char / unpaired ends > mismatched pair ( ( … ] ) — [b63cb864] \"(a]\" 1`] = `
+{
+  "input": "(a]",
+  "result": {
+    "result": "(a]",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > guards — empty / no bracket char / unpaired ends > no bracket char at all — [3ef7f850] \"plain tag\" 1`] = `
+{
+  "input": "plain tag",
+  "result": {
+    "result": "plain tag",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > guards — empty / no bracket char / unpaired ends > open paren without close — [4947b82c] \"(abc\" 1`] = `
+{
+  "input": "(abc",
+  "result": {
+    "result": "(abc",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > NovelAI braces trimmed — [094120ee] \"{ tag }\" 1`] = `
+{
+  "input": "{ tag }",
+  "result": {
+    "result": "{tag}",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > already empty inner unchanged — [2e38e77b] \"()\" 1`] = `
+{
+  "input": "()",
+  "result": {
+    "result": "()",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > angle brackets trimmed — [0b96e143] \"< lora:foo >\" 1`] = `
+{
+  "input": "< lora:foo >",
+  "result": {
+    "result": "<lora:foo>",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > edge tab trimmed — [2710e9c9] \"(x\\t)\" 1`] = `
+{
+  "input": "(x\\t)",
+  "result": {
+    "result": "(x)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > full-width parens untouched — guard regex only matches half-width bracket chars — [3a9f7eaf] \"（ tag ）\" 1`] = `
+{
+  "input": "（ tag ）",
+  "result": {
+    "result": "（ tag ）",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > half-width parens trimmed — [24368d10] \"( tag )\" 1`] = `
+{
+  "input": "( tag )",
+  "result": {
+    "result": "(tag)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > multiple layers trimmed in one pass — [e277d2be] \"(( tag ))\" 1`] = `
+{
+  "input": "(( tag ))",
+  "result": {
+    "result": "((tag))",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > square brackets trimmed — [88c2138a] \"[ tag ]\" 1`] = `
+{
+  "input": "[ tag ]",
+  "result": {
+    "result": "[tag]",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > inner whitespace trim (half-width bracket types) > whitespace-only inner → empty — [4c24ca32] \"(  )\" 1`] = `
+{
+  "input": "(  )",
+  "result": {
+    "result": "()",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > NovelAI braces — comma rule not applied — [d7519711] \"{,1girl,}\" 1`] = `
+{
+  "input": "{,1girl,}",
+  "result": {
+    "result": "{,1girl,}",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > comma + spaces collapse to empty — [b23c0022] \"( , , )\" 1`] = `
+{
+  "input": "( , , )",
+  "result": {
+    "result": "(, ,)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > commas + spaces stripped together — [4085db7a] \"( , 1girl , )\" 1`] = `
+{
+  "input": "( , 1girl , )",
+  "result": {
+    "result": "(1girl)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > decimal number preserved — [efc5eead] \"(,1.5,)\" 1`] = `
+{
+  "input": "(,1.5,)",
+  "result": {
+    "result": "(,1.5,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > double comma collapses to empty — [1d632841] \"(,,)\" 1`] = `
+{
+  "input": "(,,)",
+  "result": {
+    "result": "(,,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > leading/trailing commas stripped — [f2b4d633] \"(,1girl,)\" 1`] = `
+{
+  "input": "(,1girl,)",
+  "result": {
+    "result": "(1girl)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > lone comma pair collapses to empty — [537065b2] \"(,)\" 1`] = `
+{
+  "input": "(,)",
+  "result": {
+    "result": "(,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > only edge commas stripped, internal comma kept — [877b967b] \"(,tag, with space)\" 1`] = `
+{
+  "input": "(,tag, with space)",
+  "result": {
+    "result": "(tag, with space)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > plain number preserved — [66a4e7c4] \"(,12,)\" 1`] = `
+{
+  "input": "(,12,)",
+  "result": {
+    "result": "(,12,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > single digit preserved — [bc3ea1a9] \"(,1,)\" 1`] = `
+{
+  "input": "(,1,)",
+  "result": {
+    "result": "(,1,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > single letter preserved — [5adb6537] \"(,a,)\" 1`] = `
+{
+  "input": "(,a,)",
+  "result": {
+    "result": "(,a,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > single letter preserved — [f919a00c] \"(,x,)\" 1`] = `
+{
+  "input": "(,x,)",
+  "result": {
+    "result": "(,x,)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > square brackets — comma rule not applied — [43fc4d5e] \"[,1girl,]\" 1`] = `
+{
+  "input": "[,1girl,]",
+  "result": {
+    "result": "[,1girl,]",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > stripped across multiple layers — [32918d3a] \"((,1girl,))\" 1`] = `
+{
+  "input": "((,1girl,))",
+  "result": {
+    "result": "((1girl))",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > trailing comma sits before weight number — only leading one stripped — [9735d9e3] \"(,1girl,:1.5)\" 1`] = `
+{
+  "input": "(,1girl,:1.5)",
+  "result": {
+    "result": "(1girl,:1.5)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > weight preserved — [7c552363] \"(x :1.5,)\" 1`] = `
+{
+  "input": "(x :1.5,)",
+  "result": {
+    "result": "(x :1.5)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > weight preserved — [d27187a4] \"(x:1.5,)\" 1`] = `
+{
+  "input": "(x:1.5,)",
+  "result": {
+    "result": "(x:1.5)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > leading/trailing comma strip (half-width parens only) > whitespace trimmed even when comma rule declines — [fd672f2c] \"( ,a, )\" 1`] = `
+{
+  "input": "( ,a, )",
+  "result": {
+    "result": "(,a,)",
+    "changed": true
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > CJK content untouched — [aae0da5f] \"(風景)\" 1`] = `
+{
+  "input": "(風景)",
+  "result": {
+    "result": "(風景)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > dec-weight brackets untouched — [cf21a89a] \"[tag]\" 1`] = `
+{
+  "input": "[tag]",
+  "result": {
+    "result": "[tag]",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > no surrounding whitespace/commas — [6cf9fd65] \"(tag)\" 1`] = `
+{
+  "input": "(tag)",
+  "result": {
+    "result": "(tag)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > normal tag with leading digit — [f308a055] \"(1girl)\" 1`] = `
+{
+  "input": "(1girl)",
+  "result": {
+    "result": "(1girl)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > single digit as whole inner — [fd0ad902] \"(1)\" 1`] = `
+{
+  "input": "(1)",
+  "result": {
+    "result": "(1)",
+    "changed": false
+  }
+}
+`;
+
+exports[`trimInnerOfBracket > unchanged passthrough > single letter as whole inner — [f89bf797] \"(a)\" 1`] = `
+{
+  "input": "(a)",
+  "result": {
+    "result": "(a)",
+    "changed": false
+  }
+}
+`;

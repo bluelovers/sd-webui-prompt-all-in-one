@@ -151,6 +151,12 @@ export function caseTitle(tc: ICaseBare): string {
  *   // 專存快照的測試組：整組允許省略斷言，不必逐筆標記（個別案例可用 caseAllowSnapshotOnly: false 收回）
  *   runCases('snapshots', myFn, [ ... ], { suiteSnapshot: true, suiteAllowSnapshotOnly: true })
  *
+ *   // 自訂快照內容：傳入預設 { input, args?, result } 與案例，回傳值取代預設快照
+ *   runCases('basic', myFn, [ ... ], {
+ *     suiteSnapshot: true,
+ *     mapSnapshot: (snap, tc) => ({ input: snap.input, note: tc.note, result: snap.result }),
+ *   })
+ *
  *   // 傳入 factory function（lazy import）
  *   runCases('basic', () => import('./myModule.js').then(m => m.default), [
  *     { input: 'a. b. c', expected: ['a.', 'b.', 'c'] },
@@ -160,14 +166,15 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
     suiteName: string,
     fn: (input: TInput, ...args: TArgs) => TResult | Promise<TResult>,
     cases: readonly IRunCase<TInput, TArgs, TResult>[],
-    options: IRunCasesOptions = {},
+    options: IRunCasesOptions<TInput, TArgs, TResult> = {},
 ): void {
     /**
      * suiteSnapshot: true 時整組寫入快照 { input, args?, result }（與 splitTags 同格式）。
      * suiteAllowSnapshotOnly: true 是「整組允許省略斷言」，只給專存快照的測試組；
      * 一般測試組靠案例自己的 caseAllowSnapshotOnly 逐筆決定。
+     * mapSnapshot 傳入時以其回傳值取代預設快照內容（見下方快照組裝處）。
      */
-    const { suiteSnapshot = false, suiteAllowSnapshotOnly = false } = options
+    const { suiteSnapshot = true, suiteAllowSnapshotOnly = false, mapSnapshot } = options
     describe(suiteName, async () => {
         forEachCase(cases, caseTitle, async (tc, t: TestContext) => {
             /**
@@ -210,7 +217,8 @@ export function runCases<TInput, TArgs extends unknown[], TResult>(
                 const snap: IRunCasesSnap<TInput, TArgs, TResult> = tc.args !== undefined
                     ? { input: tc.input, args: tc.args, result }
                     : { input: tc.input, result }
-                t.assert.snapshot(snap)
+                /** mapSnapshot 提供時以回傳值取代預設快照內容 */
+                t.assert.snapshot(mapSnapshot ? mapSnapshot(snap, tc) : snap)
             }
             /**
              * 案例宣告的斷言全部執行，任一失敗即中止該案例：

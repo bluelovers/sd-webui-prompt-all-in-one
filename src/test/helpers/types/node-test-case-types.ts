@@ -7,6 +7,7 @@ import type { IUpdatePromptHost } from '#/src/utils/promptTags/updatePrompt'
 import { IHostPromptOptions } from '#/src/utils/promptTags/types'
 import { IPromptTag, IPromptTagValue, IPromptTagValueRuntimeInput } from '#/src/utils/promptTags/tag-types'
 import { IPromptOptionValueRecordWithLegacyRuntime } from '#/src/utils/promptOptions/definitions'
+import type { IRunCasesSnap } from './snap-types'
 
 /**
  * splitTags 的額外參數 tuple。
@@ -88,7 +89,7 @@ export interface IRunCase<
 	 * 只要求子結構相符，其餘欄位不受限。
 	 * 與 expected / assert 共存時全部執行。
 	 */
-	partialExpected?: TResult
+	partialExpected?: Partial<TResult>
 	/**
 	 * 自訂斷言 fn(result, t)：t 為 node:test 的 TestContext，
 	 * 可直接使用 t.assert.*（含 partialDeepStrictEqual）。
@@ -284,7 +285,11 @@ export interface ICreateUpdatePromptHostResult {
 }
 
 /** runCases 的選項。 */
-export interface IRunCasesOptions {
+export interface IRunCasesOptions<
+	TInput = unknown,
+	TArgs extends unknown[] = unknown[],
+	TResult = unknown,
+> {
 	/** suite 級：true 時整組案例寫入快照 { input, args?, result } */
 	suiteSnapshot?: boolean
 	/**
@@ -298,6 +303,17 @@ export interface IRunCasesOptions {
 	 * 預設 false：未提供 expected/assert 的案例一律拋錯。
 	 */
 	suiteAllowSnapshotOnly?: boolean
+	/**
+	 * suite 級：自訂寫入快照的內容（可省略）。
+	 * 傳入預設快照 { input, args?, result } 與案例，回傳值取代預設快照；
+	 * 不傳時維持預設形狀。
+	 * 只在會寫入快照的案例（suiteSnapshot 或該案例的 caseSnapshot）被呼叫，
+	 * 決定的是「內容」；快照名稱仍由案例標題決定，不受影響。
+	 */
+	mapSnapshot?: <R = TResult>(
+		snap: IRunCasesSnap<TInput, TArgs, TResult>,
+		tc: IRunCase<TInput, TArgs, TResult>,
+	) => IRunCasesSnap<TInput, TArgs, R>
 }
 
 /** runSplitTagsTests 的選項（被測函式由呼叫端注入，這裡只負責編排與斷言）。 */
