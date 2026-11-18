@@ -19,6 +19,17 @@ import { tagIsWrap } from './util';
 export type IPromptTagProps = Partial<Omit<IPromptTag, 'type' | 'value'>>;
 
 /**
+ * 需要在 round-trip / rebuild 中保留的自訂屬性
+ * _appendTag() 已處理的屬性（value, localValue, disabled, type）不在此列
+ * 新增自訂屬性時只需在此陣列追加
+ */
+export const RESTOREABLE_PROPERTIES = [
+	'noCommaAfter',
+	'noCommaBefore',
+	'isKeyword',
+] as const satisfies readonly (keyof IPromptTag)[];
+
+/**
  * 產生 tag 的唯一識別值。
  * 以當前時間戳為前綴、隨機數補位（與 tagMixin.js 的 _appendTag() 同源），
  * 同一 session 內近似遞增，故以 id 排序即近似以建立時間排序。

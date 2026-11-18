@@ -8,7 +8,7 @@ import {
 } from "@/utils/promptTags/util/tag-weight";
 import { getTagClasses } from "@/utils/promptTagRender/tagClasses";
 import { renderTagCore } from "@/utils/promptTagRender/renderTag";
-import { _createTagBase, _createTagUuid, _setTagCore } from "@/utils/promptTags/createTag";
+import { _createTagBase, _createTagUuid, _setTagCore, RESTOREABLE_PROPERTIES } from "@/utils/promptTags/createTag";
 import { parseLoraLikeValue } from "@/utils/promptTags/util/tag-lora";
 
 export default {
@@ -28,11 +28,7 @@ export default {
      * _appendTag() 已處理的屬性（value, localValue, disabled, type）不在此列
      * 新增自訂屬性時只需在此陣列追加
      */
-    RESTOREABLE_PROPERTIES: [
-        'noCommaAfter',
-        'noCommaBefore',
-        'isKeyword',
-    ],
+    RESTOREABLE_PROPERTIES,
     methods: {
         _setTag(tag) {
             _setTagCore(tag, this)
