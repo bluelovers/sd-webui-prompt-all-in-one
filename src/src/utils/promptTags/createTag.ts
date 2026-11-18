@@ -65,7 +65,7 @@ export function _createTagBase<T extends IPromptTagBase, P extends IPromptTagPro
  * @param tag - 目標 tag，就地寫入計算結果
  * @param options - 宿主選項（useNovelAiWeightSymbol 等，原 this）
  */
-export function _setTagCore<T extends IPromptTag>(tag: T, options: IHostPromptOptions): T & Required<IPromptTagRuntimeProps>
+export function _setTagCore<T extends IPromptTag>(tag: T, options: IHostPromptOptions): T & Required<IPromptTagRuntimeProps & Pick<IPromptTag, 'originalValue'>>
 {
 	if (tagIsWrap(tag))
 	{
