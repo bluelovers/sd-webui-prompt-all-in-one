@@ -2,17 +2,13 @@ import autoSizeInput from "autosize-input";
 import {FAVORITE_KIND} from "@/utils/gradioAPI";
 import { findTagUntil, tagIsDisabled, tagIsSharp, tagIsWrap, findTagByID } from "@/utils/promptTags/util";
 import {
-    getTagDecWeight,
-    getTagIncWeight,
-    extractTagValueFromBrackets,
-    getTagWeightNum,
     applyTagDecWeight,
     applyTagIncWeight,
     applyTagWeightNum,
 } from "@/utils/promptTags/util/tag-weight";
 import { getTagClasses } from "@/utils/promptTagRender/tagClasses";
 import { renderTagCore } from "@/utils/promptTagRender/renderTag";
-import { _createTagBase, _createTagUuid } from "@/utils/promptTags/createTag";
+import { _createTagBase, _createTagUuid, _setTagCore } from "@/utils/promptTags/createTag";
 import { parseLoraLikeValue } from "@/utils/promptTags/util/tag-lora";
 
 export default {
@@ -39,24 +35,7 @@ export default {
     ],
     methods: {
         _setTag(tag) {
-            if (typeof tag['type'] === 'string' && tag.type === 'wrap') {
-                tag.weightNum = 1
-                tag.incWeight = 0
-                tag.decWeight = 0
-            } else {
-                tag.weightNum = getTagWeightNum(tag.value)
-                // tag.weightNum = tag.weightNum <= 0 ? 1 : tag.weightNum
-                // tag.weightNum = tag.weightNum === 0 ? 1 : tag.weightNum
-                tag.incWeight = getTagIncWeight(tag.value, this)
-                tag.decWeight = getTagDecWeight(tag.value)
-
-                tag.originalValue = tag.value
-                /** Lora / Lyco 語法偵測：單一事實在 parseLoraLikeValue()，不另行比對正則 */
-                if (!parseLoraLikeValue(tag.value)) {
-                    // tag.weightNum = tag.weightNum <= 0 ? 1 : tag.weightNum
-                    tag.originalValue = extractTagValueFromBrackets(tag.value, this)
-                }
-            }
+            _setTagCore(tag, this)
             this._setTagClass(tag)
             this.$nextTick(() => {
                 this._setTagHeight(tag)

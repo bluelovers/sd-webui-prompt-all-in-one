@@ -1,4 +1,4 @@
-import { EnumPromptTagType, IPromptTag, IPromptTagBase, IPromptTagType, IPromptTagValue } from './tag-types';
+import { EnumPromptTagType, IPromptTag, IPromptTagBase, IPromptTagRuntimeProps, IPromptTagType, IPromptTagValue } from './tag-types';
 import type {
 	ITSAnyOfUnion,
 	ITSUnionToOptional,
@@ -9,6 +9,10 @@ import type {
 	ITSLogicIsAny,
 } from 'ts-type';
 import { _normalizeTagValue, _sortPromptTagKeys } from './util/tag-normalize';
+import { parseLoraLikeValue } from './util/tag-lora';
+import { extractTagValueFromBrackets, getTagDecWeight, getTagIncWeight, getTagWeightNum } from './util/tag-weight';
+import type { IHostPromptOptions } from './types';
+import { tagIsWrap } from './util';
 
 
 /** 建立 tag 時可覆寫的欄位：type / value 由 _createTagBase() 強制正規化，故不開放覆寫 */
@@ -49,6 +53,40 @@ export function _createTagBase<T extends IPromptTagBase, P extends IPromptTagPro
 		value: _normalizeTagValue(tag.value),
 		localValue: _normalizeTagValue(props?.localValue ?? tag.localValue),
 	}
+}
+
+/**
+ * 計算 tag 的權重欄位與 originalValue（_setTag 的核心計算）。
+ *
+ * - wrap tag：權重固定為 1 / 0 / 0，不解析 value
+ * - 其餘 tag：由 value 解析 weightNum / incWeight / decWeight；
+ *   originalValue 保留 value 原文，非 Lora / Lyco 語法時再剝除權重括號
+ *
+ * @param tag - 目標 tag，就地寫入計算結果
+ * @param options - 宿主選項（useNovelAiWeightSymbol 等，原 this）
+ */
+export function _setTagCore<T extends IPromptTag>(tag: T, options: IHostPromptOptions): T & Required<IPromptTagRuntimeProps>
+{
+	if (tagIsWrap(tag))
+	{
+		tag.weightNum = 1
+		tag.incWeight = 0
+		tag.decWeight = 0
+	}
+	else
+	{
+		tag.weightNum = getTagWeightNum(tag.value)
+		tag.incWeight = getTagIncWeight(tag.value, options)
+		tag.decWeight = getTagDecWeight(tag.value)
+
+		tag.originalValue = tag.value
+		/** Lora / Lyco 語法不剝括號，其 originalValue 即 value 原文 */
+		if (!parseLoraLikeValue(tag.value))
+		{
+			tag.originalValue = extractTagValueFromBrackets(tag.value, options)
+		}
+	}
+	return tag satisfies IPromptTag as any
 }
 
 export type I_IsEmptyObject<T> =
