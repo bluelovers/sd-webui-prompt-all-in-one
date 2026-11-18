@@ -7,7 +7,7 @@
     "test": "node --run test:node",
     "test:node": "node --run test:node:target -- test/**/*.node-test.js test/**/*.node-test.ts",
     "test:node:target": "node --run typecheck:all && tsx --test --test-update-snapshots --",
-    "posttest": "pnpm run build",
+    "prebuild": "pnpm run test",
     "build": "vite build",
     "build:all": "pnpm run build && node --run build:css",
     "build:css": "node build-css.js all",
