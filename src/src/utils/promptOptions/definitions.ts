@@ -137,6 +137,15 @@ const _promptOptions = [
         note: '消除重複 Lora / Lyco：以名稱為重複鍵（權重不視為差異），重複時保留最後一個、移除較早者。# 之後與 disabled 的 Lora 不參與去重。僅在 genPrompt() 輸出層過濾，不修改 tags 陣列，因此只需重新產生輸出。',
     },
     {
+        key: 'autoRemoveDuplicateTag',
+        dataDefault: false,
+        propDefault: false,
+        afterSave: EnumPromptOptionAfterSave.updatePrompt,
+        emittedBy: [EnumPromptOptionComponent.promptFormat],
+        checkUi: {labelLangKey: 'is_remove_duplicate_tag'},
+        note: '移除重複 tag：輸出時逐行於遍歷當下紀錄 originalValue ?? value（不預先掃描），同一行重複出現的一般文字 tag 直接忽略。僅在 genPrompt() 輸出層過濾，不修改 tags 陣列，因此只需重新產生輸出。',
+    },
+    {
         key: 'useNovelAiWeightSymbol',
         dataDefault: false,
         propDefault: false,

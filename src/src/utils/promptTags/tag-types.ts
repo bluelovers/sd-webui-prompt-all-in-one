@@ -86,6 +86,12 @@ export interface IPromptTagBaseWithUuid extends IPromptTagBase
 
 export interface IPromptTag extends IPromptTagBaseWithUuid, IPromptTagRuntimeExtraProps, IPromptTagRuntimeProps
 {
+	/**
+	 * 保留 tag 的原始文本值，作為後續剖析的原始參考。
+	 *
+	 * 在 _setTagCore 中若非 Lora/Lyco，會從括號剝除權重前的文字並設為 originalValue
+	 * 與 tag.value 之間的變動分離，便於回溯與還原原始內容
+	 */
 	originalValue?: string;
 
 	isLora?: boolean;

@@ -103,6 +103,20 @@ export function tagIsSharp(tag?: IPromptTag): tag is IPromptTag & { value: EnumP
 	return tag?.value?.trim() === EnumPromptTagType.VALUE_SHARP
 }
 
+/**
+ * 是否為「移除重複 tag」(autoRemoveDuplicateTag) 的排除對象：
+ * 「#」tag 與關鍵字 tag 皆不參與行內去重。
+ *
+ * 「#」是行內保護區段的分界，同一行可合法出現多次；
+ * 關鍵字（AND）需成對保留，去重會破壞其語法結構。
+ *
+ * @param tag - 要判定的 tag
+ */
+export function tagIsDedupExcluded(tag?: IPromptTag)
+{
+	return tagIsSharp(tag) || tagIsKeyword(tag) || tagIsBreak(tag)
+}
+
 export function tagIsWrapWeight(tag?: IPromptTag): tag is IPromptTag & {
 	incWeight: number;
 	decWeight: number;
@@ -198,7 +212,8 @@ export function findTagUntil<T extends IPromptTag>(
 			/** 被略過 → 累計統計後向後一個 tag 繼續掃描 */
 			if (skipped)
 			{
-				if (tagIsWrap(tag)) {
+				if (tagIsWrap(tag))
+				{
 					/** 行數預算已用盡 → 提前結束，該分行 tag 不計入遍歷 */
 					if ((linesCount + 1) >= maxLines) break
 					linesCount++

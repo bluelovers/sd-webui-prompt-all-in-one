@@ -22,9 +22,11 @@ import { getLoraLikeName } from './util/tag-lora'
 import {
     findTagUntil,
     tagIsBreak,
+    tagIsDedupExcluded,
     tagIsDisabled,
     tagIsExtraNetworks,
     tagIsLoraLike,
+    tagIsNormalText,
     tagIsSharp,
     tagIsWrap,
 } from './util'
@@ -204,6 +206,8 @@ interface IGenPromptLineStateCore {
  * 保證下一行不會延續上一行的行級狀態。
  */
 interface IGenPromptLineState extends IGenPromptLineStateCore {
+    /** 該行已出現過的 originalValue ?? value（僅一般文字 tag 記錄，移除重複 tag 判定用） */
+    seenValues: Set<string>
     /** 行級完整重置（遇分行 tag 時使用）：下一行視為全新上下文 */
     reset(): void
 }
@@ -216,8 +220,10 @@ interface IGenPromptLineState extends IGenPromptLineStateCore {
 function createLineState(): IGenPromptLineState {
     return {
         lineHasSharp: false,
+        seenValues: new Set<string>(),
         reset() {
             this.lineHasSharp = false
+            this.seenValues.clear()
         },
     }
 }
@@ -301,6 +307,18 @@ export function genPromptCore(
             applyTagWeightNumToValue(tag, options)
             applyTagTrimInnerOfBracket(tag, options)
             if (tag.disabled && !ignoreDisabled) return
+
+            /**
+             * 移除重複 tag（autoRemoveDuplicateTag）：一般文字 tag 於遍歷當下紀錄
+             * originalValue ?? value；該行已出現過且選項啟用時忽略本 tag。
+             * 「#」與關鍵字 tag 由 tagIsDedupExcluded() 判定排除，不紀錄也不忽略。
+             * 紀錄與判定皆限當前行——遇分行 tag 時 seenValues 已由 lineState.reset() 清空。
+             */
+            if (!tagIsDisabled(tag) && tagIsNormalText(tag) && !tagIsDedupExcluded(tag)) {
+                const seenKey = tag.originalValue ?? tag.value
+                if (options.autoRemoveDuplicateTag && lineState.seenValues.has(seenKey)) return
+                lineState.seenValues.add(seenKey)
+            }
 
             /**
              * 自動優化分割符號：累計當前行的 # 狀態（O(1) 檢查，
