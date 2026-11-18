@@ -4,13 +4,11 @@
  * 欄位如 isLora / isEmbedding 由 tagMixin._setTagClass() 設定，
  * 本檔的判定函式只讀取這些欄位並回傳型別守衛 (Type Guard)，
  * 讓呼叫端在判斷後直接取得收窄後的欄位。
- *
- * @module utils/promptTags/util
  */
 
 import { ITSAnyOfUnion } from 'ts-type';
 import { loraRegex, lycoRegex } from './util/tag-lora';
-import { EnumPromptTagType, IPromptTag, IPromptTagEmbeddingCore, IPromptTagLoraLikeCore, IPromptTagValue } from './tag-types';
+import { EnumPromptTagType, IPromptTag, IPromptTagEmbeddingCore, IPromptTagLoraLikeCore, IPromptTagRegionalPrompterKeyword, IPromptTagValue } from './tag-types';
 
 /**
  * 是否為 Lora 或 Lyco —— 兩者同屬 Extra Networks 的權重模型標籤，
@@ -45,16 +43,25 @@ export function tagIsBreak(tag?: IPromptTag): tag is IPromptTag & { value: EnumP
 	return tag?.value?.trim() === EnumPromptTagType.VALUE_KEYWORD_BREAK
 }
 
+export function tagIsKeywordRegionalPrompter(tag?: IPromptTag): tag is IPromptTag & { value: IPromptTagRegionalPrompterKeyword }
+{
+	const value = tag?.value?.trim()
+	return value === EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOL ||
+		value === EnumPromptTagType.VALUE_KEYWORD_RP_ADDROW ||
+		value === EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOMM ||
+		value === EnumPromptTagType.VALUE_KEYWORD_RP_ADDBASE
+}
+
 /**
  * 是否為 AND keyword tag —— 以 trim 後的 value 比對 VALUE_KEYWORD_AND，
  * 故 value 兩端空白不影響判定；AND 本身是 text 類型的普通 tag。
  *
  * @param tag - 要判定的 tag
  */
-export function tagIsKeyword(tag?: IPromptTag): tag is IPromptTag & { value: EnumPromptTagType.VALUE_KEYWORD_AND }
+export function tagIsKeyword(tag?: IPromptTag): tag is IPromptTag & { value: EnumPromptTagType.VALUE_KEYWORD_AND | IPromptTagRegionalPrompterKeyword }
 {
 	const value = tag?.value?.trim()
-	return tag?.isKeyword || value === EnumPromptTagType.VALUE_KEYWORD_AND
+	return tag?.isKeyword || value === EnumPromptTagType.VALUE_KEYWORD_AND || tagIsKeywordRegionalPrompter(tag)
 }
 
 /**

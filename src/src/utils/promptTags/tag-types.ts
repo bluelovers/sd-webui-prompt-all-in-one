@@ -16,6 +16,11 @@ export const enum EnumPromptTagType
 	/** when value is "AND" (standalone uppercase) */
 	VALUE_KEYWORD_AND = 'AND',
 
+	VALUE_KEYWORD_RP_ADDCOL = 'ADDCOL',
+	VALUE_KEYWORD_RP_ADDROW = 'ADDROW',
+	VALUE_KEYWORD_RP_ADDCOMM = 'ADDCOMM',
+	VALUE_KEYWORD_RP_ADDBASE = 'ADDBASE',
+
 	/** when value is "#" */
 	VALUE_SHARP = '#',
 
@@ -37,6 +42,13 @@ export const enum EnumIsEnglish
 }
 
 export type IPromptTagType = EnumPromptTagType.lora | EnumPromptTagType.lyco | EnumPromptTagType.wrap | EnumPromptTagType.text;
+
+/**
+ * Regional Prompter keywords
+ *
+ * @see https://github.com/hako-mikan/sd-webui-regional-prompter
+ */
+export type IPromptTagRegionalPrompterKeyword = EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOL | EnumPromptTagType.VALUE_KEYWORD_RP_ADDROW | EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOMM | EnumPromptTagType.VALUE_KEYWORD_RP_ADDBASE;
 
 export type IPromptTagValueEnum = Exclude<EnumPromptTagType, IPromptTagType>;
 export type IPromptTagValue = ITSTypeAndStringLiteral<IPromptTagValueEnum> | (string & {});

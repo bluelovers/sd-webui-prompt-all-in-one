@@ -34,6 +34,7 @@ import { IPromptOptionValueRecordWithLegacy } from '../promptOptions/definitions
 import { IHostPromptOptions } from './types'
 import { IPromptTag } from './tag-types'
 import { applyTagReplaceKeywordToPlain } from './util/tag-keyword'
+import { _endWithRegionalPrompterKeyword, _endWithRegionalPrompterKeywordRegex } from './util/tag-regional-prompter'
 
 /**
  * 副作用掛鉤：宿主（Vue 元件）注入的行為。
@@ -378,13 +379,9 @@ export function genPromptCore(
                     if (options.autoOptimizeSplitSymbol && shouldRemoveCommaBeforeWrap(tag, { lineHasSharp: lineState.lineHasSharp })) {
                         splitSymbol = ''
                     }
-                    // sd-webui-regional-prompter
-                    const regionals = [' BREAK', ' ADDCOL', ' ADDROW', ' ADDCOMM', ' ADDBASE']
-                    for (const regional of regionals) {
-                        if (tag.value.endsWith(regional)) {
-                            // 如果是sd-webui-regional-prompter，那么就不需要加逗号
-                            splitSymbol = ''
-                        }
+                    /** sd-webui-regional-prompter：行尾為 regional 關鍵字時不加逗號 */
+                    if (_endWithRegionalPrompterKeywordRegex(tag.value)) {
+                        splitSymbol = ''
                     }
                 }
             } else if (nextIsBreak) {
