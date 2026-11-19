@@ -25,6 +25,7 @@ import {
     tagIsDedupExcluded,
     tagIsDisabled,
     tagIsExtraNetworks,
+    tagIsKeywordRegionalPrompter,
     tagIsLoraLike,
     tagIsNormalText,
     tagIsSharp,
@@ -340,6 +341,8 @@ export function genPromptCore(
             let nextIsWarp = false
             let nextIsBreak = false
             let nextIsLoraLike = false
+            let nextIsKeywordRegionalPrompter = false
+
             // 获取下一个按钮
             if (index + 1 < length) {
                 nextTag = tags2[index + 1]
@@ -349,6 +352,9 @@ export function genPromptCore(
                     nextIsBreak = true
                 } else if (tagIsLoraLike(nextTag)) {
                     nextIsLoraLike = true
+                }
+                else if (tagIsKeywordRegionalPrompter(nextTag)) {
+                    nextIsKeywordRegionalPrompter = true
                 }
             }
 
@@ -384,13 +390,13 @@ export function genPromptCore(
                         splitSymbol = ''
                     }
                 }
-            } else if (nextIsBreak) {
+            } else if (nextIsBreak || nextIsKeywordRegionalPrompter) {
                 splitSymbol = ' '
             } else if (nextIsLoraLike && options.autoRemoveLoraBeforeComma) {
                 splitSymbol = (options.autoRemoveSpace ? '' : ' ')
             }
 
-            if (tagIsBreak(tag)) {
+            if (tagIsBreak(tag) || tagIsKeywordRegionalPrompter(tag)) {
                 if (nextIsWarp) {
                     splitSymbol = ''
                 } else {

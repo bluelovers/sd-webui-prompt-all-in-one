@@ -3,7 +3,6 @@ import { repairMojibake } from './repairMojibake'
 import {
     EnumPromptBracketClose,
     EnumPromptBracketOpen,
-    EnumPromptBreakKeyword,
     EnumPromptQuoteChar,
     EnumPromptSplitMarker,
     isPromptBracketOpen,
@@ -12,6 +11,7 @@ import {
     type IPromptBracketOpen,
 } from './splitPromptTypes'
 import { _isNotAllowedValueOrEmpty, _normalizeTagValueAndTrim } from './promptTags/util/tag-normalize'
+import { _isRegionalPrompterKeyword, _matchRegionalPrompterKeywordSuffix } from './promptTags/util/tag-regional-prompter'
 import { splitLoraTagSegments } from './promptTags/util/tag-lora'
 import { IPromptTagValue, IPromptTagValueRuntimeInput } from './promptTags/tag-types'
 import { IPromptOptionValueRecordWithLegacyRuntime } from './promptOptions/definitions'
@@ -62,9 +62,6 @@ const EMOJI_GUARDS: readonly IEmojiGuard[] = [
     { emoji: ":-(", re: /\:\-\(/g },
     { emoji: ":-)", re: /\:\-\)/g },
 ]
-
-/** 「空白 + BREAK」字串：用於偵測段尾 BREAK 並移除。 */
-const BREAK_WITH_SPACE = ' ' + EnumPromptBreakKeyword.BREAK
 
 /**
  * splitTags 側邊鉤子（獨立第 5 參數）。
@@ -333,16 +330,17 @@ function splitRaw(tags: IPromptTagValue, allowSingleQuote: boolean, autoBreakBef
                     lineState.endBracketChar = promptBracketPairs[converted]
                     temp += converted
                 } else {
-                    if (converted === " " && temp.trim() === EnumPromptBreakKeyword.BREAK) {
+                    if (converted === " " && _isRegionalPrompterKeyword(temp.trim())) {
                         pushSegment()
                         lineState.resetBracket()
                         temp = ''
                     } else {
                         temp += converted
-                        if (temp.endsWith(BREAK_WITH_SPACE)) {
-                            temp = temp.substring(0, temp.length - BREAK_WITH_SPACE.length)
+                        const keyword = _matchRegionalPrompterKeywordSuffix(temp)
+                        if (keyword) {
+                            temp = temp.substring(0, temp.length - keyword.length - 1)
                             pushSegment()
-                            result.push(EnumPromptBreakKeyword.BREAK)
+                            result.push(keyword)
                             lineState.resetBracket()
                             temp = ''
                         }

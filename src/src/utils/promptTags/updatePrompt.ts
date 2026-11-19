@@ -12,7 +12,7 @@
  * @module utils/updatePrompt
  */
 
-import { tagIsBreak, tagIsWrap } from './util'
+import { tagIsBreak, tagIsKeywordRegionalPrompter, tagIsWrap } from './util'
 import { IPromptTag } from './tag-types'
 import type { IHostPromptOptions } from './types'
 
@@ -20,9 +20,10 @@ import type { IHostPromptOptions } from './types'
  * 計算應插入換行 tag 的位置（純決策，不修改輸入）。
  *
  * 規則（與原 updatePrompt 第一段迴圈等價）：
- *   - 只看 BREAK tag；換行 tag 不參與判定。
- *   - autoBreakBeforeWrap：上一個不是換行 → 於當前索引前插入。
- *   - autoBreakAfterWrap ：下一個不是換行 → 於當前索引後插入。
+ *   - 只看 BREAK 與 Regional Prompter 關鍵字 tag；換行 tag 不參與判定。
+ *   - BREAK：autoBreakBeforeWrap / autoBreakAfterWrap。
+ *   - Regional Prompter 關鍵字（ADDCOL/ADDROW/ADDCOMM/ADDBASE）：
+ *     autoWrapBeforeRegionalPrompterKeyword / autoWrapAfterRegionalPrompterKeyword。
  *   - BREAK 位於陣列開頭時不產生「前方換行」（原行為保留）。
  *
  * 回傳的索引基於「尚未插入任何換行」的原陣列，套用時需加上已插入數量（見 updatePrompt）。
@@ -33,26 +34,38 @@ import type { IHostPromptOptions } from './types'
  */
 export function collectWrapInsertIndexes(
     tags: readonly IPromptTag[],
-    { autoBreakBeforeWrap, autoBreakAfterWrap }: IHostPromptOptions = {},
+    {
+        autoBreakBeforeWrap,
+        autoBreakAfterWrap,
+        autoWrapBeforeRegionalPrompterKeyword,
+        autoWrapAfterRegionalPrompterKeyword,
+    }: IHostPromptOptions = {},
 ): number[] {
     const insertWrapIndexes: number[] = []
     const length = tags.length
     for (let i = 0; i < length; i++) {
         const tag = tags[i]
-        if (!tagIsBreak(tag)) continue
-        if (autoBreakBeforeWrap) {
-            // 如果是在“BREAK”关键词前面加换行符 / 判断上一个是否换行符
+        /** BREAK 與 Regional Prompter 關鍵字各自對應一組換行插入選項 */
+        const beforeEnabled = tagIsBreak(tag) && autoBreakBeforeWrap
+            || tagIsKeywordRegionalPrompter(tag) && autoWrapBeforeRegionalPrompterKeyword
+        const afterEnabled = tagIsBreak(tag) && autoBreakAfterWrap
+            || tagIsKeywordRegionalPrompter(tag) && autoWrapAfterRegionalPrompterKeyword
+
+        if (!beforeEnabled && !afterEnabled) continue
+
+        if (beforeEnabled) {
+            /** 如果是在 BREAK 关键词前面加换行符 / 判断上一个是否换行符 */
             if (i - 1 >= 0) {
                 const prevTag = tags[i - 1]
-                // 上一个已经是换行了 → 不插入
+                /** 上一个已经是换行了 → 不插入 */
                 if (!tagIsWrap(prevTag)) insertWrapIndexes.push(i)
             }
         }
-        if (autoBreakAfterWrap) {
-            // 如果是在“BREAK”关键词后面加换行符 / 判断下一个是否换行符
+        if (afterEnabled) {
+            /** 如果是在 BREAK 关键词后面加换行符 / 判断下一个是否换行符 */
             if (i + 1 < length) {
                 const nextTag = tags[i + 1]
-                // 下一个已经是换行了 → 不插入
+                /** 下一个已经是换行了 → 不插入 */
                 if (!tagIsWrap(nextTag)) insertWrapIndexes.push(i + 1)
             }
         }
