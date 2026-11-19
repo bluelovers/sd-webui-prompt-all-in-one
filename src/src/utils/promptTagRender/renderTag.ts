@@ -8,9 +8,9 @@
  */
 
 import common from "@/utils/common";
-import { IPromptTag } from "../promptTags/tag-types";
+import { EnumPromptTagType, IPromptTag } from "../promptTags/tag-types";
 import { IPromptOptionValueRecordWithLegacyRuntime } from '../promptOptions/definitions';
-import { tagIsBreak, tagIsKeyword, tagIsLoraLike, tagIsSharp } from '../promptTags/util';
+import { tagIsBreak, tagIsKeyword, tagIsKeywordRegionalPrompter, tagIsLoraLike, tagIsSharp } from '../promptTags/util';
 import { LORA_LIKE_CHARACTERS_REGEX } from '../promptTags/util/tag-lora';
 import {
 	EnumTagWeightSymbol,
@@ -20,6 +20,7 @@ import {
 	WEIGHT_NUM_CHARACTERS_REGEX,
 	WEIGHT_NUM_CHARACTERS_REGEX2,
 } from '../promptTags/util/tag-weight';
+import { IRegionalPrompterKeywordTrigger } from '../promptTags/util/tag-regional-prompter';
 
 /**
  * lora-like 語法分段後可分別套用樣式的 class。
@@ -87,13 +88,25 @@ export interface IWrapWeightCharactersOptions extends IWeightCharacterOptions
 }
 
 /**
- * BREAK 的固定顯示內容：左右虛線夾住 BREAK 字樣；不含使用者輸入，無須 escape。
+ * 行尾關鍵字的分隔線顯示內容：左右虛線夾住關鍵字字樣。
  *
- * 中段雖是特殊處理的固定內容，BREAK 本身仍是語法關鍵字，
+ * 中段雖是特殊處理的固定內容，關鍵字（BREAK / ADDCOL 等）仍是語法關鍵字，
  * 故一併套上 keyword-character——與一般關鍵字同款 class，
  * 樣式擴充（tag-keyword-character）啟用時才有同樣的顏色提示。
+ *
+ * keyword 僅由 renderTagCore 以 tagIsBreak / tagIsKeywordRegionalPrompter
+ * 收窄後的字面值傳入（皆為固定常數、非使用者輸入），無須 escape。
+ *
+ * @param keyword - 行尾關鍵字字樣（BREAK / ADDCOL / ADDROW / ADDCOMM / ADDBASE）
+ * @returns 顯示用 HTML
  */
-const BREAK_HTML = '<div class="break-character">---------------------</div> <div class="character keyword-character">BREAK</div> <div class="break-character">---------------------</div>'
+function buildSeparatorHtml(keyword: IRegionalPrompterKeywordTrigger): string
+{
+	return `<div class="break-character">---------------------</div> <div class="character keyword-character">${keyword}</div> <div class="break-character">---------------------</div>`
+}
+
+/** BREAK 的分隔線 HTML：僅在 autoBreakBeforeWrap / autoBreakAfterWrap 任一開啟時套用 */
+const BREAK_HTML = buildSeparatorHtml(EnumPromptTagType.VALUE_KEYWORD_BREAK)
 
 /**
  * 權重醒目樣式用的 class 字串。
@@ -250,10 +263,21 @@ export function renderTagCore(tag: IPromptTag | undefined, options: IPromptOptio
 	if (!tag) return ''
 
 	let value = tag.value
-	/** BREAK 以嚴格相等判定（不 trim），僅在 autoBreakBeforeWrap / autoBreakAfterWrap 任一開啟時改渲染成分隔線； */
+	/**
+	 * 行尾關鍵字以分隔線渲染（trim 比對，判定見 tagIsBreak / tagIsKeywordRegionalPrompter）：
+	 * BREAK —— autoBreakBeforeWrap / autoBreakAfterWrap 任一開啟時；
+	 * Regional Prompter 關鍵字（ADDCOL / ADDROW / ADDCOMM / ADDBASE）——
+	 * autoWrapBeforeRegionalPrompterKeyword / autoWrapAfterRegionalPrompterKeyword 任一開啟時。
+	 * 分隔線取代原 value 字樣，關鍵字本身置中顯示。
+	 */
 	if (tagIsBreak(tag) && (options.autoBreakBeforeWrap || options.autoBreakAfterWrap))
 	{
 		value = BREAK_HTML
+	}
+	else if (tagIsKeywordRegionalPrompter(tag) &&
+		(options.autoWrapBeforeRegionalPrompterKeyword || options.autoWrapAfterRegionalPrompterKeyword))
+	{
+		value = buildSeparatorHtml(tag.value.trim() as IRegionalPrompterKeywordTrigger)
 	}
 	else if (tag.incWeight > 0)
 	{

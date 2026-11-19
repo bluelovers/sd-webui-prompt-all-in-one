@@ -5,24 +5,13 @@
                 .prompt-tag-main {
                     .prompt-tag-edit {
                         .prompt-tag-value {
-                            // 語法符號（權重括號、lora-like 的 <> 與名稱分隔）統一用等寬字型：
-                            // 這些字元在比例字型下會寬窄不一，同一種符號看起來反而像不同字。
-                            --pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family:
-                                "JetBrains Mono",
-                                "Noto Sans",
-                                "Liberation Sans",
-                                "Helvetica Neue",
-                                "Arial",
-                                "Segoe UI",
-                                sans-serif;
-
                             .weight-character {
                                 font-weight: 900;
 
                                 font-synthesis: weight;
                                 -webkit-text-stroke: 2px currentColor;
 
-                                font-family: var(--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family);
+                                font-family: var(--pp-pt-font-family-mono);
 
                                 padding: 0 1px;
                                 &:first-of-type {
@@ -38,7 +27,7 @@
                             // 避免同一行出現兩種同樣搶眼的符號。
                             .lora-like-open-character,
                             .lora-like-close-character {
-                                font-family: var(--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family);
+                                font-family: var(--pp-pt-font-family-mono);
 
                                 font-synthesis: none;
                                 font-weight: 400;
@@ -53,7 +42,7 @@
                                 font-weight: bold;
                                 font-synthesis: weight;
 
-                                font-family: var(--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family);
+                                font-family: var(--pp-pt-font-family-mono);
 
                                 padding: 0 1px;
                             }
@@ -61,7 +50,7 @@
                             // 權重段的醒目效果由 .weight-number-character 提供，
                             // 這裡只補「權重 0 / 未寫權重」時的情境：仍讓它維持等寬字型。
                             .lora-like-weight-character {
-                                font-family: var(--pp-pt-dsb-ptl-pt-ptm-pte-promptTagValue-bracket-font-family);
+                                font-family: var(--pp-pt-font-family-mono);
                             }
 
                             // 名稱是使用者真正在讀的部分，維持一般字型並略為加重

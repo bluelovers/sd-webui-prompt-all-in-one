@@ -2,9 +2,14 @@
     .prompt-tags {
         .prompt-tags-list {
             .prompt-tag {
-                .prompt-tag-main {
+                .prompt-tag-main:has(.keyword-character) {
+                    border: 1px ridge var(--physton-common-orange);
+                    border-radius: var(--pp-pt-dsb-ptl-pt-ptm-promptTagEdit-border-radius);
+
                     .prompt-tag-edit {
                         .prompt-tag-value {
+                            font-family: var(--pp-pt-font-family-mono);
+
                             // 關鍵字（renderTag 的 keyword-character：AND 與
                             // autoKeywordToPlain 轉換後的 And）以顏色提示
                             // 它是語法關鍵字，不是普通提示詞。
@@ -20,6 +25,7 @@
                             .keyword-character {
                                 color: var(--physton-common-orange);
                                 font-weight: 700;
+                                padding: 0 2px;
                             }
                         }
                     }

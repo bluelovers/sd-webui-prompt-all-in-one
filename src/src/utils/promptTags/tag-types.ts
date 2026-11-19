@@ -47,6 +47,7 @@ export type IPromptTagType = EnumPromptTagType.lora | EnumPromptTagType.lyco | E
  * Regional Prompter keywords
  *
  * @see https://github.com/hako-mikan/sd-webui-regional-prompter
+ * @see https://stable-diffusion-art.com/regional-prompter/
  */
 export type IPromptTagRegionalPrompterKeyword = EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOL | EnumPromptTagType.VALUE_KEYWORD_RP_ADDROW | EnumPromptTagType.VALUE_KEYWORD_RP_ADDCOMM | EnumPromptTagType.VALUE_KEYWORD_RP_ADDBASE;
 
