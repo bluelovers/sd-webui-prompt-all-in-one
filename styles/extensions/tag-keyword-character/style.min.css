@@ -1,1 +1,3 @@
-.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main .prompt-tag-edit .prompt-tag-value .keyword-character{color:var(--physton-common-orange);font-weight:700}
+.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main:has(.keyword-character){border:1px ridge var(--physton-common-orange);border-radius:var(--pp-pt-dsb-ptl-pt-ptm-promptTagEdit-border-radius)}
+.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main:has(.keyword-character) .prompt-tag-edit .prompt-tag-value{font-family:var(--pp-pt-font-family-mono)}
+.physton-prompt .prompt-tags .prompt-tags-list .prompt-tag .prompt-tag-main:has(.keyword-character) .prompt-tag-edit .prompt-tag-value .keyword-character{color:var(--physton-common-orange);font-weight:700;padding:0 2px}
