@@ -120,8 +120,8 @@ const _promptOptions = [
     },
     {
         key: 'autoWrapAfterRegionalPrompterKeyword',
-        dataDefault: false,
-        propDefault: false,
+        dataDefault: true,
+        propDefault: true,
         afterSave: EnumPromptOptionAfterSave.updatePrompt,
         emittedBy: [EnumPromptOptionComponent.promptFormat],
         checkUi: {labelLangKey: 'is_break_after_wrap_regional_prompter'},
